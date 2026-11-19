@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATH 6 LMS | Dashboard Giáo Viên & Phòng Học Trực Tuyến Supabase (Bài 47 - Bài 94)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Supabase JS Client v2 (Tương thích trực tiếp GitHub Pages) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgCanvas: '#F7FAFC',
+            navyMain: '#243B53',
+            navySub: '#627D98',
+            navyLight: '#829AB1',
+            borderSoft: '#E2E8F0',
+            eduBlue: '#3563E9',
+            eduBlueBg: '#EBF4FF',
+            eduGreen: '#55B88A',
+            eduGreenBg: '#ECFDF5',
+            eduYellow: '#F59E0B',
+            eduYellowBadge: '#FFC857',
+            eduYellowBg: '#FFFBEB',
+            eduOrange: '#FF9F68',
+            eduOrangeBg: '#FFF5F0',
+            eduPurple: '#7655D9',
+            eduPurpleBg: '#F5F3FF'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Nunito', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            soft: '0 4px 20px rgba(36, 59, 83, 0.05)',
+            softHover: '0 10px 28px rgba(36, 59, 83, 0.09)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #F7FAFC; color: #243B53; font-family: 'Inter', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Nunito', sans-serif; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #F1F5F9; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .edu-card { background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 20px rgba(36, 59, 83, 0.05); transition: all 0.2s ease; }
+    .edu-card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(36, 59, 83, 0.09); border-color: #CBD5E1; }
+    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade { animation: fadeSlideUp 0.2s ease-out forwards; }
+    @keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.65; } }
+    .live-pulse { animation: pulseDot 1.6s infinite ease-in-out; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col bg-bgCanvas text-navyMain">
+
+  <!-- THANH TRẠNG THÁI SUPABASE & TÀI KHOẢN GIÁO VIÊN -->
+  <div id="topGlobalBar" class="bg-navyMain text-white px-4 lg:px-8 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shrink-0 z-30">
+    <div class="flex items-center gap-3 flex-wrap">
+      <span class="px-2.5 py-0.5 rounded-full bg-eduBlue text-white font-display font-extrabold tracking-wide">
+        MATH 6 EDUTECH
+      </span>
+      <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold">
+        <span id="supabaseStatusDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
+        <span id="supabaseStatusText">Supabase: Đang kiểm tra cấu hình...</span>
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <span id="teacherAuthInfo" class="text-[11px] text-slate-300 font-mono">Chưa đăng nhập giáo viên</span>
+      <button id="teacherLoginBtn" onclick="openTeacherAuthModal()" class="px-3 py-1 rounded-xl bg-eduBlue hover:bg-blue-600 text-white font-bold transition">
+        🔑 Đăng nhập Giáo viên
+      </button>
+      <button id="teacherLogoutBtn" onclick="handleTeacherLogout()" class="hidden px-3 py-1 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold transition">
+        Đăng xuất
+      </button>
+    </div>
+  </div>
+
+  <!-- KHUNG CHÍNH -->
+  <div id="appRootContainer" class="flex-1 flex overflow-hidden relative">
+
+    <!-- PHẦN 1: DASHBOARD GIÁO VIÊN -->
+    <div id="teacherAppPane" class="flex-1 flex h-full overflow-hidden">
+      <div id="mobileOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-navyMain/40 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+      <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-[275px] bg-white border-r border-borderSoft flex flex-col transition-all duration-300 transform -translate-x-full lg:translate-x-0 shrink-0">
+        <div class="p-4 border-b border-borderSoft flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3 cursor-pointer" onclick="navigateToNav('lessons')">
+            <div class="w-10 h-10 rounded-2xl bg-eduBlue text-white flex items-center justify-center font-display font-black text-lg shadow-md shadow-eduBlue/25 shrink-0">
+              M6
+            </div>
+            <div class="sidebar-text overflow-hidden">
+              <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-eduBlueBg text-eduBlue">
+                Toán 6 • Bài 47 – 94
+              </span>
+              <h1 class="font-display font-extrabold text-sm text-navyMain truncate mt-0.5">
+                Dashboard Giáo Viên
+              </h1>
+            </div>
+          </div>
+
+          <button onclick="toggleSidebarCollapse()" title="Thu gọn / Mở rộng thanh điều hướng" class="hidden lg:flex w-8 h-8 rounded-xl bg-bgCanvas hover:bg-eduBlueBg text-navySub hover:text-eduBlue items-center justify-center transition">
+            <svg id="sidebarCollapseIcon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-3.5 border-b border-borderSoft sidebar-text">
+          <button onclick="openShareLessonModal()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-eduBlue to-eduPurple hover:opacity-95 text-white font-display font-extrabold text-xs tracking-wide shadow-md shadow-eduBlue/20 flex items-center justify-center gap-2 transition">
+            <span class="text-base">📤</span>
+            <span>CHIA SẺ BÀI TẬP</span>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+          <div>
+            <div class="sidebar-text px-2.5 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-navyLight">
+              Quản lý & Giảng dạy
+            </div>
+            <nav class="space-y-1" id="mainNavContainer">
+              <button onclick="navigateToNav('lessons')" data-nav="lessons" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+                <div class="flex items-center gap-2.5 truncate">
+                  <span class="w-7 h-7 rounded-lg bg-eduBlueBg text-eduBlue flex items-center justify-center shrink-0">📚</span>
+                  <span class="sidebar-text truncate">Danh sách 48 bài học</span>
+                </div>
+                <span class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-navySub">48</span>
+              </button>
+
+              <button onclick="navigateToNav('monitor')" data-nav="monitor" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+                <div class="flex items-center gap-2.5 truncate">
+                  <span class="w-7 h-7 rounded-lg bg-eduGreenBg text-eduGreen flex items-center justify-center shrink-0">🖥️</span>
+                  <span class="sidebar-text truncate">Phòng học & Giám sát</span>
+                </div>
+                <span id="navMonitorBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduGreenBg text-[#047857]">0 HS</span>
+              </button>
+
+              <button onclick="navigateToNav('repository')" data-nav="repository" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+                <div class="flex items-center gap-2.5 truncate">
+                  <span class="w-7 h-7 rounded-lg bg-eduPurpleBg text-eduPurple flex items-center justify-center shrink-0">🔗</span>
+                  <span class="sidebar-text truncate">Kho URL bài tập</span>
+                </div>
+                <span id="navRepoBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduPurpleBg text-[#6D28D9]">0 URL</span>
+              </button>
+
+              <button onclick="navigateToNav('progress')" data-nav="progress" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+                <div class="flex items-center gap-2.5 truncate">
+                  <span class="w-7 h-7 rounded-lg bg-eduYellowBg text-eduYellow flex items-center justify-center shrink-0">📊</span>
+                  <span class="sidebar-text truncate">Tiến độ & Kết quả</span>
+                </div>
+                <span id="navProgressBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduYellowBg text-[#D97706]">0%</span>
+              </button>
+            </nav>
+          </div>
+
+          <div class="sidebar-text pt-3 border-t border-borderSoft">
+            <div class="px-2.5 mb-2 flex items-center justify-between">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-navyLight">8 Nhóm chủ đề</span>
+              <button onclick="filterByGroup('all')" class="text-xs font-semibold text-eduBlue hover:underline">Tất cả</button>
+            </div>
+            <div id="sidebarTopicGroups" class="space-y-1"></div>
+          </div>
+        </div>
+
+        <div class="p-3.5 border-t border-borderSoft bg-slate-50/80 sidebar-text space-y-2">
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="exportFullBackup()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-[11px] font-bold text-navyMain hover:text-eduBlue transition">
+              ⬇ Sao lưu JSON
+            </button>
+            <button onclick="triggerImportBackup()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-eduGreenBg border border-borderSoft text-[11px] font-bold text-navyMain hover:text-eduGreen transition">
+              ⬆ Khôi phục
+            </button>
+            <input type="file" id="importBackupInput" accept=".json" class="hidden" onchange="handleImportBackup(event)" />
+          </div>
+        </div>
+      </aside>
+
+      <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="bg-white border-b border-borderSoft px-5 lg:px-7 py-3.5 shrink-0 z-20">
+          <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+            <div class="flex items-center gap-3">
+              <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl bg-bgCanvas border border-borderSoft text-navyMain">
+                ☰
+              </button>
+              <div>
+                <h2 class="font-display font-black text-lg sm:text-xl text-navyMain tracking-tight">
+                  HỆ THỐNG QUẢN LÝ CHƯƠNG TRÌNH TOÁN LỚP 6 (BÀI 47 – BÀI 94)
+                </h2>
+                <p class="text-xs text-navySub font-medium">
+                  Phân cấp 4 tầng: Bài học → Dạng toán → Nhiệm vụ → Bài tập 1, 2, 3, 4 • Đồng bộ Realtime qua Supabase
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap" id="headerBreadcrumb"></div>
+          </div>
+        </header>
+
+        <main id="mainWorkspace" class="flex-1 overflow-y-auto px-5 lg:px-7 py-5 space-y-5"></main>
+      </div>
+    </div>
+
+    <!-- PHẦN 2: GIAO DIỆN HỌC SINH THAM GIA PHÒNG (?room=MA_PHONG) -->
+    <div id="studentAppPane" class="hidden flex-1 flex-col h-full bg-bgCanvas overflow-hidden">
+      <div id="studentJoinView" class="flex-1 overflow-y-auto bg-gradient-to-br from-[#EBF4FF] via-[#F7FAFC] to-[#F5F3FF] p-4 sm:p-8 flex items-center justify-center"></div>
+
+      <div id="studentExerciseView" class="hidden flex-1 flex flex-col h-full bg-bgCanvas overflow-hidden">
+        <div id="studentExerciseHeader" class="bg-white border-b border-borderSoft px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0"></div>
+        <div class="bg-slate-50 border-b border-borderSoft px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+          <span id="studentLoadStatusBadge" class="px-2.5 py-1 rounded-full font-bold bg-eduBlueBg text-eduBlue">⏳ Đang tải bài tập...</span>
+          <div class="flex items-center gap-2">
+            <button onclick="openCurrentStudentUrlInNewTab()" class="px-2.5 py-1.5 rounded-lg bg-eduBlueBg text-eduBlue font-bold">↗ Mở tab mới</button>
+            <button onclick="studentSubmitResultToSupabase()" id="studentSubmitBtn" class="px-3 py-1.5 rounded-lg bg-eduGreen hover:bg-emerald-600 text-white font-bold">✓ Nộp bài</button>
+          </div>
+        </div>
+        <div class="flex-1 relative bg-white overflow-hidden">
+          <iframe id="studentStableExerciseIframe" class="w-full h-full border-0 block bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" onload="onStudentIframeLoaded()" title="Bài tập học sinh"></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- POPUP CHIA SẺ BÀI HỌC CHO HỌC SINH (SUPABASE)             -->
+  <!-- ========================================================= -->
+  <div id="shareLessonModal" class="fixed inset-0 bg-navyMain/65 backdrop-blur-xs z-50 hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-2xl w-full p-6 shadow-2xl animate-fade max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-borderSoft shrink-0">
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full bg-eduBlueBg text-eduBlue text-xs font-extrabold uppercase">
+            Phòng học trực tuyến Supabase
+          </span>
+          <h3 class="font-display font-black text-xl sm:text-2xl text-navyMain mt-1">
+            CHIA SẺ BÀI HỌC CHO HỌC SINH
+          </h3>
+        </div>
+        <button onclick="closeShareLessonModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-navySub font-bold">✕</button>
+      </div>
+
+      <div class="py-4 space-y-4 overflow-y-auto flex-1 pr-1">
+        <!-- Cảnh báo nếu chưa cấu hình Supabase hoặc chưa đăng nhập giáo viên -->
+        <div id="shareSupabaseAlertBox" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700"></div>
+
+        <!-- 1. Tên lớp học & 2. Tên giáo viên -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">1. Tên lớp học:</label>
+            <input id="shareClassNameInput" type="text" oninput="saveTeacherProfileInputs()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2 text-sm font-bold text-navyMain" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">2. Tên giáo viên:</label>
+            <input id="shareTeacherNameInput" type="text" oninput="saveTeacherProfileInputs()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2 text-sm text-navyMain" />
+          </div>
+        </div>
+
+        <!-- 3. Bài học -->
+        <div>
+          <label class="block text-xs font-bold uppercase text-navySub mb-1">3. Bài học (Bài 47 – Bài 94):</label>
+          <select id="shareLessonSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2.5 text-sm font-bold text-navyMain"></select>
+        </div>
+
+        <!-- 4. Dạng toán, 5. Nhiệm vụ, 6. Bài tập -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">4. Dạng toán:</label>
+            <select id="shareTypeSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain">
+              <option value="1">Dạng 1</option>
+              <option value="2">Dạng 2</option>
+              <option value="3">Dạng 3</option>
+              <option value="4">Dạng 4</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">5. Nhiệm vụ:</label>
+            <select id="shareTaskSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">6. Bài tập:</label>
+            <select id="shareExerciseSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain">
+              <option value="1">Bài tập 1</option>
+              <option value="2">Bài tập 2</option>
+              <option value="3">Bài tập 3</option>
+              <option value="4">Bài tập 4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Đường link bài tập đã lưu (CHỈ ĐỌC) -->
+        <div class="p-3.5 rounded-2xl bg-bgCanvas border border-borderSoft space-y-2">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <label class="block text-xs font-extrabold uppercase text-navyMain">Đường link bài tập đã lưu:</label>
+            <span id="shareSourceUrlBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input id="shareReadonlyExerciseUrlInput" type="text" readonly placeholder="Chưa có đường link bài tập..." class="flex-1 bg-slate-100 border border-borderSoft rounded-xl px-3 py-2 font-mono text-xs text-navyMain select-all cursor-default" />
+            <button type="button" onclick="copyExerciseSourceUrl()" class="px-3 py-2 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-xs font-bold text-eduBlue shrink-0 transition">📋 Sao chép</button>
+            <button type="button" onclick="previewExerciseSourceUrlFromShare()" class="px-3 py-2 rounded-xl bg-eduPurpleBg hover:bg-eduPurple text-[#6D28D9] hover:text-white text-xs font-bold shrink-0 transition">▶ Mở bài tập</button>
+          </div>
+
+          <div id="shareMissingUrlWarning" class="hidden text-xs font-bold text-red-600 pt-1">
+            Bài tập này chưa có đường link. Vui lòng lưu URL bài tập trước khi chia sẻ.
+          </div>
+        </div>
+
+        <!-- KẾT QUẢ PHÒNG HỌC TRÊN SUPABASE -->
+        <div id="shareRoomResultBox" class="hidden p-4 rounded-2xl bg-gradient-to-br from-eduBlueBg/70 to-eduPurpleBg/70 border-2 border-eduBlue/30 space-y-4 animate-fade">
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-blue-200/70">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg bg-navyMain text-white font-mono text-xs font-extrabold" id="createdRoomCodeBadge">TOAN6-0000</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-eduGreenBg text-[#047857] border border-emerald-300" id="createdRoomStatusBadge">Đang mở</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-white text-navyMain border border-borderSoft" id="createdRoomStudentCountBadge">0 học sinh đã tham gia</span>
+            </div>
+            <button type="button" id="shareCloseRoomBtn" onclick="toggleCurrentSharedRoomStatus()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition">🔒 Đóng phòng</button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div class="md:col-span-2 space-y-2.5">
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-navySub mb-1">Mã phòng học:</label>
+                <div class="flex items-center gap-2">
+                  <input id="createdRoomCodeInput" type="text" readonly class="flex-1 bg-white border border-borderSoft rounded-xl px-3 py-2 font-mono font-extrabold text-sm text-navyMain" />
+                  <button type="button" onclick="copyRoomCodeToClipboard()" class="px-3 py-2 rounded-xl bg-navyMain hover:bg-slate-700 text-white text-xs font-bold shrink-0">📋 COPY MÃ PHÒNG</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-navySub mb-1">Link tham gia của học sinh:</label>
+                <div class="flex items-center gap-2">
+                  <input id="createdRoomJoinLinkInput" type="text" readonly class="flex-1 bg-white border border-borderSoft rounded-xl px-3 py-2 font-mono text-xs text-eduBlue" />
+                  <button type="button" onclick="copyStudentJoinLinkToClipboard()" class="px-3 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold shrink-0">🔗 COPY LINK</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-borderSoft space-y-2">
+              <div id="roomQrCodeContainer" class="flex items-center justify-center"></div>
+              <button type="button" onclick="downloadRoomQrImage()" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-navyMain transition">⬇ Tải mã QR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3.5 border-t border-borderSoft flex items-center justify-end gap-2.5 shrink-0">
+        <button type="button" onclick="closeShareLessonModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">Đóng</button>
+        <button type="button" id="createRoomAndShareBtn" onclick="createRoomAndShare()" class="px-5 py-2.5 rounded-xl bg-eduBlue hover:bg-blue-600 text-white font-display font-extrabold text-xs shadow-sm transition">
+          🚀 TẠO PHÒNG HỌC VÀ CHIA SẺ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XEM TRƯỚC URL BÀI TẬP -->
+  <div id="urlPreviewModal" class="fixed inset-0 bg-navyMain/75 backdrop-blur-xs z-50 hidden items-center justify-center p-2 sm:p-5">
+    <div id="urlPreviewContainer" class="bg-white rounded-2xl border border-borderSoft shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden transition-all">
+      <div class="px-5 py-3 bg-slate-50 border-b border-borderSoft flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <span id="urlPreviewBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-eduBlue text-white shrink-0">B47_D1_NV1_BT1</span>
+          <div class="min-w-0">
+            <h3 id="urlPreviewTitle" class="font-display font-extrabold text-base text-navyMain truncate">Xem trước URL bài tập</h3>
+            <p id="urlPreviewMeta" class="text-xs font-mono text-navySub truncate"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="openActivePreviewUrlInNewTab()" class="px-3 py-2 rounded-xl bg-eduBlueBg hover:bg-eduBlue text-eduBlue hover:text-white text-xs font-bold transition">↗ Mở tab mới</button>
+          <button onclick="toggleFullscreenPreview()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-borderSoft text-xs font-bold text-navyMain transition"><span id="fullscreenPreviewLabel">⛶ Toàn màn hình</span></button>
+          <button onclick="closeUrlPreviewModal()" class="px-4 py-2 rounded-xl bg-navyMain hover:bg-slate-700 text-white text-xs font-bold transition">✕ Đóng</button>
+        </div>
+      </div>
+      <div class="flex-1 bg-white relative">
+        <iframe id="urlPreviewIframe" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" title="Xem trước bài tập"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XÁC NHẬN & MODAL CHỈNH SỬA / ĐĂNG NHẬP -->
+  <div id="confirmDialogModal" class="fixed inset-0 bg-navyMain/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-md w-full p-6 shadow-xl animate-fade">
+      <div class="flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-2xl bg-eduOrangeBg text-eduOrange flex items-center justify-center shrink-0 font-bold text-lg">!</div>
+        <div>
+          <h3 id="confirmDialogTitle" class="font-display font-extrabold text-lg text-navyMain">Xác nhận thao tác</h3>
+          <p id="confirmDialogMessage" class="text-sm text-navySub mt-1 leading-relaxed"></p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-borderSoft">
+        <button onclick="closeConfirmDialog()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">Hủy bỏ</button>
+        <button id="confirmDialogActionBtn" class="px-5 py-2 rounded-xl bg-eduBlue text-white text-xs font-bold">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editorModal" class="fixed inset-0 bg-navyMain/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-md w-full p-6 shadow-2xl animate-fade max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3.5 border-b border-borderSoft">
+        <div>
+          <span id="editorModalSub" class="text-xs font-mono font-bold uppercase tracking-wider text-eduBlue">Cập nhật</span>
+          <h3 id="editorModalTitle" class="font-display font-extrabold text-xl text-navyMain mt-0.5">Chỉnh sửa thông tin</h3>
+        </div>
+        <button onclick="closeEditorModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-navySub font-bold">✕</button>
+      </div>
+      <div id="editorModalBody" class="py-4 space-y-4 overflow-y-auto flex-1"></div>
+      <div class="pt-3.5 border-t border-borderSoft flex items-center justify-end gap-2.5">
+        <button onclick="closeEditorModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">Đóng</button>
+        <button id="editorModalSaveBtn" class="px-5 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold">Lưu thông tin</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    /******************************************************************
+     * 0. CẤU HÌNH SUPABASE TẬP TRUNG (DỰ ÁN TrangE2)
+     ******************************************************************/
+    const SUPABASE_URL = "https://bpnsyvkdotnspwydztpv.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_uIF7OUjgvpUOeGC8SUb9WA_EowE6n2l";
+
+    function isSupabaseConfigured() {
+      return (
+        typeof SUPABASE_URL === "string" && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") &&
+        typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("YOUR_")
+      );
+    }
+
+    let supabaseClient = null;
+    let currentTeacherUser = null;
+    let activeRoom = null;
+    let activeRoomStudents = [];
+    let activeRoomSubmissions = [];
+    let realtimeChannel = null;
+    let studentJoinedInfo = null;
+    let latestStudentScore = null;
+
+    // Nhận điểm số thực tế từ file bài tập bên trong iframe gửi ra
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+      if (data.type === "MATH6_SCORE_UPDATE" && data.score !== undefined && data.score !== null) {
+        latestStudentScore = Number(data.score);
+      }
+    });
+
+    function updateSupabaseBadge(text, ok) {
+      const txtEl = document.getElementById("supabaseStatusText");
+      const dotEl = document.getElementById("supabaseStatusDot");
+      const badgeEl = document.getElementById("supabaseStatusBadge");
+      if (txtEl) txtEl.textContent = text;
+      if (dotEl) dotEl.className = ok ? "w-2 h-2 rounded-full bg-emerald-400 live-pulse" : "w-2 h-2 rounded-full bg-amber-300";
+      if (badgeEl) {
+        badgeEl.className = ok
+          ? "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-semibold"
+          : "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold";
+      }
+    }
+
+    async function initSupabase() {
+      if (!isSupabaseConfigured()) {
+        updateSupabaseBadge("Supabase: Chưa cấu hình SUPABASE_URL / SUPABASE_ANON_KEY", false);
+        return false;
+      }
+
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      updateSupabaseBadge("Supabase: Đã kết nối (TrangE2)", true);
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      handleAuthSessionUpdate(session);
+
+      supabaseClient.auth.onAuthStateChange((_event, newSession) => {
+        handleAuthSessionUpdate(newSession);
+      });
+
+      return true;
+    }
+
+    function handleAuthSessionUpdate(session) {
+      const user = session?.user || null;
+      const isAnon = user?.is_anonymous === true;
+      const infoEl = document.getElementById("teacherAuthInfo");
+      const loginBtn = document.getElementById("teacherLoginBtn");
+      const logoutBtn = document.getElementById("teacherLogoutBtn");
+
+      if (user && !isAnon) {
+        currentTeacherUser = user;
+        if (infoEl) infoEl.textContent = `GV: ${user.email || user.id.slice(0, 8)}`;
+        loginBtn?.classList.add("hidden");
+        logoutBtn?.classList.remove("hidden");
+        restoreLastTeacherRoomIfAny();
+      } else {
+        currentTeacherUser = null;
+        if (infoEl) infoEl.textContent = "Chưa đăng nhập giáo viên";
+        loginBtn?.classList.remove("hidden");
+        logoutBtn?.classList.add("hidden");
+      }
+      renderShareSupabaseAlert();
+    }
+
+    function openTeacherAuthModal() {
+      if (!supabaseClient) {
+        showToast("Chưa cấu hình SUPABASE_URL và SUPABASE_ANON_KEY trong mã nguồn!", "warn");
+        return;
+      }
+      document.getElementById("editorModalSub").textContent = "SUPABASE AUTH";
+      document.getElementById("editorModalTitle").textContent = "Đăng nhập tài khoản Giáo viên";
+      document.getElementById("editorModalBody").innerHTML = `
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">Email giáo viên:</label>
+            <input id="teacherEmailInput" type="email" placeholder="giaovien@truonghoc.edu.vn" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2.5 text-sm text-navyMain" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">Mật khẩu:</label>
+            <input id="teacherPasswordInput" type="password" placeholder="••••••••" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2.5 text-sm text-navyMain" />
+          </div>
+        </div>
+      `;
+      document.getElementById("editorModalSaveBtn").textContent = "Đăng nhập";
+      document.getElementById("editorModalSaveBtn").onclick = async () => {
+        const email = document.getElementById("teacherEmailInput").value.trim();
+        const password = document.getElementById("teacherPasswordInput").value;
+        if (!email || !password) { showToast("Vui lòng nhập đầy đủ email và mật khẩu.", "warn"); return; }
+
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          showToast(`Đăng nhập thất bại: ${error.message}`, "warn");
+        } else {
+          closeEditorModal();
+          showToast("Đăng nhập giáo viên thành công!", "success");
+        }
+      };
+      showEditorModal();
+    }
+
+    async function handleTeacherLogout() {
+      if (!supabaseClient) return;
+      await supabaseClient.auth.signOut();
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+      activeRoom = null;
+      activeRoomStudents = [];
+      activeRoomSubmissions = [];
+      renderAll();
+      showToast("Đã đăng xuất.", "info");
+    }
+
+    async function restoreLastTeacherRoomIfAny() {
+      const lastRoomId = localStorage.getItem("MATH6_SB_LAST_ROOM_ID");
+      if (!lastRoomId || !supabaseClient || !currentTeacherUser) return;
+      const { data, error } = await supabaseClient
+        .from("rooms")
+        .select("*")
+        .eq("id", lastRoomId)
+        .eq("teacher_id", currentTeacherUser.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        activeRoom = data;
+        await loadAndSubscribeRoomRealtime(data.id);
+      }
+    }
+
+    async function loadAndSubscribeRoomRealtime(roomId) {
+      if (!supabaseClient || !roomId) return;
+      localStorage.setItem("MATH6_SB_LAST_ROOM_ID", roomId);
+
+      const { data: studentsData } = await supabaseClient
+        .from("students")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("last_seen_at", { ascending: false });
+      activeRoomStudents = studentsData || [];
+
+      const { data: subsData } = await supabaseClient
+        .from("submissions")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("submitted_at", { ascending: false });
+      activeRoomSubmissions = subsData || [];
+
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+      }
+
+      realtimeChannel = supabaseClient
+        .channel(`room-live-${roomId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "students", filter: `room_id=eq.${roomId}` },
+          async () => {
+            const { data } = await supabaseClient
+              .from("students")
+              .select("*")
+              .eq("room_id", roomId)
+              .order("last_seen_at", { ascending: false });
+            activeRoomStudents = data || [];
+            refreshRoomMonitorUI();
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "submissions", filter: `room_id=eq.${roomId}` },
+          async () => {
+            const { data } = await supabaseClient
+              .from("submissions")
+              .select("*")
+              .eq("room_id", roomId)
+              .order("submitted_at", { ascending: false });
+            activeRoomSubmissions = data || [];
+            refreshRoomMonitorUI();
+          }
+        )
+        .subscribe();
+
+      refreshRoomMonitorUI();
+    }
+
+    function refreshRoomMonitorUI() {
+      updateSidebarBadges();
+      renderHeaderBreadcrumbUI();
+      if (appState.currentView === "monitor") renderAll();
+      if (activeRoom) {
+        const badge = document.getElementById("createdRoomStudentCountBadge");
+        if (badge) badge.textContent = `${activeRoomStudents.length} học sinh đã tham gia`;
+      }
+    }
+
+    /******************************************************************
+     * 1. DANH MỤC 8 NHÓM CHỦ ĐỀ & 48 BÀI HỌC (BÀI 47 - BÀI 94)
+     ******************************************************************/
+    const TOPIC_GROUPS = [
+      { id: 1, code: "Nhóm 1", name: "Hình có tính đối xứng", range: "Bài 47 – 49", color: "#3563E9", bg: "#EBF4FF" },
+      { id: 2, code: "Nhóm 2", name: "Biểu thức và tìm x", range: "Bài 50 – 51", color: "#55B88A", bg: "#ECFDF5" },
+      { id: 3, code: "Nhóm 3", name: "Ôn tập và kiểm tra", range: "Bài 52 – 54", color: "#F59E0B", bg: "#FFFBEB" },
+      { id: 4, code: "Nhóm 4", name: "Phân số và hỗn số", range: "Bài 55 – 63", color: "#7655D9", bg: "#F5F3FF" },
+      { id: 5, code: "Nhóm 5", name: "Hình học cơ bản", range: "Bài 64 – 67", color: "#3563E9", bg: "#EBF4FF" },
+      { id: 6, code: "Nhóm 6", name: "Số thập phân và tỉ số phần trăm", range: "Bài 68 – 76", color: "#55B88A", bg: "#ECFDF5" },
+      { id: 7, code: "Nhóm 7", name: "Dữ liệu và xác suất", range: "Bài 77 – 84", color: "#FF9F68", bg: "#FFF5F0" },
+      { id: 8, code: "Nhóm 8", name: "Luyện tập tổng hợp", range: "Bài 85 – 94", color: "#7655D9", bg: "#F5F3FF" }
+    ];
+
+    const RAW_LESSONS = [
+      { number: 47, groupId: 1, title: "Trục đối xứng" },
+      { number: 48, groupId: 1, title: "Tâm đối xứng" },
+      { number: 49, groupId: 1, title: "Luyện tập chung Hình có trục đối xứng, tâm đối xứng" },
+      { number: 50, groupId: 2, title: "Tính giá trị của biểu thức và Tìm x" },
+      { number: 51, groupId: 2, title: "Tìm x có liên quan đến dấu ngoặc" },
+      { number: 52, groupId: 3, title: "Ôn tập 3a (Số học)" },
+      { number: 53, groupId: 3, title: "Ôn tập 3b (Hình học)" },
+      { number: 54, groupId: 3, title: "Bài Kiểm Tra Số 3 (đề thi thử cuối kì) và Sửa bài" },
+      { number: 55, groupId: 4, title: "Mở rộng phân số & Phân số bằng nhau" },
+      { number: 56, groupId: 4, title: "So sánh và Sắp xếp các phân số" },
+      { number: 57, groupId: 4, title: "Phép cộng trừ của phân số dương" },
+      { number: 58, groupId: 4, title: "Phép nhân chia của phân số dương" },
+      { number: 59, groupId: 4, title: "Giới thiệu và So sánh Phân số và Hỗn số có tử âm" },
+      { number: 60, groupId: 4, title: "Cộng trừ phân số và hỗn số (1)" },
+      { number: 61, groupId: 4, title: "Cộng trừ phân số và hỗn số (2)" },
+      { number: 62, groupId: 4, title: "Phép nhân và chia phân số và hỗn số" },
+      { number: 63, groupId: 4, title: "Toán đố liên quan đến làm bằng nhau" },
+      { number: 64, groupId: 5, title: "Điểm, Đường thẳng và Tia" },
+      { number: 65, groupId: 5, title: "Trung điểm của đoạn thẳng" },
+      { number: 66, groupId: 5, title: "Góc và Số đo góc" },
+      { number: 67, groupId: 5, title: "Tìm góc trong một hình vuông, hình chữ nhật" },
+      { number: 68, groupId: 6, title: "Giới thiệu số thập phân âm, làm tròn số" },
+      { number: 69, groupId: 6, title: "Chuyển đổi giữa phân số, hỗn số, số thập phân và phần trăm" },
+      { number: 70, groupId: 6, title: "Các phép tính với số thập phân (1)" },
+      { number: 71, groupId: 6, title: "Các phép tính với số thập phân (2)" },
+      { number: 72, groupId: 6, title: "Tỉ số phần trăm của một số" },
+      { number: 73, groupId: 6, title: "Bài toán liên quan đến tỉ số phần trăm (1)" },
+      { number: 74, groupId: 6, title: "Bài toán liên quan đến tỉ số phần trăm (2)" },
+      { number: 75, groupId: 6, title: "Ôn tập 4" },
+      { number: 76, groupId: 6, title: "Bài kiểm tra số 4 (đề thi thử giữa kì) và sửa bài" },
+      { number: 77, groupId: 7, title: "Thu thập và phân loại dữ liệu" },
+      { number: 78, groupId: 7, title: "Bảng dữ liệu và biểu đồ tranh" },
+      { number: 79, groupId: 7, title: "Biểu đồ cột" },
+      { number: 80, groupId: 7, title: "Biểu đồ cột kép" },
+      { number: 81, groupId: 7, title: "Mô hình xác suất đơn giản" },
+      { number: 82, groupId: 7, title: "Xác suất thực nghiệm" },
+      { number: 83, groupId: 7, title: "Xác suất của biến cố đơn (1)" },
+      { number: 84, groupId: 7, title: "Xác suất của biến cố đơn (2)" },
+      { number: 85, groupId: 8, title: "Luyện tập về Phân số và Hỗn số (1)" },
+      { number: 86, groupId: 8, title: "Luyện tập về Phân số và Hỗn số (2)" },
+      { number: 87, groupId: 8, title: "Luyện tập về Số thập phân, Tỉ số phần trăm (1)" },
+      { number: 88, groupId: 8, title: "Luyện tập về Số thập phân, Tỉ số phần trăm (2)" },
+      { number: 89, groupId: 8, title: "Luyện tập về hình học và xác suất" },
+      { number: 90, groupId: 8, title: "Bài kiểm tra số 5 (đề thi thử cuối kì) và Sửa bài" },
+      { number: 91, groupId: 8, title: "Luyện tập về toán tìm x và Làm đề thi thử" },
+      { number: 92, groupId: 8, title: "Luyện tập về biểu đồ và Làm đề thi thử" },
+      { number: 93, groupId: 8, title: "Toán tư duy: Gà và Thỏ" },
+      { number: 94, groupId: 8, title: "Toán tư duy: Giải đố sudoku và Tổng kết" }
+    ];
+
+    const TYPE_PASTEL_THEMES = {
+      1: { name: "DẠNG 1", bgWrapper: "bg-[#EBF4FF]/60", borderWrapper: "border-[#BFDBFE]", headerBg: "bg-[#EBF4FF]", badgeBg: "bg-[#3563E9]", accentText: "text-[#2563EB]", btnBg: "bg-[#3563E9] hover:bg-[#2563EB]", lightBtn: "bg-white hover:bg-[#EBF4FF] text-[#2563EB] border-[#BFDBFE]" },
+      2: { name: "DẠNG 2", bgWrapper: "bg-[#ECFDF5]/60", borderWrapper: "border-[#A7F3D0]", headerBg: "bg-[#ECFDF5]", badgeBg: "bg-[#55B88A]", accentText: "text-[#059669]", btnBg: "bg-[#55B88A] hover:bg-[#10B981]", lightBtn: "bg-white hover:bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]" },
+      3: { name: "DẠNG 3", bgWrapper: "bg-[#FFFBEB]/70", borderWrapper: "border-[#FDE68A]", headerBg: "bg-[#FFFBEB]", badgeBg: "bg-[#F59E0B]", accentText: "text-[#D97706]", btnBg: "bg-[#F59E0B] hover:bg-[#D97706]", lightBtn: "bg-white hover:bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]" },
+      4: { name: "DẠNG 4", bgWrapper: "bg-[#F5F3FF]/65", borderWrapper: "border-[#DDD6FE]", headerBg: "bg-[#F5F3FF]", badgeBg: "bg-[#7655D9]", accentText: "text-[#7C3AED]", btnBg: "bg-[#7655D9] hover:bg-[#6D28D9]", lightBtn: "bg-white hover:bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]" }
+    };
+
+    /******************************************************************
+     * 2. LƯU TRỮ CẤU TRÚC BÀI HỌC & URL BÀI TẬP (INDEXEDDB + LOCALSTORAGE)
+     ******************************************************************/
+    const DB_NAME = "Math6_LMS_BrightEdTech_DB";
+    const DB_VERSION = 2;
+    const STORE_STATE = "app_state";
+    const STORE_EXERCISE_URLS = "exercise_urls";
+    const SNAPSHOT_STORAGE_KEY = "MATH6_LMS_SB_STATE";
+    const URLS_STORAGE_KEY = "MATH6_LMS_SB_URLS";
+
+    let dbInstance = null;
+    let exerciseUrlsMap = {};
+    let activePreviewUrl = "";
+    let isPreviewFullscreen = false;
+    let isCreatingRoomLock = false;
+
+    let appState = {
+      currentView: "lessons",
+      selectedGroupFilter: "all",
+      selectedUrlFilter: "all",
+      searchQuery: "",
+      activeLessonNumber: 47,
+      sidebarCollapsed: false,
+      defaultClassName: "Lớp 6A1",
+      defaultTeacherName: "Giáo viên Toán 6",
+      lessons: createDefaultLessonsState()
+    };
+
+    function openDatabase() {
+      return new Promise((resolve) => {
+        if (!window.indexedDB) { resolve(null); return; }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_STATE)) db.createObjectStore(STORE_STATE);
+          if (!db.objectStoreNames.contains(STORE_EXERCISE_URLS)) db.createObjectStore(STORE_EXERCISE_URLS, { keyPath: "exerciseKey" });
+        };
+        request.onsuccess = (event) => { dbInstance = event.target.result; resolve(dbInstance); };
+        request.onerror = () => resolve(null);
+      });
+    }
+
+    function dbSaveAppState(stateObj) {
+      try { localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(stateObj)); } catch (e) {}
+      if (!dbInstance || !dbInstance.objectStoreNames.contains(STORE_STATE)) return Promise.resolve();
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction([STORE_STATE], "readwrite");
+        tx.objectStore(STORE_STATE).put(stateObj, "main_sb");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    }
+
+    function dbLoadAppState() {
+      if (!dbInstance || !dbInstance.objectStoreNames.contains(STORE_STATE)) {
+        const raw = localStorage.getItem(SNAPSHOT_STORAGE_KEY);
+        return Promise.resolve(raw ? JSON.parse(raw) : null);
+      }
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction([STORE_STATE], "readonly");
+        const req = tx.objectStore(STORE_STATE).get("main_sb");
+        req.onsuccess = () => {
+          if (req.result) resolve(req.result);
+          else {
+            const raw = localStorage.getItem(SNAPSHOT_STORAGE_KEY);
+            resolve(raw ? JSON.parse(raw) : null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    function persistExerciseUrlRecord(record) {
+      exerciseUrlsMap[record.exerciseKey] = record;
+      try { localStorage.setItem(URLS_STORAGE_KEY, JSON.stringify(exerciseUrlsMap
