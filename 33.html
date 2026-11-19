@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATH 6 LMS | Dashboard Giáo Viên & Phòng Học Trực Tuyến Firebase (Bài 47 - Bài 94)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Firebase JS SDK (Compat CDN - Tương thích trực tiếp GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgCanvas: '#F7FAFC',
+            navyMain: '#243B53',
+            navySub: '#627D98',
+            navyLight: '#829AB1',
+            borderSoft: '#E2E8F0',
+            eduBlue: '#3563E9',
+            eduBlueBg: '#EBF4FF',
+            eduGreen: '#55B88A',
+            eduGreenBg: '#ECFDF5',
+            eduYellow: '#F59E0B',
+            eduYellowBadge: '#FFC857',
+            eduYellowBg: '#FFFBEB',
+            eduOrange: '#FF9F68',
+            eduOrangeBg: '#FFF5F0',
+            eduPurple: '#7655D9',
+            eduPurpleBg: '#F5F3FF'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Nunito', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            soft: '0 4px 20px rgba(36, 59, 83, 0.05)',
+            softHover: '0 10px 28px rgba(36, 59, 83, 0.09)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #F7FAFC;
+      color: #243B53;
+      font-family: 'Inter', sans-serif;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Nunito', sans-serif;
+    }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #F1F5F9; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .edu-card {
+      background-color: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 20px rgba(36, 59, 83, 0.05);
+      transition: all 0.2s ease;
+    }
+    .edu-card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(36, 59, 83, 0.09);
+      border-color: #CBD5E1;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade { animation: fadeSlideUp 0.2s ease-out forwards; }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.65; }
+    }
+    .live-pulse { animation: pulseDot 1.6s infinite ease-in-out; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col bg-bgCanvas text-navyMain">
+
+  <!-- THANH TRẠNG THÁI FIREBASE -->
+  <div id="topGlobalBar" class="bg-navyMain text-white px-4 lg:px-8 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shrink-0 z-30">
+    <div class="flex items-center gap-3 flex-wrap">
+      <span class="px-2.5 py-0.5 rounded-full bg-eduBlue text-white font-display font-extrabold tracking-wide">
+        MATH 6 EDUTECH
+      </span>
+      <span id="firebaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold">
+        <span id="firebaseStatusDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
+        <span id="firebaseStatusText">Firebase: Đang kiểm tra cấu hình...</span>
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2 text-[11px] text-slate-300 font-mono">
+      <span id="teacherUidDisplay">UID Giáo viên: Chưa xác thực</span>
+    </div>
+  </div>
+
+  <!-- KHUNG CHÍNH DASHBOARD GIÁO VIÊN -->
+  <div id="appRootContainer" class="flex-1 flex overflow-hidden relative">
+    <div id="mobileOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-navyMain/40 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-[275px] bg-white border-r border-borderSoft flex flex-col transition-all duration-300 transform -translate-x-full lg:translate-x-0 shrink-0">
+      <div class="p-4 border-b border-borderSoft flex items-center justify-between gap-2">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="navigateToNav('lessons')">
+          <div class="w-10 h-10 rounded-2xl bg-eduBlue text-white flex items-center justify-center font-display font-black text-lg shadow-md shadow-eduBlue/25 shrink-0">
+            M6
+          </div>
+          <div class="sidebar-text overflow-hidden">
+            <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-eduBlueBg text-eduBlue">
+              Toán 6 • Bài 47 – 94
+            </span>
+            <h1 class="font-display font-extrabold text-sm text-navyMain truncate mt-0.5">
+              Dashboard Giáo Viên
+            </h1>
+          </div>
+        </div>
+
+        <button onclick="toggleSidebarCollapse()" title="Thu gọn / Mở rộng thanh điều hướng" class="hidden lg:flex w-8 h-8 rounded-xl bg-bgCanvas hover:bg-eduBlueBg text-navySub hover:text-eduBlue items-center justify-center transition">
+          <svg id="sidebarCollapseIcon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-3.5 border-b border-borderSoft sidebar-text">
+        <button onclick="openShareLessonModal()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-eduBlue to-eduPurple hover:opacity-95 text-white font-display font-extrabold text-xs tracking-wide shadow-md shadow-eduBlue/20 flex items-center justify-center gap-2 transition">
+          <span class="text-base">📤</span>
+          <span>CHIA SẺ BÀI TẬP</span>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+        <div>
+          <div class="sidebar-text px-2.5 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-navyLight">
+            Quản lý & Giảng dạy
+          </div>
+          <nav class="space-y-1" id="mainNavContainer">
+            <button onclick="navigateToNav('lessons')" data-nav="lessons" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+              <div class="flex items-center gap-2.5 truncate">
+                <span class="w-7 h-7 rounded-lg bg-eduBlueBg text-eduBlue flex items-center justify-center shrink-0">📚</span>
+                <span class="sidebar-text truncate">Danh sách 48 bài học</span>
+              </div>
+              <span class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-navySub">48</span>
+            </button>
+
+            <button onclick="navigateToNav('monitor')" data-nav="monitor" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+              <div class="flex items-center gap-2.5 truncate">
+                <span class="w-7 h-7 rounded-lg bg-eduGreenBg text-eduGreen flex items-center justify-center shrink-0">🖥️</span>
+                <span class="sidebar-text truncate">Phòng học & Giám sát</span>
+              </div>
+              <span id="navMonitorBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduGreenBg text-[#047857]">0 online</span>
+            </button>
+
+            <button onclick="navigateToNav('repository')" data-nav="repository" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+              <div class="flex items-center gap-2.5 truncate">
+                <span class="w-7 h-7 rounded-lg bg-eduPurpleBg text-eduPurple flex items-center justify-center shrink-0">🔗</span>
+                <span class="sidebar-text truncate">Kho URL bài tập</span>
+              </div>
+              <span id="navRepoBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduPurpleBg text-[#6D28D9]">0 URL</span>
+            </button>
+
+            <button onclick="navigateToNav('progress')" data-nav="progress" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition">
+              <div class="flex items-center gap-2.5 truncate">
+                <span class="w-7 h-7 rounded-lg bg-eduYellowBg text-eduYellow flex items-center justify-center shrink-0">📊</span>
+                <span class="sidebar-text truncate">Tiến độ & Kết quả</span>
+              </div>
+              <span id="navProgressBadge" class="sidebar-text text-xs font-bold px-2 py-0.5 rounded-full bg-eduYellowBg text-[#D97706]">0%</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-text pt-3 border-t border-borderSoft">
+          <div class="px-2.5 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-navyLight">8 Nhóm chủ đề</span>
+            <button onclick="filterByGroup('all')" class="text-xs font-semibold text-eduBlue hover:underline">Tất cả</button>
+          </div>
+          <div id="sidebarTopicGroups" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <div class="p-3.5 border-t border-borderSoft bg-slate-50/80 sidebar-text space-y-2">
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="exportFullBackup()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-[11px] font-bold text-navyMain hover:text-eduBlue transition">
+            ⬇ Sao lưu JSON
+          </button>
+          <button onclick="triggerImportBackup()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-eduGreenBg border border-borderSoft text-[11px] font-bold text-navyMain hover:text-eduGreen transition">
+            ⬆ Khôi phục
+          </button>
+          <input type="file" id="importBackupInput" accept=".json" class="hidden" onchange="handleImportBackup(event)" />
+        </div>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+      <header class="bg-white border-b border-borderSoft px-5 lg:px-7 py-3.5 shrink-0 z-20">
+        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+          <div class="flex items-center gap-3">
+            <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl bg-bgCanvas border border-borderSoft text-navyMain">
+              ☰
+            </button>
+            <div>
+              <h2 class="font-display font-black text-lg sm:text-xl text-navyMain tracking-tight">
+                HỆ THỐNG QUẢN LÝ CHƯƠNG TRÌNH TOÁN LỚP 6 (BÀI 47 – BÀI 94)
+              </h2>
+              <p class="text-xs text-navySub font-medium">
+                Phân cấp 4 tầng: Bài học → Dạng toán → Nhiệm vụ → Bài tập 1, 2, 3, 4 • Đồng bộ Realtime qua Firebase
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap" id="headerBreadcrumb"></div>
+        </div>
+      </header>
+
+      <main id="mainWorkspace" class="flex-1 overflow-y-auto px-5 lg:px-7 py-5 space-y-5"></main>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- POPUP CHIA SẺ BÀI HỌC CHO HỌC SINH                        -->
+  <!-- ========================================================= -->
+  <div id="shareLessonModal" class="fixed inset-0 bg-navyMain/65 backdrop-blur-xs z-50 hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-2xl w-full p-6 shadow-2xl animate-fade max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-borderSoft shrink-0">
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full bg-eduBlueBg text-eduBlue text-xs font-extrabold uppercase">
+            Phòng học trực tuyến Firebase
+          </span>
+          <h3 class="font-display font-black text-xl sm:text-2xl text-navyMain mt-1">
+            CHIA SẺ BÀI HỌC CHO HỌC SINH
+          </h3>
+        </div>
+        <button onclick="closeShareLessonModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-navySub font-bold">✕</button>
+      </div>
+
+      <div class="py-4 space-y-4 overflow-y-auto flex-1 pr-1">
+        <!-- Cảnh báo nếu chưa cấu hình Firebase -->
+        <div id="shareFirebaseAlertBox" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700"></div>
+
+        <!-- 1. Tên lớp học & 2. Tên giáo viên -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">1. Tên lớp học:</label>
+            <input id="shareClassNameInput" type="text" oninput="saveTeacherProfileInputs()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2 text-sm font-bold text-navyMain" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">2. Tên giáo viên:</label>
+            <input id="shareTeacherNameInput" type="text" oninput="saveTeacherProfileInputs()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2 text-sm text-navyMain" />
+          </div>
+        </div>
+
+        <!-- 3. Bài học -->
+        <div>
+          <label class="block text-xs font-bold uppercase text-navySub mb-1">3. Bài học (Bài 47 – Bài 94):</label>
+          <select id="shareLessonSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3.5 py-2.5 text-sm font-bold text-navyMain"></select>
+        </div>
+
+        <!-- 4. Dạng toán, 5. Nhiệm vụ, 6. Bài tập -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">4. Dạng toán:</label>
+            <select id="shareTypeSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain">
+              <option value="1">Dạng 1</option>
+              <option value="2">Dạng 2</option>
+              <option value="3">Dạng 3</option>
+              <option value="4">Dạng 4</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">5. Nhiệm vụ:</label>
+            <select id="shareTaskSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-navySub mb-1">6. Bài tập:</label>
+            <select id="shareExerciseSelect" onchange="onShareExerciseSelectionChanged()" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-sm font-bold text-navyMain">
+              <option value="1">Bài tập 1</option>
+              <option value="2">Bài tập 2</option>
+              <option value="3">Bài tập 3</option>
+              <option value="4">Bài tập 4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Đường link bài tập đã lưu (CHỈ ĐỌC) -->
+        <div class="p-3.5 rounded-2xl bg-bgCanvas border border-borderSoft space-y-2">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <label class="block text-xs font-extrabold uppercase text-navyMain">
+              Đường link bài tập đã lưu:
+            </label>
+            <span id="shareSourceUrlBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input
+              id="shareReadonlyExerciseUrlInput"
+              type="text"
+              readonly
+              placeholder="Chưa có đường link bài tập..."
+              class="flex-1 bg-slate-100 border border-borderSoft rounded-xl px-3 py-2 font-mono text-xs text-navyMain select-all cursor-default"
+            />
+            <button type="button" onclick="copyExerciseSourceUrl()" class="px-3 py-2 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-xs font-bold text-eduBlue shrink-0 transition">
+              📋 Sao chép
+            </button>
+            <button type="button" onclick="previewExerciseSourceUrlFromShare()" class="px-3 py-2 rounded-xl bg-eduPurpleBg hover:bg-eduPurple text-[#6D28D9] hover:text-white text-xs font-bold shrink-0 transition">
+              ▶ Mở bài tập
+            </button>
+          </div>
+
+          <div id="shareMissingUrlWarning" class="hidden text-xs font-bold text-red-600 pt-1">
+            Bài tập này chưa có đường link. Vui lòng lưu URL bài tập trước khi chia sẻ.
+          </div>
+        </div>
+
+        <!-- KẾT QUẢ PHÒNG HỌC TRÊN FIREBASE -->
+        <div id="shareRoomResultBox" class="hidden p-4 rounded-2xl bg-gradient-to-br from-eduBlueBg/70 to-eduPurpleBg/70 border-2 border-eduBlue/30 space-y-4 animate-fade">
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-blue-200/70">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg bg-navyMain text-white font-mono text-xs font-extrabold" id="createdRoomCodeBadge">TOAN6-0000</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-eduGreenBg text-[#047857] border border-emerald-300" id="createdRoomStatusBadge">
+                open (Đang mở)
+              </span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-white text-navyMain border border-borderSoft" id="createdRoomStudentCountBadge">
+                0 học sinh đã tham gia
+              </span>
+            </div>
+            <button type="button" id="shareCloseRoomBtn" onclick="toggleCurrentSharedRoomStatus()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition">
+              🔒 Đóng phòng
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div class="md:col-span-2 space-y-2.5">
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-navySub mb-1">Mã phòng học:</label>
+                <div class="flex items-center gap-2">
+                  <input id="createdRoomCodeInput" type="text" readonly class="flex-1 bg-white border border-borderSoft rounded-xl px-3 py-2 font-mono font-extrabold text-sm text-navyMain" />
+                  <button type="button" onclick="copyRoomCodeToClipboard()" class="px-3 py-2 rounded-xl bg-navyMain hover:bg-slate-700 text-white text-xs font-bold shrink-0">
+                    📋 COPY MÃ PHÒNG
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase text-navySub mb-1">Link tham gia của học sinh (URL bài tập + ?room=):</label>
+                <div class="flex items-center gap-2">
+                  <input id="createdRoomJoinLinkInput" type="text" readonly class="flex-1 bg-white border border-borderSoft rounded-xl px-3 py-2 font-mono text-xs text-eduBlue" />
+                  <button type="button" onclick="copyStudentJoinLinkToClipboard()" class="px-3 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold shrink-0">
+                    🔗 COPY LINK
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-borderSoft space-y-2">
+              <div id="roomQrCodeContainer" class="flex items-center justify-center"></div>
+              <button type="button" onclick="downloadRoomQrImage()" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-navyMain transition">
+                ⬇ Tải mã QR
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3.5 border-t border-borderSoft flex items-center justify-end gap-2.5 shrink-0">
+        <button type="button" onclick="closeShareLessonModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">
+          Đóng
+        </button>
+        <button type="button" id="createRoomAndShareBtn" onclick="createRoomAndShare()" class="px-5 py-2.5 rounded-xl bg-eduBlue hover:bg-blue-600 text-white font-display font-extrabold text-xs shadow-sm transition">
+          🚀 TẠO PHÒNG HỌC VÀ CHIA SẺ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XEM TRƯỚC URL BÀI TẬP -->
+  <div id="urlPreviewModal" class="fixed inset-0 bg-navyMain/75 backdrop-blur-xs z-50 hidden items-center justify-center p-2 sm:p-5">
+    <div id="urlPreviewContainer" class="bg-white rounded-2xl border border-borderSoft shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden transition-all">
+      <div class="px-5 py-3 bg-slate-50 border-b border-borderSoft flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <span id="urlPreviewBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-eduBlue text-white shrink-0">B47_D1_NV1_BT1</span>
+          <div class="min-w-0">
+            <h3 id="urlPreviewTitle" class="font-display font-extrabold text-base text-navyMain truncate">Xem trước URL bài tập</h3>
+            <p id="urlPreviewMeta" class="text-xs font-mono text-navySub truncate"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="openActivePreviewUrlInNewTab()" class="px-3 py-2 rounded-xl bg-eduBlueBg hover:bg-eduBlue text-eduBlue hover:text-white text-xs font-bold transition">↗ Mở tab mới</button>
+          <button onclick="toggleFullscreenPreview()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-borderSoft text-xs font-bold text-navyMain transition"><span id="fullscreenPreviewLabel">⛶ Toàn màn hình</span></button>
+          <button onclick="closeUrlPreviewModal()" class="px-4 py-2 rounded-xl bg-navyMain hover:bg-slate-700 text-white text-xs font-bold transition">✕ Đóng</button>
+        </div>
+      </div>
+      <div class="flex-1 bg-white relative">
+        <iframe id="urlPreviewIframe" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" title="Xem trước bài tập"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XÁC NHẬN & MODAL CHỈNH SỬA -->
+  <div id="confirmDialogModal" class="fixed inset-0 bg-navyMain/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-md w-full p-6 shadow-xl animate-fade">
+      <div class="flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-2xl bg-eduOrangeBg text-eduOrange flex items-center justify-center shrink-0 font-bold text-lg">!</div>
+        <div>
+          <h3 id="confirmDialogTitle" class="font-display font-extrabold text-lg text-navyMain">Xác nhận thao tác</h3>
+          <p id="confirmDialogMessage" class="text-sm text-navySub mt-1 leading-relaxed"></p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-borderSoft">
+        <button onclick="closeConfirmDialog()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">Hủy bỏ</button>
+        <button id="confirmDialogActionBtn" class="px-5 py-2 rounded-xl bg-eduBlue text-white text-xs font-bold">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editorModal" class="fixed inset-0 bg-navyMain/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-borderSoft max-w-2xl w-full p-6 shadow-2xl animate-fade max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3.5 border-b border-borderSoft">
+        <div>
+          <span id="editorModalSub" class="text-xs font-mono font-bold uppercase tracking-wider text-eduBlue">Cập nhật</span>
+          <h3 id="editorModalTitle" class="font-display font-extrabold text-xl text-navyMain mt-0.5">Chỉnh sửa thông tin</h3>
+        </div>
+        <button onclick="closeEditorModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-navySub font-bold">✕</button>
+      </div>
+      <div id="editorModalBody" class="py-4 space-y-4 overflow-y-auto flex-1"></div>
+      <div class="pt-3.5 border-t border-borderSoft flex items-center justify-end gap-2.5">
+        <button onclick="closeEditorModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-navySub">Đóng</button>
+        <button id="editorModalSaveBtn" class="px-5 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold">Lưu thông tin</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    /******************************************************************
+     * 0. CẤU HÌNH FIREBASE TẬP TRUNG (GIÁO VIÊN ĐIỀN THÔNG TIN DỰ ÁN)
+     ******************************************************************/
+    const FIREBASE_CONFIG = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    function isFirebaseConfigProvided() {
+      const vals = [
+        FIREBASE_CONFIG.apiKey,
+        FIREBASE_CONFIG.authDomain,
+        FIREBASE_CONFIG.databaseURL,
+        FIREBASE_CONFIG.projectId,
+        FIREBASE_CONFIG.appId
+      ];
+      return vals.every(v => typeof v === "string" && v.trim() !== "" && !v.includes("YOUR_"));
+    }
+
+    let fbApp = null;
+    let fbAuth = null;
+    let fbDb = null;
+    let firebaseReady = false;
+    let teacherUid = null;
+    let activeRoomListenerRef = null;
+    let activeRoomData = null; // Dữ liệu phòng đang theo dõi trực tiếp từ Firebase
+    let teacherOwnedRoomIds = []; // Danh sách mã phòng giáo viên đã tạo trong phiên/lưu local
+
+    async function initFirebaseTeacher() {
+      if (!isFirebaseConfigProvided()) {
+        firebaseReady = false;
+        updateFirebaseBadge("Firebase: Chưa cấu hình (Vui lòng điền FIREBASE_CONFIG trong mã nguồn)", false);
+        return;
+      }
+
+      try {
+        updateFirebaseBadge("Firebase: Đang kết nối & xác thực...", false);
+        fbApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        fbAuth = firebase.auth();
+        fbDb = firebase.database();
+
+        const cred = await fbAuth.signInAnonymously();
+        teacherUid = cred.user.uid;
+        const uidEl = document.getElementById("teacherUidDisplay");
+        if (uidEl) uidEl.textContent = `UID Giáo viên: ${teacherUid.slice(0, 10)}...`;
+
+        // Lắng nghe trạng thái kết nối thực tế của Firebase Realtime Database
+        fbDb.ref(".info/connected").on("value", (snap) => {
+          const connected = snap.val() === true;
+          firebaseReady = connected;
+          if (connected) {
+            updateFirebaseBadge("Firebase Realtime: Đã kết nối", true);
+          } else {
+            updateFirebaseBadge("Firebase Realtime: Mất kết nối mạng", false);
+          }
+          renderShareFirebaseAlert();
+        });
+
+        // Tự động lắng nghe lại phòng gần nhất nếu có
+        const savedActiveRoomId = localStorage.getItem("MATH6_FB_ACTIVE_ROOM_ID");
+        if (savedActiveRoomId) {
+          subscribeToFirebaseRoom(savedActiveRoomId);
+        }
+      } catch (err) {
+        firebaseReady = false;
+        updateFirebaseBadge(`Firebase lỗi kết nối: ${err.message || "Kiểm tra cấu hình"}`, false);
+      }
+    }
+
+    function updateFirebaseBadge(text, connected) {
+      const txtEl = document.getElementById("firebaseStatusText");
+      const dotEl = document.getElementById("firebaseStatusDot");
+      const badgeEl = document.getElementById("firebaseStatusBadge");
+      if (txtEl) txtEl.textContent = text;
+      if (dotEl) dotEl.className = connected ? "w-2 h-2 rounded-full bg-emerald-400 live-pulse" : "w-2 h-2 rounded-full bg-amber-300";
+      if (badgeEl) {
+        badgeEl.className = connected
+          ? "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-semibold"
+          : "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold";
+      }
+    }
+
+    function subscribeToFirebaseRoom(roomId) {
+      if (!fbDb || !roomId) return;
+      if (activeRoomListenerRef) {
+        activeRoomListenerRef.off();
+      }
+      localStorage.setItem("MATH6_FB_ACTIVE_ROOM_ID", roomId);
+      activeRoomListenerRef = fbDb.ref(`rooms/${roomId}`);
+      activeRoomListenerRef.on("value", (snapshot) => {
+        const val = snapshot.val();
+        if (!val) return;
+        activeRoomData = val;
+        if (!teacherOwnedRoomIds.includes(roomId)) teacherOwnedRoomIds.push(roomId);
+        updateSidebarBadges();
+        renderHeaderBreadcrumbUI();
+        if (appState.currentView === "monitor") renderAll();
+        if (lastCreatedRoomId === roomId) renderCreatedRoomPanel(val);
+      });
+    }
+
+    /******************************************************************
+     * 1. DANH MỤC 8 NHÓM CHỦ ĐỀ & 48 BÀI HỌC (BÀI 47 - BÀI 94)
+     ******************************************************************/
+    const TOPIC_GROUPS = [
+      { id: 1, code: "Nhóm 1", name: "Hình có tính đối xứng", range: "Bài 47 – 49", color: "#3563E9", bg: "#EBF4FF" },
+      { id: 2, code: "Nhóm 2", name: "Biểu thức và tìm x", range: "Bài 50 – 51", color: "#55B88A", bg: "#ECFDF5" },
+      { id: 3, code: "Nhóm 3", name: "Ôn tập và kiểm tra", range: "Bài 52 – 54", color: "#F59E0B", bg: "#FFFBEB" },
+      { id: 4, code: "Nhóm 4", name: "Phân số và hỗn số", range: "Bài 55 – 63", color: "#7655D9", bg: "#F5F3FF" },
+      { id: 5, code: "Nhóm 5", name: "Hình học cơ bản", range: "Bài 64 – 67", color: "#3563E9", bg: "#EBF4FF" },
+      { id: 6, code: "Nhóm 6", name: "Số thập phân và tỉ số phần trăm", range: "Bài 68 – 76", color: "#55B88A", bg: "#ECFDF5" },
+      { id: 7, code: "Nhóm 7", name: "Dữ liệu và xác suất", range: "Bài 77 – 84", color: "#FF9F68", bg: "#FFF5F0" },
+      { id: 8, code: "Nhóm 8", name: "Luyện tập tổng hợp", range: "Bài 85 – 94", color: "#7655D9", bg: "#F5F3FF" }
+    ];
+
+    const RAW_LESSONS = [
+      { number: 47, groupId: 1, title: "Trục đối xứng" },
+      { number: 48, groupId: 1, title: "Tâm đối xứng" },
+      { number: 49, groupId: 1, title: "Luyện tập chung Hình có trục đối xứng, tâm đối xứng" },
+      { number: 50, groupId: 2, title: "Tính giá trị của biểu thức và Tìm x" },
+      { number: 51, groupId: 2, title: "Tìm x có liên quan đến dấu ngoặc" },
+      { number: 52, groupId: 3, title: "Ôn tập 3a (Số học)" },
+      { number: 53, groupId: 3, title: "Ôn tập 3b (Hình học)" },
+      { number: 54, groupId: 3, title: "Bài Kiểm Tra Số 3 (đề thi thử cuối kì) và Sửa bài" },
+      { number: 55, groupId: 4, title: "Mở rộng phân số & Phân số bằng nhau" },
+      { number: 56, groupId: 4, title: "So sánh và Sắp xếp các phân số" },
+      { number: 57, groupId: 4, title: "Phép cộng trừ của phân số dương" },
+      { number: 58, groupId: 4, title: "Phép nhân chia của phân số dương" },
+      { number: 59, groupId: 4, title: "Giới thiệu và So sánh Phân số và Hỗn số có tử âm" },
+      { number: 60, groupId: 4, title: "Cộng trừ phân số và hỗn số (1)" },
+      { number: 61, groupId: 4, title: "Cộng trừ phân số và hỗn số (2)" },
+      { number: 62, groupId: 4, title: "Phép nhân và chia phân số và hỗn số" },
+      { number: 63, groupId: 4, title: "Toán đố liên quan đến làm bằng nhau" },
+      { number: 64, groupId: 5, title: "Điểm, Đường thẳng và Tia" },
+      { number: 65, groupId: 5, title: "Trung điểm của đoạn thẳng" },
+      { number: 66, groupId: 5, title: "Góc và Số đo góc" },
+      { number: 67, groupId: 5, title: "Tìm góc trong một hình vuông, hình chữ nhật" },
+      { number: 68, groupId: 6, title: "Giới thiệu số thập phân âm, làm tròn số" },
+      { number: 69, groupId: 6, title: "Chuyển đổi giữa phân số, hỗn số, số thập phân và phần trăm" },
+      { number: 70, groupId: 6, title: "Các phép tính với số thập phân (1)" },
+      { number: 71, groupId: 6, title: "Các phép tính với số thập phân (2)" },
+      { number: 72, groupId: 6, title: "Tỉ số phần trăm của một số" },
+      { number: 73, groupId: 6, title: "Bài toán liên quan đến tỉ số phần trăm (1)" },
+      { number: 74, groupId: 6, title: "Bài toán liên quan đến tỉ số phần trăm (2)" },
+      { number: 75, groupId: 6, title: "Ôn tập 4" },
+      { number: 76, groupId: 6, title: "Bài kiểm tra số 4 (đề thi thử giữa kì) và sửa bài" },
+      { number: 77, groupId: 7, title: "Thu thập và phân loại dữ liệu" },
+      { number: 78, groupId: 7, title: "Bảng dữ liệu và biểu đồ tranh" },
+      { number: 79, groupId: 7, title: "Biểu đồ cột" },
+      { number: 80, groupId: 7, title: "Biểu đồ cột kép" },
+      { number: 81, groupId: 7, title: "Mô hình xác suất đơn giản" },
+      { number: 82, groupId: 7, title: "Xác suất thực nghiệm" },
+      { number: 83, groupId: 7, title: "Xác suất của biến cố đơn (1)" },
+      { number: 84, groupId: 7, title: "Xác suất của biến cố đơn (2)" },
+      { number: 85, groupId: 8, title: "Luyện tập về Phân số và Hỗn số (1)" },
+      { number: 86, groupId: 8, title: "Luyện tập về Phân số và Hỗn số (2)" },
+      { number: 87, groupId: 8, title: "Luyện tập về Số thập phân, Tỉ số phần trăm (1)" },
+      { number: 88, groupId: 8, title: "Luyện tập về Số thập phân, Tỉ số phần trăm (2)" },
+      { number: 89, groupId: 8, title: "Luyện tập về hình học và xác suất" },
+      { number: 90, groupId: 8, title: "Bài kiểm tra số 5 (đề thi thử cuối kì) và Sửa bài" },
+      { number: 91, groupId: 8, title: "Luyện tập về toán tìm x và Làm đề thi thử" },
+      { number: 92, groupId: 8, title: "Luyện tập về biểu đồ và Làm đề thi thử" },
+      { number: 93, groupId: 8, title: "Toán tư duy: Gà và Thỏ" },
+      { number: 94, groupId: 8, title: "Toán tư duy: Giải đố sudoku và Tổng kết" }
+    ];
+
+    const TYPE_PASTEL_THEMES = {
+      1: { name: "DẠNG 1", bgWrapper: "bg-[#EBF4FF]/60", borderWrapper: "border-[#BFDBFE]", headerBg: "bg-[#EBF4FF]", badgeBg: "bg-[#3563E9]", accentText: "text-[#2563EB]", btnBg: "bg-[#3563E9] hover:bg-[#2563EB]", lightBtn: "bg-white hover:bg-[#EBF4FF] text-[#2563EB] border-[#BFDBFE]" },
+      2: { name: "DẠNG 2", bgWrapper: "bg-[#ECFDF5]/60", borderWrapper: "border-[#A7F3D0]", headerBg: "bg-[#ECFDF5]", badgeBg: "bg-[#55B88A]", accentText: "text-[#059669]", btnBg: "bg-[#55B88A] hover:bg-[#10B981]", lightBtn: "bg-white hover:bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]" },
+      3: { name: "DẠNG 3", bgWrapper: "bg-[#FFFBEB]/70", borderWrapper: "border-[#FDE68A]", headerBg: "bg-[#FFFBEB]", badgeBg: "bg-[#F59E0B]", accentText: "text-[#D97706]", btnBg: "bg-[#F59E0B] hover:bg-[#D97706]", lightBtn: "bg-white hover:bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]" },
+      4: { name: "DẠNG 4", bgWrapper: "bg-[#F5F3FF]/65", borderWrapper: "border-[#DDD6FE]", headerBg: "bg-[#F5F3FF]", badgeBg: "bg-[#7655D9]", accentText: "text-[#7C3AED]", btnBg: "bg-[#7655D9] hover:bg-[#6D28D9]", lightBtn: "bg-white hover:bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]" }
+    };
+
+    /******************************************************************
+     * 2. LƯU TRỮ BỀN VỮNG CHƯƠNG TRÌNH & URL BÀI TẬP (INDEXEDDB + LOCALSTORAGE)
+     ******************************************************************/
+    const DB_NAME = "Math6_LMS_BrightEdTech_DB";
+    const DB_VERSION = 2;
+    const STORE_STATE = "app_state";
+    const STORE_EXERCISE_URLS = "exercise_urls";
+    const SNAPSHOT_STORAGE_KEY = "MATH6_LMS_FB_STATE";
+    const URLS_STORAGE_KEY = "MATH6_LMS_FB_URLS";
+
+    let dbInstance = null;
+    let exerciseUrlsMap = {};
+    let activePreviewUrl = "";
+    let isPreviewFullscreen = false;
+    let lastCreatedRoomId = null;
+    let isCreatingRoomLock = false;
+
+    let appState = {
+      currentView: "lessons",
+      selectedGroupFilter: "all",
+      selectedUrlFilter: "all",
+      searchQuery: "",
+      activeLessonNumber: 47,
+      sidebarCollapsed: false,
+      defaultClassName: "Lớp 6A1",
+      defaultTeacherName: "Giáo viên Toán 6",
+      lessons: createDefaultLessonsState()
+    };
+
+    function openDatabase() {
+      return new Promise((resolve) => {
+        if (!window.indexedDB) { resolve(null); return; }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_STATE)) db.createObjectStore(STORE_STATE);
+          if (!db.objectStoreNames.contains(STORE_EXERCISE_URLS)) db.createObjectStore(STORE_EXERCISE_URLS, { keyPath: "exerciseKey" });
+        };
+        request.onsuccess = (event) => { dbInstance = event.target.result; resolve(dbInstance); };
+        request.onerror = () => resolve(null);
+      });
+    }
+
+    function dbSaveAppState(stateObj) {
+      try { localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(stateObj)); } catch (e) {}
+      if (!dbInstance || !dbInstance.objectStoreNames.contains(STORE_STATE)) return Promise.resolve();
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction([STORE_STATE], "readwrite");
+        tx.objectStore(STORE_STATE).put(stateObj, "main_fb");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    }
+
+    function dbLoadAppState() {
+      if (!dbInstance || !dbInstance.objectStoreNames.contains(STORE_STATE)) {
+        const raw = localStorage.getItem(SNAPSHOT_STORAGE_KEY);
+        return Promise.resolve(raw ? JSON.parse(raw) : null);
+      }
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction([STORE_STATE], "readonly");
+        const req = tx.objectStore(STORE_STATE).get("main_fb");
+        req.onsuccess = () => {
+          if (req.result) resolve(req.result);
+          else {
+            const raw = localStorage.getItem(SNAPSHOT_STORAGE_KEY);
+            resolve(raw ? JSON.parse(raw) : null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    function persistExerciseUrlRecord(record) {
+      exerciseUrlsMap[record.exerciseKey] = record;
+      try { localStorage.setItem(URLS_STORAGE_KEY, JSON.stringify(exerciseUrlsMap)); } catch (e) {}
+      if (dbInstance && dbInstance.objectStoreNames.contains(STORE_EXERCISE_URLS)) {
+        const tx = dbInstance.transaction([STORE_EXERCISE_URLS], "readwrite");
+        tx.objectStore(STORE_EXERCISE_URLS).put(record);
+      }
+    }
+
+    function removeExerciseUrlRecord(exerciseKey) {
+      delete exerciseUrlsMap[exerciseKey];
+      try { localStorage.setItem(URLS_STORAGE_KEY, JSON.stringify(exerciseUrlsMap)); } catch (e) {}
+      if (dbInstance && dbInstance.objectStoreNames.contains(STORE_EXERCISE_URLS)) {
+        const tx = dbInstance.transaction([STORE_EXERCISE_URLS], "readwrite");
+        tx.objectStore(STORE_EXERCISE_URLS).delete(exerciseKey);
+      }
+    }
+
+    async function loadAllExerciseUrls() {
+      const map = {};
+      try {
+        const raw = localStorage.getItem(URLS_STORAGE_KEY);
+        if (raw) Object.assign(map, JSON.parse(raw));
+      } catch (e) {}
+      if (dbInstance && dbInstance.objectStoreNames.contains(STORE_EXERCISE_URLS)) {
+        await new Promise((resolve) => {
+          const tx = dbInstance.transaction([STORE_EXERCISE_URLS], "readonly");
+          const req = tx.objectStore(STORE_EXERCISE_URLS).getAll();
+          req.onsuccess = () => {
+            (req.result || []).forEach(item => { if (item && item.exerciseKey) map[item.exerciseKey] = item; });
+            resolve();
+          };
+          req.onerror = () => resolve();
+        });
+      }
+      exerciseUrlsMap = map;
+    }
+
+    /******************************************************************
+     * 3. KIỂM TRA URL BÀI TẬP & TẠO LINK CHIA SẺ (URL GỐC + ?room=)
+     ******************************************************************/
+    function validateSafeExerciseUrl(rawUrl) {
+      const trimmed = (rawUrl || "").trim();
+      if (!trimmed) return { valid: false, status: "empty", message: "Chưa có đường link" };
+      const lower = trimmed.toLowerCase();
+      if (
+        lower.startsWith("file:") ||
+        lower.startsWith("javascript:") ||
+        lower.startsWith("data:") ||
+        lower.includes("localhost") ||
+        lower.includes("127.0.0.1")
+      ) {
+        return { valid: false, status: "invalid", message: "Link không hợp lệ (không dùng file:/// hoặc localhost)" };
+      }
+      try {
+        const parsed = new URL(trimmed);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+          return { valid: false, status: "invalid", message: "Link bài tập phải là HTTP/HTTPS hợp lệ" };
+        }
+        return { valid: true, status: "saved", message: "Đã lưu đường link", normalizedUrl: parsed.toString() };
+      } catch (err) {
+        return { valid: false, status: "invalid", message: "Link không hợp lệ" };
+      }
+    }
+
+    // Ghép trực tiếp ?room=TOAN6-XXXX vào URL bài tập gốc (KHÔNG nối /student)
+    function buildStudentShareLinkFromExerciseUrl(exerciseUrl, roomId) {
+      const u = new URL(exerciseUrl);
+      u.searchParams.set("room", roomId);
+      return u.toString();
+    }
+
+    /******************************************************************
+     * 4. CẤU TRÚC PHÂN CẤP 4 TẦNG
+     ******************************************************************/
+    function createExerciseObject(lessonNum, typeIdx, taskIdx, exIdx) {
+      return { id: `B${lessonNum}_D${typeIdx}_NV${taskIdx}_BT${exIdx}`, index: exIdx, label: `BÀI TẬP ${exIdx}`, customTitle: "", content: "", status: "empty" };
+    }
+
+    function createTaskObject(lessonNum, typeIdx, taskIdx) {
+      const exercises = [];
+      for (let e = 1; e <= 4; e++) exercises.push(createExerciseObject(lessonNum, typeIdx, taskIdx, e));
+      return { id: `B${lessonNum}_D${typeIdx}_NV${taskIdx}`, index: taskIdx, label: `NHIỆM VỤ ${taskIdx}`, customTitle: "", objective: "", content: "", status: "empty", expanded: true, exercises };
+    }
+
+    function createDefaultLessonsState() {
+      const lessons = {};
+      RAW_LESSONS.forEach(raw => {
+        const types = {};
+        for (let t = 1; t <= 4; t++) {
+          types[t] = { id: `B${raw.number}_D${t}`, index: t, label: `DẠNG ${t}`, customName: "", tasks: [createTaskObject(raw.number, t, 1)] };
+        }
+        lessons[raw.number] = { id: `B${raw.number}`, number: raw.number, groupId: raw.groupId, title: raw.title, description: "", types };
+      });
+      return lessons;
+    }
+
+    /******************************************************************
+     * 5. QUY TRÌNH GIÁO VIÊN TẠO PHÒNG & CHIA SẺ TRÊN FIREBASE
+     ******************************************************************/
+    function generateRoomCode() {
+      const rand4 = Math.floor(1000 + Math.random() * 9000);
+      return `TOAN6-${rand4}`;
+    }
+
+    function saveTeacherProfileInputs() {
+      const cls = document.getElementById("shareClassNameInput")?.value.trim();
+      const tchr = document.getElementById("shareTeacherNameInput")?.value.trim();
+      if (cls !== undefined) appState.defaultClassName = cls || "Lớp 6A1";
+      if (tchr !== undefined) appState.defaultTeacherName = tchr || "Giáo viên Toán 6";
+      dbSaveAppState(appState);
+    }
+
+    function renderShareFirebaseAlert() {
+      const box = document.getElementById("shareFirebaseAlertBox");
+      if (!box) return;
+      if (!isFirebaseConfigProvided()) {
+        box.textContent = "Chưa cấu hình Firebase. Vui lòng điền thông số dự án Firebase (apiKey, authDomain, databaseURL, projectId, appId) vào mục FIREBASE_CONFIG trong mã nguồn trước khi tạo phòng trực tuyến.";
+        box.classList.remove("hidden");
+      } else if (!firebaseReady) {
+        box.textContent = "Chưa kết nối được tới Firebase Realtime Database. Vui lòng kiểm tra kết nối mạng hoặc trạng thái dự án Firebase.";
+        box.classList.remove("hidden");
+      } else {
+        box.classList.add("hidden");
+      }
+    }
+
+    function openShareLessonModal(presetLessonNum = null, presetType = 1, presetTask = 1, presetEx = 1) {
+      const classInput = document.getElementById("shareClassNameInput");
+      const teacherInput = document.getElementById("shareTeacherNameInput");
+      if (classInput) classInput.value = appState.defaultClassName || "Lớp 6A1";
+      if (teacherInput) teacherInput.value = appState.defaultTeacherName || "Giáo viên Toán 6";
+
+      const lessonSelect = document.getElementById("shareLessonSelect");
+      if (lessonSelect) {
+        const targetLesson = presetLessonNum || appState.activeLessonNumber || 47;
+        lessonSelect.innerHTML = RAW_LESSONS.map(l => `
+          <option value="${l.number}" ${l.number === targetLesson ? "selected" : ""}>
+            Bài ${l.number} – ${escapeHtml(l.title)}
+          </option>
+        `).join("");
+      }
+
+      const typeSelect = document.getElementById("shareTypeSelect");
+      if (typeSelect) typeSelect.value = String(presetType || 1);
+      populateShareTaskSelect(presetLessonNum || appState.activeLessonNumber || 47, presetType || 1, presetTask || 1);
+
+      const exSelect = document.getElementById("shareExerciseSelect");
+      if (exSelect) exSelect.value = String(presetEx || 1);
+
+      onShareExerciseSelectionChanged();
+      renderShareFirebaseAlert();
+
+      if (activeRoomData) {
+        renderCreatedRoomPanel(activeRoomData);
+      } else {
+        document.getElementById("shareRoomResultBox")?.classList.add("hidden");
+      }
+
+      const modal = document.getElementById("shareLessonModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeShareLessonModal() {
+      const modal = document.getElementById("shareLessonModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function populateShareTaskSelect(lessonNum, typeIdx, selectedTaskIdx = 1) {
+      const taskSelect = document.getElementById("shareTaskSelect");
+      if (!taskSelect) return;
+      const tasks = appState.lessons[lessonNum]?.types[typeIdx]?.tasks || [{ index: 1, label: "NHIỆM VỤ 1" }];
+      taskSelect.innerHTML = tasks.map(tk => `
+        <option value="${tk.index}" ${tk.index === Number(selectedTaskIdx) ? "selected" : ""}>
+          Nhiệm vụ ${tk.index}${tk.customTitle ? `: ${escapeHtml(tk.customTitle)}` : ""}
+        </option>
+      `).join("");
+    }
+
+    function onShareExerciseSelectionChanged() {
+      const lessonNum = Number(document.getElementById("shareLessonSelect")?.value || 47);
+      const typeIdx = Number(document.getElementById("shareTypeSelect")?.value || 1);
+      const currentTaskVal = Number(document.getElementById("shareTaskSelect")?.value || 1);
+      populateShareTaskSelect(lessonNum, typeIdx, currentTaskVal);
+      const taskIdx = Number(document.getElementById("shareTaskSelect")?.value || 1);
+      const exIdx = Number(document.getElementById("shareExerciseSelect")?.value || 1);
+
+      const exerciseKey = `B${lessonNum}_D${typeIdx}_NV${taskIdx}_BT${exIdx}`;
+      const rec = exerciseUrlsMap[exerciseKey] || null;
+      const urlInput = document.getElementById("shareReadonlyExerciseUrlInput");
+      const badge = document.getElementById("shareSourceUrlBadge");
+      const warning = document.getElementById("shareMissingUrlWarning");
+
+      const check = rec ? validateSafeExerciseUrl(rec.url) : { valid: false };
+      if (urlInput) urlInput.value = check.valid ? check.normalizedUrl : (rec?.url || "");
+
+      if (check.valid) {
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-eduGreenBg text-[#047857]";
+          badge.textContent = `✓ Đã lưu tại ${exerciseKey}`;
+        }
+        if (warning) warning.classList.add("hidden");
+      } else {
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-600";
+          badge.textContent = `✕ Chưa có URL (${exerciseKey})`;
+        }
+        if (warning) warning.classList.remove("hidden");
+      }
+    }
+
+    function copyExerciseSourceUrl() {
+      const val = document.getElementById("shareReadonlyExerciseUrlInput")?.value || "";
+      if (!validateSafeExerciseUrl(val).valid) {
+        showToast("Bài tập này chưa có đường link. Vui lòng lưu URL bài tập trước khi chia sẻ.", "warn");
+        return;
+      }
+      navigator.clipboard?.writeText(val);
+      showToast("Đã sao chép URL bài tập!", "success");
+    }
+
+    function previewExerciseSourceUrlFromShare() {
+      const val = document.getElementById("shareReadonlyExerciseUrlInput")?.value || "";
+      const check = validateSafeExerciseUrl(val);
+      if (!check.valid) {
+        showToast("Bài tập này chưa có đường link.", "warn");
+        return;
+      }
+      openUrlPreviewModal("XEM TRƯỚC", check.normalizedUrl, "Xem trước bài tập");
+    }
+
+    async function createRoomAndShare() {
+      if (isCreatingRoomLock) return;
+
+      // 1. Kiểm tra Firebase đã kết nối & xác thực giáo viên
+      if (!isFirebaseConfigProvided() || !firebaseReady || !fbDb || !teacherUid) {
+        showToast("Chưa kết nối Firebase. Vui lòng cấu hình FIREBASE_CONFIG trước khi tạo phòng trực tuyến.", "warn");
+        renderShareFirebaseAlert();
+        return;
+      }
+
+      const lessonNum = Number(document.getElementById("shareLessonSelect")?.value || 47);
+      const typeIdx = Number(document.getElementById("shareTypeSelect")?.value || 1);
+      const taskIdx = Number(document.getElementById("shareTaskSelect")?.value || 1);
+      const exIdx = Number(document.getElementById("shareExerciseSelect")?.value || 1);
+      const className = (document.getElementById("shareClassNameInput")?.value || "").trim() || "Lớp 6A1";
+      const teacherName = (document.getElementById("shareTeacherNameInput")?.value || "").trim() || "Giáo viên Toán 6";
+
+      const exerciseKey = `B${lessonNum}_D${typeIdx}_NV${taskIdx}_BT${exIdx}`;
+      const savedUrlRec = exerciseUrlsMap[exerciseKey] || null;
+      const urlCheck = savedUrlRec ? validateSafeExerciseUrl(savedUrlRec.url) : { valid: false };
+
+      if (!urlCheck.valid) {
+        showToast("Bài tập này chưa có đường link. Vui lòng lưu URL bài tập trước khi chia sẻ.", "warn");
+        return;
+      }
+
+      isCreatingRoomLock = true;
+      try {
+        const roomId = generateRoomCode();
+        const lessonObj = appState.lessons[lessonNum];
+        const shareLink = buildStudentShareLinkFromExerciseUrl(urlCheck.normalizedUrl, roomId);
+        const nowTs = Date.now();
+
+        const roomPayload = {
+          roomId: roomId,
+          teacherUid: teacherUid,
+          teacherName: teacherName,
+          className: className,
+          lessonId: `B${lessonNum}`,
+          lessonName: lessonObj ? `Bài ${lessonNum} – ${lessonObj.title}` : `Bài ${lessonNum}`,
+          topicId: `D${typeIdx}`,
+          taskId: `NV${taskIdx}`,
+          exerciseId: exerciseKey,
+          exerciseUrl: urlCheck.normalizedUrl,
+          shareLink: shareLink,
+          status: "open", // 'open' | 'closed' | 'expired'
+          createdAt: nowTs,
+          updatedAt: nowTs
+        };
+
+        await fbDb.ref(`rooms/${roomId}`).set(roomPayload);
+        lastCreatedRoomId = roomId;
+        subscribeToFirebaseRoom(roomId);
+        renderCreatedRoomPanel(roomPayload);
+        showToast(`Đã tạo phòng ${roomId} trên Firebase thành công!`, "success");
+      } catch (err) {
+        showToast(`Lỗi ghi phòng lên Firebase: ${err.message || "Kiểm tra Security Rules"}`, "warn");
+      } finally {
+        setTimeout(() => { isCreatingRoomLock = false; }, 1000);
+      }
+    }
+
+    function renderCreatedRoomPanel(room) {
+      lastCreatedRoomId = room.roomId;
+      const box = document.getElementById("shareRoomResultBox");
+      if (!box) return;
+
+      const shareLink = room.shareLink || buildStudentShareLinkFromExerciseUrl(room.exerciseUrl, room.roomId);
+      const studentsObj = room.students || {};
+      const studentCount = Object.keys(studentsObj).length;
+
+      box.classList.remove("hidden");
+      document.getElementById("createdRoomCodeBadge").textContent = room.roomId;
+      document.getElementById("createdRoomCodeInput").value = room.roomId;
+      document.getElementById("createdRoomJoinLinkInput").value = shareLink;
+      document.getElementById("createdRoomStudentCountBadge").textContent = `${studentCount} học sinh đã tham gia`;
+
+      const stBadge = document.getElementById("createdRoomStatusBadge");
+      const closeBtn = document.getElementById("shareCloseRoomBtn");
+      if (room.status === "open") {
+        stBadge.textContent = "Đang mở (open)";
+        stBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-eduGreenBg text-[#047857] border border-emerald-300";
+        if (closeBtn) {
+          closeBtn.textContent = "🔒 Đóng phòng";
+          closeBtn.className = "px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition";
+        }
+      } else {
+        stBadge.textContent = room.status === "expired" ? "Hết hạn (expired)" : "Đã đóng (closed)";
+        stBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600 border border-red-200";
+        if (closeBtn) {
+          closeBtn.textContent = "🔓 Mở lại phòng";
+          closeBtn.className = "px-3 py-1.5 rounded-lg bg-eduGreen hover:bg-emerald-600 text-white text-xs font-bold transition";
+        }
+      }
+
+      const qrBox = document.getElementById("roomQrCodeContainer");
+      if (qrBox) {
+        qrBox.innerHTML = "";
+        if (window.QRCode) {
+          new QRCode(qrBox, {
+            text: shareLink,
+            width: 118,
+            height: 118,
+            colorDark: "#243B53",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }
+      }
+    }
+
+    function toggleCurrentSharedRoomStatus() {
+      if (!activeRoomData) return;
+      const nextStatus = activeRoomData.status === "open" ? "closed" : "open";
+      confirmUpdateFirebaseRoomStatus(activeRoomData.roomId, nextStatus);
+    }
+
+    function confirmUpdateFirebaseRoomStatus(roomId, nextStatus) {
+      if (!fbDb || !activeRoomData) return;
+      if (activeRoomData.teacherUid !== teacherUid) {
+        showToast("Chỉ giáo viên chủ phòng mới có quyền thay đổi trạng thái phòng.", "warn");
+        return;
+      }
+
+      const title = nextStatus === "closed" ? `Đóng phòng ${roomId}` : `Mở lại phòng ${roomId}`;
+      const msg = nextStatus === "closed"
+        ? "Khi đóng phòng, học sinh mới sẽ không thể tham gia và kết quả đã làm được giữ nguyên."
+        : "Cho phép học sinh tiếp tục tham gia vào phòng học này?";
+
+      openConfirmDialog({
+        title,
+        message: msg,
+        confirmText: nextStatus === "closed" ? "Đóng phòng" : "Mở lại phòng",
+        isDanger: nextStatus === "closed",
+        onConfirm: async () => {
+          try {
+            await fbDb.ref(`rooms/${roomId}`).update({ status: nextStatus, updatedAt: Date.now() });
+            showToast(`Đã cập nhật trạng thái phòng ${roomId} thành ${nextStatus}.`, "success");
+          } catch (err) {
+            showToast(`Lỗi cập nhật trạng thái phòng: ${err.message}`, "warn");
+          }
+        }
+      });
+    }
+
+    function copyRoomCodeToClipboard() {
+      const code = document.getElementById("createdRoomCodeInput")?.value;
+      if (!code) return;
+      navigator.clipboard?.writeText(code);
+      showToast(`Đã sao chép mã phòng: ${code}`, "success");
+    }
+
+    function copyStudentJoinLinkToClipboard() {
+      const link = document.getElementById("createdRoomJoinLinkInput")?.value;
+      if (!link) return;
+      navigator.clipboard?.writeText(link);
+      showToast("Đã sao chép link tham gia phòng học!", "success");
+    }
+
+    function downloadRoomQrImage() {
+      const qrBox = document.getElementById("roomQrCodeContainer");
+      const canvas = qrBox?.querySelector("canvas");
+      const img = qrBox?.querySelector("img");
+      const code = document.getElementById("createdRoomCodeInput")?.value || "QR_PHONG_HOC";
+      const dataUrl = canvas ? canvas.toDataURL("image/png") : (img?.src || "");
+      if (!dataUrl) return;
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `QR_${code}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    /******************************************************************
+     * 6. MÀN HÌNH GIÁM SÁT HỌC SINH REALTIME TỪ FIREBASE
+     ******************************************************************/
+    function renderClassroomMonitorScreen() {
+      if (!activeRoomData) {
+        return `
+          <div class="space-y-6 pb-10 animate-fade">
+            <div class="edu-card p-8 text-center max-w-2xl mx-auto space-y-4">
+              <div class="w-16 h-16 rounded-2xl bg-eduBlueBg text-eduBlue flex items-center justify-center mx-auto text-3xl">📤</div>
+              <h3 class="font-display font-black text-2xl text-navyMain">CHƯA CÓ PHÒNG HỌC NÀO ĐANG THEO DÕI</h3>
+              <p class="text-sm text-navySub">
+                Danh sách học sinh chỉ hiển thị dữ liệu thực tế từ Firebase Realtime Database khi học sinh truy cập link và tham gia phòng.
+              </p>
+              <button onclick="openShareLessonModal()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-eduBlue to-eduPurple text-white font-display font-extrabold text-sm shadow-md">
+                📤 CHIA SẺ BÀI TẬP
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      const studentsMap = activeRoomData.students || {};
+      const studentList = Object.values(studentsMap).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+      const onlineCount = studentList.filter(s => s.status === "online").length;
+
+      return `
+        <div class="space-y-6 pb-10 animate-fade">
+          <div class="edu-card p-5 sm:p-6 bg-gradient-to-r from-white via-white to-eduBlueBg/40 space-y-4">
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-3 py-1 rounded-xl bg-navyMain text-white font-mono text-xs font-extrabold">
+                    PHÒNG: ${escapeHtml(activeRoomData.roomId)}
+                  </span>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold ${
+                    activeRoomData.status === 'open'
+                      ? 'bg-eduGreenBg text-[#047857] border border-emerald-300'
+                      : 'bg-red-50 text-red-600 border border-red-200'
+                  }">
+                    ${activeRoomData.status === 'open' ? '🟢 Đang mở' : (activeRoomData.status === 'expired' ? '⚪ Hết hạn' : '🔴 Đã đóng')}
+                  </span>
+                  <span class="px-3 py-1 rounded-xl bg-eduBlueBg text-eduBlue font-mono text-xs font-bold">
+                    ${escapeHtml(activeRoomData.exerciseId)}
+                  </span>
+                </div>
+
+                <h3 class="font-display font-black text-xl sm:text-2xl text-navyMain">
+                  ${escapeHtml(activeRoomData.lessonName)} • ${escapeHtml(activeRoomData.topicId)} • ${escapeHtml(activeRoomData.taskId)}
+                </h3>
+                <p class="text-xs text-navySub font-mono break-all">
+                  Link chia sẻ: ${escapeHtml(activeRoomData.shareLink || "")}
+                </p>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button onclick="navigator.clipboard?.writeText('${escapeAttr(activeRoomData.shareLink || "")}'); showToast('Đã sao chép link tham gia!', 'success')" class="px-3 py-2 rounded-xl bg-eduBlueBg hover:bg-eduBlue text-eduBlue hover:text-white text-xs font-bold transition">
+                  🔗 COPY LINK
+                </button>
+                ${activeRoomData.status === "open" ? `
+                  <button onclick="confirmUpdateFirebaseRoomStatus('${escapeAttr(activeRoomData.roomId)}', 'closed')" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition">
+                    🔒 Đóng phòng
+                  </button>
+                ` : `
+                  <button onclick="confirmUpdateFirebaseRoomStatus('${escapeAttr(activeRoomData.roomId)}', 'open')" class="px-3.5 py-2 rounded-xl bg-eduGreen hover:bg-emerald-600 text-white text-xs font-bold transition">
+                    🔓 Mở lại phòng
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <div class="text-xs text-navySub pt-2 border-t border-borderSoft">
+              Lớp: <strong class="text-navyMain">${escapeHtml(activeRoomData.className)}</strong> • Giáo viên: <strong class="text-navyMain">${escapeHtml(activeRoomData.teacherName)}</strong> • Tổng tham gia: <strong class="text-navyMain">${studentList.length}</strong> • Đang kết nối: <strong class="text-eduGreen">${onlineCount}</strong>
+            </div>
+          </div>
+
+          ${studentList.length === 0 ? `
+            <div class="edu-card p-12 text-center space-y-3">
+              <h4 class="font-display font-extrabold text-xl text-navyMain">Chưa có học sinh nào tham gia phòng ${escapeHtml(activeRoomData.roomId)}</h4>
+              <p class="text-xs sm:text-sm text-navySub">Khi học sinh mở link, nhập tên và nhấn Tham gia phòng, thông tin sẽ tự động xuất hiện tại đây.</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              ${studentList.map(st => renderFirebaseStudentCard(st)).join("")}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderFirebaseStudentCard(st) {
+      const isOnline = st.status === "online";
+      const isDone = st.completionStatus === "submitted" || Number(st.progress) >= 100;
+      const badgeCls = isDone
+        ? "bg-eduBlueBg text-[#1D4ED8] border-blue-200"
+        : (isOnline ? "bg-eduGreenBg text-[#047857] border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-300");
+      const badgeText = isDone ? "🔵 Đã nộp bài" : (isOnline ? "🟢 Đang kết nối" : "⚪ Mất kết nối");
+      const joinedStr = st.joinedAt ? new Date(st.joinedAt).toLocaleTimeString("vi-VN") : "—";
+
+      return `
+        <div class="edu-card p-5 flex flex-col justify-between gap-4 border-t-4 ${isOnline ? 'border-t-eduGreen' : 'border-t-slate-400'}">
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h4 class="font-display font-extrabold text-base text-navyMain">${escapeHtml(st.studentName || "Học sinh")}</h4>
+                <div class="text-xs text-navySub">Tham gia lúc: <strong>${joinedStr}</strong></div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0 ${badgeCls}">${badgeText}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-bgCanvas border border-borderSoft space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-navySub">Bài tập:</span>
+                <code class="font-mono font-bold text-eduBlue">${escapeHtml(st.currentExercise || activeRoomData?.exerciseId || "—")}</code>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-navySub shrink-0">Câu hỏi hiện tại:</span>
+                <strong class="text-navyMain truncate">${escapeHtml(st.currentQuestion || "—")}</strong>
+              </div>
+              <div class="flex items-center justify-between pt-1.5 border-t border-slate-200/70">
+                <div>
+                  <span class="text-navySub">Trạng thái nộp:</span>
+                  <strong class="text-navyMain ml-1">${isDone ? "Đã nộp" : "Đang làm"}</strong>
+                </div>
+                <div>
+                  <span class="text-navySub">Điểm:</span>
+                  <strong class="text-eduBlue font-display font-black text-sm ml-1">${st.score !== undefined && st.score !== null ? st.score : "—"}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between text-xs font-semibold text-navySub mb-1">
+                <span>Tiến độ hoàn thành</span>
+                <span class="font-bold text-navyMain">${Number(st.progress || 0)}%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-eduGreen rounded-full transition-all" style="width: ${Number(st.progress || 0)}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /******************************************************************
+     * 7. QUẢN LÝ CHƯƠNG TRÌNH & THẺ URL BÀI TẬP (GIỮ NGUYÊN)
+     ******************************************************************/
+    function getGroupById(groupId) {
+      return TOPIC_GROUPS.find(g => g.id === Number(groupId)) || TOPIC_GROUPS[0];
+    }
+
+    function computeLessonSummary(lessonNumber) {
+      const lesson = appState.lessons[lessonNumber];
+      let typesWithContentCount = 0;
+      let totalTasks = 0;
+      let totalExercises = 0;
+      let exercisesWithUrl = 0;
+
+      for (let t = 1; t <= 4; t++) {
+        const typeObj = lesson.types[t];
+        let typeActive = !!(typeObj.customName && typeObj.customName.trim() !== "");
+        typeObj.tasks.forEach(tk => {
+          totalTasks++;
+          if (tk.content && tk.content.trim() !== "") typeActive = true;
+          tk.exercises.forEach(ex => {
+            totalExercises++;
+            const exKey = `B${lessonNumber}_D${t}_NV${tk.index}_BT${ex.index}`;
+            const rec = exerciseUrlsMap[exKey];
+            if (rec && rec.url && rec.url.trim() !== "") {
+              exercisesWithUrl++;
+              typeActive = true;
+            }
+          });
+        });
+        if (typeActive) typesWithContentCount++;
+      }
+
+      const statusLabel = exercisesWithUrl >= totalExercises && totalExercises > 0
+        ? "Đã đủ link"
+        : (exercisesWithUrl > 0 || typesWithContentCount > 0 ? "Đang cập nhật" : "Chưa có link");
+
+      const statusClass = exercisesWithUrl >= totalExercises && totalExercises > 0
+        ? "bg-eduGreenBg text-[#047857]"
+        : (exercisesWithUrl > 0 || typesWithContentCount > 0 ? "bg-eduBlueBg text-[#1D4ED8]" : "bg-slate-100 text-navySub");
+
+      const percentProgress = totalExercises > 0 ? Math.min(100, Math.round((exercisesWithUrl / totalExercises) * 100)) : 0;
+
+      return { typesCount: 4, typesWithContentCount, totalTasks, totalExercises, exercisesWithUrl, statusLabel, statusClass, percentProgress };
+    }
+
+    function computeGlobalMetrics() {
+      let totalTasks = 0, totalExercises = 0, exercisesWithUrl = 0;
+      RAW_LESSONS.forEach(raw => {
+        const s = computeLessonSummary(raw.number);
+        totalTasks += s.totalTasks;
+        totalExercises += s.totalExercises;
+        exercisesWithUrl += s.exercisesWithUrl;
+      });
+      const validUrlCount = Object.values(exerciseUrlsMap).filter(r => r && r.url && r.url.trim() !== "").length;
+      const overallPercent = totalExercises > 0 ? Math.round((exercisesWithUrl / totalExercises) * 100) : 0;
+      return { totalLessons: 48, totalTypes: 192, totalTasks, totalExercises, exercisesWithUrl, validUrlCount, overallPercent };
+    }
+
+    function updateSidebarBadges() {
+      const metrics = computeGlobalMetrics();
+      const studentsMap = activeRoomData?.students || {};
+      const onlineCount = Object.values(studentsMap).filter(s => s.status === "online").length;
+      const monBadge = document.getElementById("navMonitorBadge");
+      const repoBadge = document.getElementById("navRepoBadge");
+      const progBadge = document.getElementById("navProgressBadge");
+      if (monBadge) monBadge.textContent = `${onlineCount} online`;
+      if (repoBadge) repoBadge.textContent = `${metrics.validUrlCount} URL`;
+      if (progBadge) progBadge.textContent = `${metrics.overallPercent}%`;
+    }
+
+    function renderAll() {
+      updateSidebarBadges();
+      renderSidebarUI();
+      renderHeaderBreadcrumbUI();
+
+      const main = document.getElementById("mainWorkspace");
+      if (!main) return;
+      const metrics = computeGlobalMetrics();
+
+      if (appState.currentView === "lessonDetail") main.innerHTML = renderLessonDetailScreen(appState.activeLessonNumber);
+      else if (appState.currentView === "monitor") main.innerHTML = renderClassroomMonitorScreen();
+      else if (appState.currentView === "repository") main.innerHTML = renderTopStatsRow(metrics) + renderUrlRepositoryScreen();
+      else if (appState.currentView === "progress") main.innerHTML = renderTopStatsRow(metrics) + renderProgressScreen(metrics);
+      else main.innerHTML = renderTopStatsRow(metrics) + renderLessonsCatalogScreen();
+
+      dbSaveAppState(appState);
+    }
+
+    function renderSidebarUI() {
+      document.querySelectorAll("#mainNavContainer .nav-btn").forEach(btn => {
+        const navKey = btn.getAttribute("data-nav");
+        const isActive = appState.currentView === navKey || (navKey === "lessons" && appState.currentView === "lessonDetail");
+        btn.className = isActive
+          ? "nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold bg-eduBlueBg text-eduBlue border border-eduBlue/30 transition"
+          : "nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold text-navySub hover:bg-slate-100 hover:text-navyMain border border-transparent transition";
+      });
+
+      const groupBox = document.getElementById("sidebarTopicGroups");
+      if (!groupBox) return;
+      groupBox.innerHTML = TOPIC_GROUPS.map(g => {
+        const countLessons = RAW_LESSONS.filter(l => l.groupId === g.id).length;
+        const isSelected = appState.currentView === "lessons" && String(appState.selectedGroupFilter) === String(g.id);
+        return `
+          <button onclick="filterByGroup('${g.id}')" class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left text-xs font-semibold transition ${isSelected ? 'bg-navyMain text-white' : 'text-navySub hover:bg-slate-100 hover:text-navyMain'}">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${g.color}"></span>
+              <span class="truncate">${g.id}. ${g.name}</span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-navySub'} shrink-0">${countLessons}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderHeaderBreadcrumbUI() {
+      const box = document.getElementById("headerBreadcrumb");
+      if (!box) return;
+      const studentsMap = activeRoomData?.students || {};
+      const onlineCount = Object.values(studentsMap).filter(s => s.status === "online").length;
+
+      box.innerHTML = `
+        ${activeRoomData ? `
+          <div onclick="navigateToNav('monitor')" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-xl bg-eduGreenBg border border-emerald-200 text-xs font-bold text-[#047857]">
+            <span class="w-2 h-2 rounded-full bg-eduGreen live-pulse"></span>
+            <span>Phòng <code class="font-mono">${escapeHtml(activeRoomData.roomId)}</code> (${onlineCount} online)</span>
+          </div>
+        ` : ""}
+        <button onclick="openShareLessonModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-eduBlue to-eduPurple hover:opacity-95 text-white font-display font-extrabold text-xs shadow-sm flex items-center gap-1.5 transition">
+          <span>📤 CHIA SẺ BÀI TẬP</span>
+        </button>
+        <button onclick="navigateToNav('monitor')" class="px-3.5 py-2 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-navyMain hover:text-eduBlue text-xs font-bold transition">
+          🖥️ Giám sát (${onlineCount})
+        </button>
+      `;
+    }
+
+    function renderTopStatsRow(metrics) {
+      const studentsMap = activeRoomData?.students || {};
+      const list = Object.values(studentsMap);
+      const onlineCount = list.filter(s => s.status === "online").length;
+
+      return `
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="edu-card p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-eduBlueBg text-eduBlue flex items-center justify-center font-bold text-lg shrink-0">📚</div>
+            <div>
+              <div class="text-xs font-semibold text-navySub">Tổng số bài học</div>
+              <div class="font-display font-black text-2xl text-navyMain leading-tight">${metrics.totalLessons} <span class="text-xs font-semibold text-navySub">(Bài 47–94)</span></div>
+            </div>
+          </div>
+
+          <div class="edu-card p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-eduGreenBg text-eduGreen flex items-center justify-center font-bold text-lg shrink-0">🧑‍🎓</div>
+            <div>
+              <div class="text-xs font-semibold text-navySub">Học sinh tham gia</div>
+              <div class="font-display font-black text-2xl text-navyMain leading-tight">${onlineCount} <span class="text-xs font-semibold text-navySub">online / ${list.length}</span></div>
+            </div>
+          </div>
+
+          <div class="edu-card p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-eduYellowBg text-eduYellow flex items-center justify-center font-bold text-lg shrink-0">🔗</div>
+            <div>
+              <div class="text-xs font-semibold text-navySub">Bài tập có URL</div>
+              <div class="font-display font-black text-2xl text-navyMain leading-tight">${metrics.exercisesWithUrl} <span class="text-xs font-semibold text-navySub">/ ${metrics.totalExercises} BT</span></div>
+            </div>
+          </div>
+
+          <div class="edu-card p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-eduPurpleBg text-eduPurple flex items-center justify-center font-bold text-lg shrink-0">🌐</div>
+            <div>
+              <div class="text-xs font-semibold text-navySub">Tổng URL đã lưu</div>
+              <div class="font-display font-black text-2xl text-navyMain leading-tight">${metrics.validUrlCount} <span class="text-xs font-semibold text-navySub">liên kết</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLessonsCatalogScreen() {
+      const q = appState.searchQuery.trim().toLowerCase();
+      const groupFilter = appState.selectedGroupFilter;
+      const urlFilter = appState.selectedUrlFilter;
+
+      const filtered = RAW_LESSONS.filter(raw => {
+        if (groupFilter !== "all" && String(raw.groupId) !== String(groupFilter)) return false;
+        const sum = computeLessonSummary(raw.number);
+        if (urlFilter === "has_url" && sum.exercisesWithUrl === 0) return false;
+        if (urlFilter === "no_url" && sum.exercisesWithUrl > 0) return false;
+        if (q) return String(raw.number).includes(q) || `bài ${raw.number}`.includes(q) || raw.title.toLowerCase().includes(q);
+        return true;
+      });
+
+      let sectionsHtml = "";
+      TOPIC_GROUPS.forEach(group => {
+        const list = filtered.filter(l => l.groupId === group.id);
+        if (list.length === 0) return;
+        sectionsHtml += `
+          <section class="space-y-4 animate-fade">
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <div class="flex items-center gap-3">
+                <span class="px-3.5 py-1 rounded-xl font-display font-extrabold text-xs uppercase tracking-wider" style="background-color: ${group.bg}; color: ${group.color}">
+                  ${group.code} • ${group.range}
+                </span>
+                <h3 class="font-display font-extrabold text-lg sm:text-xl text-navyMain">${group.name}</h3>
+              </div>
+              <span class="text-xs font-semibold text-navySub">${list.length} bài học</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              ${list.map(item => renderLessonCard(item.number)).join("")}
+            </div>
+          </section>
+        `;
+      });
+
+      return `
+        <div class="edu-card p-4">
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            <input id="catalogSearchInput" type="text" value="${escapeHtml(appState.searchQuery)}" oninput="handleCatalogSearch(this.value)" placeholder="🔍 Tìm kiếm bài học (47 - 94)..." class="flex-1 bg-bgCanvas border border-borderSoft focus:border-eduBlue focus:bg-white rounded-xl px-4 py-2.5 text-sm text-navyMain focus:outline-none" />
+            <div class="flex flex-wrap items-center gap-2">
+              <select onchange="filterByGroup(this.value)" class="bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-xs font-bold text-navyMain">
+                <option value="all" ${groupFilter === "all" ? "selected" : ""}>Tất cả 8 nhóm chủ đề</option>
+                ${TOPIC_GROUPS.map(g => `<option value="${g.id}" ${String(groupFilter) === String(g.id) ? "selected" : ""}>${g.code}: ${g.name}</option>`).join("")}
+              </select>
+              <select onchange="filterByUrlStatus(this.value)" class="bg-bgCanvas border border-borderSoft rounded-xl px-3 py-2.5 text-xs font-bold text-navyMain">
+                <option value="all" ${urlFilter === "all" ? "selected" : ""}>Tất cả trạng thái URL</option>
+                <option value="has_url" ${urlFilter === "has_url" ? "selected" : ""}>Đã có đường link</option>
+                <option value="no_url" ${urlFilter === "no_url" ? "selected" : ""}>Chưa có đường link</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-8 pb-8">${sectionsHtml}</div>
+      `;
+    }
+
+    function renderLessonCard(lessonNumber) {
+      const lesson = appState.lessons[lessonNumber];
+      const group = getGroupById(lesson.groupId);
+      const sum = computeLessonSummary(lessonNumber);
+
+      return `
+        <div class="edu-card edu-card-hover p-5 flex flex-col justify-between gap-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg font-display font-black text-xs text-white" style="background-color: ${group.color}">BÀI ${lesson.number}</span>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${sum.statusClass}">${sum.statusLabel}</span>
+            </div>
+            <h4 onclick="openLessonDetail(${lesson.number})" class="font-display font-extrabold text-xl text-navyMain hover:text-eduBlue cursor-pointer leading-snug transition">
+              Bài ${lesson.number} – ${escapeHtml(lesson.title)}
+            </h4>
+            <div class="text-xs text-navySub flex items-center justify-between pt-1">
+              <span>Bài tập có URL: <strong class="text-eduGreen">${sum.exercisesWithUrl}/${sum.totalExercises}</strong></span>
+              <span>Hoàn thiện: <strong class="text-navyMain">${sum.percentProgress}%</strong></span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-borderSoft">
+            <button onclick="openLessonDetail(${lesson.number})" class="col-span-2 py-2.5 px-4 rounded-xl bg-eduBlue hover:bg-blue-600 text-white font-display font-extrabold text-xs transition">MỞ BÀI HỌC (4 DẠNG & BÀI TẬP) →</button>
+            <button onclick="openShareLessonModal(${lesson.number}, 1, 1, 1)" class="py-2 px-3 rounded-xl bg-eduGreenBg hover:bg-eduGreen text-[#047857] hover:text-white text-xs font-bold transition">📤 Chia sẻ bài tập</button>
+            <button onclick="presentAtLevel('B${lesson.number}', 'Bài ${lesson.number}')" class="py-2 px-3 rounded-xl bg-eduPurpleBg hover:bg-eduPurple text-[#6D28D9] hover:text-white text-xs font-bold transition">▶ Mở bài tập</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLessonDetailScreen(lessonNumber) {
+      const lesson = appState.lessons[lessonNumber];
+      const group = getGroupById(lesson.groupId);
+      const sum = computeLessonSummary(lessonNumber);
+      const prevNum = lessonNumber > 47 ? lessonNumber - 1 : null;
+      const nextNum = lessonNumber < 94 ? lessonNumber + 1 : null;
+
+      return `
+        <div class="space-y-6 pb-12 animate-fade">
+          <div class="edu-card p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-borderSoft">
+              <div class="space-y-1.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="px-3 py-1 rounded-xl font-display font-black text-xs text-white" style="background-color: ${group.color}">BÀI ${lesson.number}</span>
+                  <span class="px-3 py-1 rounded-xl text-xs font-bold" style="background-color: ${group.bg}; color: ${group.color}">${group.code}: ${group.name}</span>
+                  <span class="px-3 py-1 rounded-xl text-xs font-bold ${sum.statusClass}">${sum.statusLabel} (${sum.exercisesWithUrl}/${sum.totalExercises} URL)</span>
+                </div>
+                <h2 class="font-display font-black text-2xl sm:text-3xl text-navyMain pt-1">
+                  BÀI ${lesson.number} – ${escapeHtml(lesson.title.toUpperCase())}
+                </h2>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button onclick="navigateToNav('lessons')" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-navyMain text-xs font-bold">← Danh sách bài</button>
+                <button onclick="openShareLessonModal(${lesson.number}, 1, 1, 1)" class="px-4 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold transition">📤 CHIA SẺ BÀI TẬP</button>
+                <button onclick="${prevNum ? `openLessonDetail(${prevNum})` : ''}" ${!prevNum ? 'disabled' : ''} class="px-3 py-2 rounded-xl border border-borderSoft text-xs font-bold ${prevNum ? 'bg-white hover:bg-slate-100' : 'opacity-40 cursor-not-allowed'}">◀</button>
+                <button onclick="${nextNum ? `openLessonDetail(${nextNum})` : ''}" ${!nextNum ? 'disabled' : ''} class="px-3 py-2 rounded-xl border border-borderSoft text-xs font-bold ${nextNum ? 'bg-white hover:bg-slate-100' : 'opacity-40 cursor-not-allowed'}">▶</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-8">
+            ${[1, 2, 3, 4].map(typeIdx => renderSingleTypeWrapper(lesson, lesson.types[typeIdx], TYPE_PASTEL_THEMES[typeIdx])).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSingleTypeWrapper(lesson, typeObj, theme) {
+      const typeKey = `B${lesson.number}_D${typeObj.index}`;
+      const typeDisplayTitle = typeObj.customName ? `${typeObj.label} – ${typeObj.customName.toUpperCase()}` : typeObj.label;
+
+      return `
+        <section class="rounded-2xl border-2 ${theme.borderWrapper} ${theme.bgWrapper} p-5 sm:p-6 shadow-soft space-y-5">
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-4 py-2 rounded-xl font-display font-black text-base text-white ${theme.badgeBg}">DẠNG ${typeObj.index}</span>
+              <h3 class="font-display font-extrabold text-xl sm:text-2xl text-navyMain">${escapeHtml(typeDisplayTitle)}</h3>
+              <span class="px-2.5 py-0.5 rounded-md bg-white/90 border border-slate-200 font-mono text-xs font-bold text-navySub">${typeKey}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="openRenameTypeDialog(${lesson.number}, ${typeObj.index})" class="px-3 py-2 rounded-xl border text-xs font-bold transition ${theme.lightBtn}">✎ Đổi tên dạng</button>
+              <button onclick="addNewTaskToType(${lesson.number}, ${typeObj.index})" class="px-3.5 py-2 rounded-xl bg-navyMain hover:bg-slate-700 text-white text-xs font-bold transition">+ Thêm Nhiệm vụ ${typeObj.tasks.length + 1}</button>
+            </div>
+          </div>
+          <div class="space-y-4">
+            ${typeObj.tasks.map((taskObj, taskArrIdx) => renderTaskBlockInType(lesson, typeObj, taskObj, taskArrIdx, theme)).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderTaskBlockInType(lesson, typeObj, taskObj, taskArrIdx, theme) {
+      const taskKey = `B${lesson.number}_D${typeObj.index}_NV${taskObj.index}`;
+      return `
+        <div class="bg-white rounded-2xl border border-borderSoft overflow-hidden shadow-2xs">
+          <div class="px-5 py-3.5 bg-slate-50 border-b border-borderSoft flex flex-wrap items-center justify-between gap-3">
+            <div onclick="toggleTaskAccordion(${lesson.number}, ${typeObj.index}, ${taskArrIdx})" class="flex items-center gap-2.5 cursor-pointer select-none">
+              <span class="px-3 py-1 rounded-lg font-display font-extrabold text-xs ${theme.headerBg} ${theme.accentText}">${taskObj.label}</span>
+              <span class="font-mono text-xs font-bold text-navySub">[${taskKey}]</span>
+              <h4 class="font-display font-extrabold text-base text-navyMain">${taskObj.customTitle ? escapeHtml(taskObj.customTitle) : `Phân vùng ${taskObj.label}`}</h4>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="openTaskEditorModal(${lesson.number}, ${typeObj.index}, ${taskArrIdx})" class="px-3 py-1.5 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-xs font-bold text-navyMain hover:text-eduBlue transition">✎ Soạn nhiệm vụ</button>
+              <button onclick="addNewExerciseToTask(${lesson.number}, ${typeObj.index}, ${taskArrIdx})" class="px-3 py-1.5 rounded-xl bg-eduGreenBg hover:bg-eduGreen text-[#047857] hover:text-white text-xs font-bold transition">+ Thêm Bài tập ${taskObj.exercises.length + 1}</button>
+            </div>
+          </div>
+          ${taskObj.expanded ? `
+            <div class="p-5">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${taskObj.exercises.map((exObj, exArrIdx) => renderIndependentExerciseUrlCard(lesson, typeObj, taskObj, taskArrIdx, exObj, exArrIdx)).join("")}
+              </div>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function renderIndependentExerciseUrlCard(lesson, typeObj, taskObj, taskArrIdx, exObj, exArrIdx) {
+      const exKey = `B${lesson.number}_D${typeObj.index}_NV${taskObj.index}_BT${exObj.index}`;
+      const rec = exerciseUrlsMap[exKey] || null;
+      const exTitle = exObj.customTitle ? `${exObj.label} – ${exObj.customTitle}` : `${exObj.label} (Độc lập)`;
+
+      let statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-navySub">Chưa có đường link</span>`;
+      if (rec) {
+        if (rec.urlStatus === "saved") statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-eduGreenBg text-[#047857] border border-emerald-200">✓ Đã lưu đường link</span>`;
+        else if (rec.urlStatus === "invalid") statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-600 border border-red-200">✕ Link không hợp lệ</span>`;
+      }
+
+      return `
+        <div class="rounded-2xl border-2 border-borderSoft bg-bgCanvas/60 p-4 flex flex-col justify-between gap-3.5">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-lg bg-navyMain text-white font-display font-extrabold text-xs">${exObj.label}</span>
+                <span class="px-2 py-0.5 rounded bg-white border border-borderSoft font-mono text-[11px] font-bold text-eduBlue">${exKey}</span>
+              </div>
+              ${statusBadge}
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+              <h5 class="font-display font-extrabold text-base text-navyMain">${escapeHtml(exTitle)}</h5>
+              <button onclick="openExerciseEditorModal(${lesson.number}, ${typeObj.index}, ${taskArrIdx}, ${exArrIdx})" class="text-xs font-bold text-eduBlue hover:underline">✎ Sửa tên</button>
+            </div>
+
+            <div class="p-3 rounded-xl bg-white border border-borderSoft space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-navySub">
+                <span>&lt; KHO BÀI TẬP TRỰC TUYẾN &gt;</span>
+                ${rec?.updatedAt ? `<span class="font-normal">Cập nhật: ${escapeHtml(rec.updatedAt)}</span>` : ""}
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-navyMain mb-1">Đường link bài tập:</label>
+                <input id="urlInput_${exKey}" type="url" value="${escapeAttr(rec?.url || "")}" placeholder="https://quymon.github.io/BT1/bai-tap-hoc-sinh.html" class="w-full bg-bgCanvas border border-borderSoft focus:border-eduBlue focus:bg-white rounded-xl px-3 py-2 font-mono text-xs text-navyMain focus:outline-none" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-2 border-t border-slate-200/80">
+            <button onclick="saveExerciseUrl('${exKey}', ${lesson.number}, ${typeObj.index}, ${taskObj.index}, ${exObj.index}, '${escapeAttr(exTitle)}')" class="py-2 px-2.5 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold transition">💾 LƯU LINK</button>
+            <button onclick="previewExerciseUrl('${exKey}')" class="py-2 px-2.5 rounded-xl bg-white hover:bg-eduBlueBg border border-borderSoft text-eduBlue text-xs font-bold transition">👁 XEM TRƯỚC</button>
+            <button onclick="previewExerciseUrl('${exKey}')" class="py-2 px-2.5 rounded-xl bg-eduPurpleBg hover:bg-eduPurple text-[#6D28D9] hover:text-white text-xs font-bold transition">▶ MỞ BÀI TẬP</button>
+            <button onclick="openShareLessonModal(${lesson.number}, ${typeObj.index}, ${taskObj.index}, ${exObj.index})" class="col-span-2 py-2 px-2.5 rounded-xl bg-eduGreen hover:bg-emerald-600 text-white text-xs font-bold transition">📤 CHIA SẺ BÀI TẬP</button>
+            <button onclick="deleteExerciseUrl('${exKey}')" class="py-2 px-2.5 rounded-xl bg-white hover:bg-red-50 border border-borderSoft text-red-600 text-xs font-bold transition">🗑 XÓA LINK</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveExerciseUrl(exKey, lessonNum, typeIdx, taskIdx, exIdx, exTitle) {
+      const val = document.getElementById(`urlInput_${exKey}`)?.value || "";
+      const check = validateSafeExerciseUrl(val);
+      const record = {
+        exerciseKey: exKey,
+        lessonCode: `B${lessonNum}`,
+        typeCode: `D${typeIdx}`,
+        taskCode: `NV${taskIdx}`,
+        exerciseCode: `BT${exIdx}`,
+        exerciseTitle: exTitle || `Bài tập ${exIdx}`,
+        url: check.valid ? check.normalizedUrl : val.trim(),
+        updatedAt: formatNowDateTime(),
+        urlStatus: check.valid ? "saved" : check.status
+      };
+      persistExerciseUrlRecord(record);
+      renderAll();
+      showToast(check.valid ? `Đã lưu URL cho ${exKey}` : check.message, check.valid ? "success" : "warn");
+    }
+
+    function deleteExerciseUrl(exKey) {
+      if (!exerciseUrlsMap[exKey]) return;
+      openConfirmDialog({
+        title: `Xóa URL của ${exKey}`,
+        message: `Xóa đường link bài tập tại ${exKey}?`,
+        confirmText: "Xóa link",
+        isDanger: true,
+        onConfirm: () => { removeExerciseUrlRecord(exKey); renderAll(); showToast(`Đã xóa URL tại ${exKey}`, "info"); }
+      });
+    }
+
+    function previewExerciseUrl(exKey) {
+      const rec = exerciseUrlsMap[exKey];
+      const check = rec ? validateSafeExerciseUrl(rec.url) : { valid: false };
+      if (!check.valid) { showToast("Bài tập này chưa có đường link hợp lệ.", "warn"); return; }
+      openUrlPreviewModal(exKey, check.normalizedUrl, `${rec.exerciseTitle} (${exKey})`);
+    }
+
+    function openUrlPreviewModal(badgeText, urlStr, titleStr) {
+      activePreviewUrl = urlStr;
+      document.getElementById("urlPreviewBadge").textContent = badgeText;
+      document.getElementById("urlPreviewTitle").textContent = titleStr;
+      document.getElementById("urlPreviewMeta").textContent = urlStr;
+      const iframe = document.getElementById("urlPreviewIframe");
+      if (iframe) iframe.src = urlStr;
+      isPreviewFullscreen = false;
+      applyPreviewFullscreenLayout();
+      const modal = document.getElementById("urlPreviewModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeUrlPreviewModal() {
+      const modal = document.getElementById("urlPreviewModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      const iframe = document.getElementById("urlPreviewIframe");
+      if (iframe) iframe.src = "about:blank";
+      activePreviewUrl = "";
+    }
+
+    function toggleFullscreenPreview() { isPreviewFullscreen = !isPreviewFullscreen; applyPreviewFullscreenLayout(); }
+    function openActivePreviewUrlInNewTab() { if (activePreviewUrl) window.open(activePreviewUrl, "_blank", "noopener,noreferrer"); }
+
+    function presentAtLevel(prefixKey, titleLabel) {
+      const foundKey = Object.keys(exerciseUrlsMap).sort().find(k => (k === prefixKey || k.startsWith(prefixKey + "_")) && exerciseUrlsMap[k]?.url);
+      if (!foundKey) { showToast(`Chưa có URL bài tập nào cho ${titleLabel}.`, "warn"); return; }
+      previewExerciseUrl(foundKey);
+    }
+
+    function renderUrlRepositoryScreen() {
+      const items = Object.values(exerciseUrlsMap).sort((a, b) => a.exerciseKey.localeCompare(b.exerciseKey));
+      return `
+        <div class="space-y-5 pb-10 animate-fade">
+          <div class="edu-card p-5"><h3 class="font-display font-extrabold text-xl text-navyMain">KHO URL BÀI TẬP (${items.length})</h3></div>
+          ${items.length === 0 ? `<div class="edu-card p-10 text-center text-sm text-navySub">Chưa có URL bài tập nào được lưu.</div>` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              ${items.map(rec => `
+                <div class="edu-card p-4 flex flex-col justify-between gap-3">
+                  <div class="space-y-1">
+                    <span class="px-2.5 py-0.5 rounded bg-eduBlueBg text-eduBlue font-mono text-xs font-bold">${escapeHtml(rec.exerciseKey)}</span>
+                    <div class="font-bold text-sm text-navyMain">${escapeHtml(rec.exerciseTitle)}</div>
+                    <div class="font-mono text-xs text-eduBlue break-all">${escapeHtml(rec.url || "—")}</div>
+                  </div>
+                  <div class="flex items-center justify-end gap-2 pt-2 border-t border-borderSoft">
+                    <button onclick="previewExerciseUrl('${escapeAttr(rec.exerciseKey)}')" class="px-3 py-1 rounded-lg bg-eduBlue text-white text-xs font-bold">Mở</button>
+                    <button onclick="deleteExerciseUrl('${escapeAttr(rec.exerciseKey)}')" class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-bold">Xóa</button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderProgressScreen(metrics) {
+      return `
+        <div class="space-y-5 pb-10 animate-fade">
+          <div class="edu-card p-5 flex items-center justify-between">
+            <h3 class="font-display font-extrabold text-xl text-navyMain">TIẾN ĐỘ GẮN URL (${metrics.exercisesWithUrl}/${metrics.totalExercises} BÀI TẬP)</h3>
+            <span class="font-display font-black text-2xl text-eduGreen">${metrics.overallPercent}%</span>
+          </div>
+          <div class="edu-card overflow-hidden">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-borderSoft text-navySub uppercase text-xs">
+                  <th class="py-3 px-4">Bài học</th>
+                  <th class="py-3 px-3 text-center">BT có URL</th>
+                  <th class="py-3 px-3 text-center">Trạng thái</th>
+                  <th class="py-3 px-4 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-borderSoft">
+                ${RAW_LESSONS.map(raw => {
+                  const s = computeLessonSummary(raw.number);
+                  return `
+                    <tr class="hover:bg-slate-50">
+                      <td class="py-3 px-4 font-display font-bold text-navyMain">Bài ${raw.number} – ${escapeHtml(raw.title)}</td>
+                      <td class="py-3 px-3 text-center font-bold text-eduGreen">${s.exercisesWithUrl}/${s.totalExercises}</td>
+                      <td class="py-3 px-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${s.statusClass}">${s.statusLabel}</span></td>
+                      <td class="py-3 px-4 text-right"><button onclick="openLessonDetail(${raw.number})" class="px-3 py-1 rounded-lg bg-eduBlueBg text-eduBlue font-bold text-xs">Mở →</button></td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function openRenameTypeDialog(lessonNumber, typeIndex) {
+      const typeObj = appState.lessons[lessonNumber].types[typeIndex];
+      document.getElementById("editorModalSub").textContent = `B${lessonNumber}_D${typeIndex}`;
+      document.getElementById("editorModalTitle").textContent = `Đổi tên Dạng ${typeIndex}`;
+      document.getElementById("editorModalBody").innerHTML = `<input id="modalTypeCustomNameInput" type="text" value="${escapeHtml(typeObj.customName || "")}" class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-4 py-2.5 text-sm text-navyMain" />`;
+      document.getElementById("editorModalSaveBtn").textContent = "Lưu thông tin";
+      document.getElementById("editorModalSaveBtn").onclick = () => { typeObj.customName = document.getElementById("modalTypeCustomNameInput").value.trim(); closeEditorModal(); renderAll(); };
+      showEditorModal();
+    }
+
+    function openTaskEditorModal(lessonNumber, typeIndex, taskArrayIdx) {
+      const taskObj = appState.lessons[lessonNumber].types[typeIndex].tasks[taskArrayIdx];
+      document.getElementById("editorModalSub").textContent = `B${lessonNumber}_D${typeIndex}_NV${taskObj.index}`;
+      document.getElementById("editorModalTitle").textContent = `Soạn ${taskObj.label}`;
+      document.getElementById("editorModalBody").innerHTML = `
+        <div class="space-y-3">
+          <input id="modalTaskTitleInput" type="text" value="${escapeHtml(taskObj.customTitle || "")}" placeholder="Tên nhiệm vụ..." class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-4 py-2.5 text-sm text-navyMain" />
+          <textarea id="modalTaskContentInput" rows="3" placeholder="Nội dung..." class="w-full bg-bgCanvas border border-borderSoft rounded-xl p-3 text-sm text-navyMain">${escapeHtml(taskObj.content || "")}</textarea>
+        </div>
+      `;
+      document.getElementById("editorModalSaveBtn").textContent = "Lưu thông tin";
+      document.getElementById("editorModalSaveBtn").onclick = () => { taskObj.customTitle = document.getElementById("modalTaskTitleInput").value.trim(); taskObj.content = document.getElementById("modalTaskContentInput").value.trim(); closeEditorModal(); renderAll(); };
+      showEditorModal();
+    }
+
+    function openExerciseEditorModal(lessonNumber, typeIndex, taskArrayIdx, exArrayIdx) {
+      const taskObj = appState.lessons[lessonNumber].types[typeIndex].tasks[taskArrayIdx];
+      const exObj = taskObj.exercises[exArrayIdx];
+      document.getElementById("editorModalSub").textContent = `B${lessonNumber}_D${typeIndex}_NV${taskObj.index}_BT${exObj.index}`;
+      document.getElementById("editorModalTitle").textContent = `Đặt tên ${exObj.label}`;
+      document.getElementById("editorModalBody").innerHTML = `<input id="modalExTitleInput" type="text" value="${escapeHtml(exObj.customTitle || "")}" placeholder="Tên bài tập..." class="w-full bg-bgCanvas border border-borderSoft rounded-xl px-4 py-2.5 text-sm text-navyMain" />`;
+      document.getElementById("editorModalSaveBtn").textContent = "Lưu thông tin";
+      document.getElementById("editorModalSaveBtn").onclick = () => { exObj.customTitle = document.getElementById("modalExTitleInput").value.trim(); closeEditorModal(); renderAll(); };
+      showEditorModal();
+    }
+
+    function addNewTaskToType(lessonNumber, typeIndex) { appState.lessons[lessonNumber].types[typeIndex].tasks.push(createTaskObject(lessonNumber, typeIndex, appState.lessons[lessonNumber].types[typeIndex].tasks.length + 1)); renderAll(); }
+    function addNewExerciseToTask(lessonNumber, typeIndex, taskArrayIdx) { const tk = appState.lessons[lessonNumber].types[typeIndex].tasks[taskArrayIdx]; tk.exercises.push(createExerciseObject(lessonNumber, typeIndex, tk.index, tk.exercises.length + 1)); renderAll(); }
+    function toggleTaskAccordion(lessonNumber, typeIndex, taskArrayIdx) { const tk = appState.lessons[lessonNumber].types[typeIndex].tasks[taskArrayIdx]; if (tk) { tk.expanded = !tk.expanded; renderAll(); } }
+
+    async function initializeApplicationData() {
+      await openDatabase();
+      await loadAllExerciseUrls();
+
+      const savedState = await dbLoadAppState();
+      if (savedState && savedState.lessons) {
+        appState.currentView = savedState.currentView || "lessons";
+        appState.selectedGroupFilter = savedState.selectedGroupFilter || "all";
+        appState.selectedUrlFilter = savedState.selectedUrlFilter || "all";
+        appState.activeLessonNumber = Number(savedState.activeLessonNumber) || 47;
+        appState.sidebarCollapsed = !!savedState.sidebarCollapsed;
+        appState.defaultClassName = savedState.defaultClassName || "Lớp 6A1";
+        appState.defaultTeacherName = savedState.defaultTeacherName || "Giáo viên Toán 6";
+
+        RAW_LESSONS.forEach(raw => {
+          const num = raw.number;
+          const savedLesson = savedState.lessons[num];
+          if (savedLesson) {
+            appState.lessons[num].description = savedLesson.description || "";
+            if (savedLesson.types) {
+              for (let t = 1; t <= 4; t++) {
+                const stType = savedLesson.types[t];
+                if (stType) {
+                  appState.lessons[num].types[t].customName = stType.customName || "";
+                  if (Array.isArray(stType.tasks) && stType.tasks.length > 0) appState.lessons[num].types[t].tasks = stType.tasks;
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function showEditorModal() { const m = document.getElementById("editorModal"); m.classList.remove("hidden"); m.classList.add("flex"); }
+    function closeEditorModal() { const m = document.getElementById("editorModal"); m.classList.add("hidden"); m.classList.remove("flex"); }
+    function openConfirmDialog({ title, message, confirmText, isDanger, onConfirm }) {
+      document.getElementById("confirmDialogTitle").textContent = title || "Xác nhận";
+      document.getElementById("confirmDialogMessage").textContent = message || "";
+      const btn = document.getElementById("confirmDialogActionBtn");
+      btn.textContent = confirmText || "Đồng ý";
+      btn.className = isDanger ? "px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold" : "px-5 py-2 rounded-xl bg-eduBlue hover:bg-blue-600 text-white text-xs font-bold";
+      btn.onclick = () => { closeConfirmDialog(); if (typeof onConfirm === "function") onConfirm(); };
+      const m = document.getElementById("confirmDialogModal"); m.classList.remove("hidden"); m.classList.add("flex");
+    }
+    function closeConfirmDialog() { const m = document.getElementById("confirmDialogModal"); m.classList.add("hidden"); m.classList.remove("flex"); }
+
+    function applyPreviewFullscreenLayout() {
+      const modal = document.getElementById("urlPreviewModal");
+      const container = document.getElementById("urlPreviewContainer");
+      const label = document.getElementById("fullscreenPreviewLabel");
+      if (!container || !modal) return;
+      if (isPreviewFullscreen) {
+        modal.classList.remove("p-2", "sm:p-5"); container.classList.remove("max-w-6xl", "h-[90vh]", "rounded-2xl"); container.classList.add("w-screen", "h-screen", "rounded-none");
+        if (label) label.textContent = "Thu nhỏ khung";
+      } else {
+        modal.classList.add("p-2", "sm:p-5"); container.classList.add("max-w-6xl", "h-[90vh]", "rounded-2xl"); container.classList.remove("w-screen", "h-screen", "rounded-none");
+        if (label) label.textContent = "⛶ Toàn màn hình";
+      }
+    }
+
+    function navigateToNav(viewName) { appState.currentView = viewName; closeMobileSidebar(); renderAll(); document.getElementById("mainWorkspace")?.scrollTo({ top: 0, behavior: "smooth" }); }
+    function openLessonDetail(lessonNumber) { appState.activeLessonNumber = Number(lessonNumber); appState.currentView = "lessonDetail"; closeMobileSidebar(); renderAll(); document.getElementById("mainWorkspace")?.scrollTo({ top: 0, behavior: "smooth" }); }
+    function filterByGroup(groupVal) { appState.selectedGroupFilter = String(groupVal); appState.currentView = "lessons"; closeMobileSidebar(); renderAll(); }
+    function filterByUrlStatus(statusVal) { appState.selectedUrlFilter = statusVal; appState.currentView = "lessons"; renderAll(); }
+    function handleCatalogSearch(val) { appState.searchQuery = val; renderAll(); const i = document.getElementById("catalogSearchInput"); if (i) { i.focus(); i.setSelectionRange(val.length, val.length); } }
+    function toggleSidebarCollapse() { appState.sidebarCollapsed = !appState.sidebarCollapsed; applySidebarCollapseUI(); dbSaveAppState(appState); }
+    function applySidebarCollapseUI() {
+      const sidebar = document.getElementById("sidebar");
+      const icon = document.getElementById("sidebarCollapseIcon");
+      const texts = document.querySelectorAll(".sidebar-text");
+      if (appState.sidebarCollapsed) { sidebar.classList.remove("w-[275px]"); sidebar.classList.add("w-[76px]"); icon?.classList.add("rotate-180"); texts.forEach(el => el.classList.add("hidden")); }
+      else { sidebar.classList.remove("w-[76px]"); sidebar.classList.add("w-[275px]"); icon?.classList.remove("rotate-180"); texts.forEach(el => el.classList.remove("hidden")); }
+    }
+    function toggleMobileSidebar() { const s = document.getElementById("sidebar"), o = document.getElementById("mobileOverlay"); if (s.classList.contains("-translate-x-full")) { s.classList.remove("-translate-x-full"); o.classList.remove("hidden"); } else { s.classList.add("-translate-x-full"); o.classList.add("hidden"); } }
+    function closeMobileSidebar() { document.getElementById("sidebar")?.classList.add("-translate-x-full"); document.getElementById("mobileOverlay")?.classList.add("hidden"); }
+
+    function exportFullBackup() {
+      const payload = { version: "firebase-1.0", exportedAt: formatNowDateTime(), appState, exerciseUrlsMap };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `Math6_LMS_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      showToast("Đã xuất file sao lưu!", "success");
+    }
+    function triggerImportBackup() { document.getElementById("importBackupInput")?.click(); }
+    function handleImportBackup(event) {
+      const file = event.target.files?.[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.appState?.lessons) appState = parsed.appState;
+          if (parsed.exerciseUrlsMap) Object.keys(parsed.exerciseUrlsMap).forEach(k => persistExerciseUrlRecord(parsed.exerciseUrlsMap[k]));
+          await dbSaveAppState(appState); renderAll(); showToast("Khôi phục dữ liệu thành công!", "success");
+        } catch (err) { showToast("File sao lưu không hợp lệ!", "warn"); }
+      };
+      reader.readAsText(file);
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer"); if (!container) return;
+      const styles = { success: "bg-white border-l-4 border-l-eduGreen text-navyMain", warn: "bg-white border-l-4 border-l-eduOrange text-navyMain", info: "bg-white border-l-4 border-l-eduBlue text-navyMain" };
+      const el = document.createElement("div");
+      el.className = `pointer-events-auto ${styles[type] || styles.info} border border-borderSoft rounded-xl px-4 py-3 shadow-lg text-xs font-bold flex items-center gap-2 animate-fade`;
+      el.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity 0.25s ease"; setTimeout(() => el.remove(), 250); }, 3200);
+    }
+
+    function formatNowDateTime() {
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+    function escapeHtml(str) { return str == null ? "" : String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+    function escapeAttr(str) { return escapeHtml(str).replace(/`/g, "&#096;"); }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await initializeApplicationData();
+      applySidebarCollapseUI();
+      renderAll();
+      await initFirebaseTeacher();
+    });
+  </script>
+</body>
+</html>
