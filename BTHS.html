@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Bài tập Toán tương tác - Học sinh</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/rrweb@1.1.3/dist/rrweb.min.js"></script>
   <style>
     body { font-family: sans-serif; background: #f0f4f8; padding: 20px; max-width: 650px; margin: auto; }
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 16px; }
@@ -20,31 +18,29 @@
 </head>
 <body>
 
-  <!-- Màn hình nhập tên (Sau này tích hợp ClassIn sẽ tự lấy tên từ URL) -->
   <div id="login-screen" class="card">
     <h2>Nhập tên của con để bắt đầu làm bài</h2>
     <input type="text" id="student-name-input" placeholder="Ví dụ: Minh Anh" />
     <button onclick="startQuiz()">Vào làm bài</button>
   </div>
 
-  <!-- Màn hình bài tập tương tác -->
   <div id="quiz-screen">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <div>Học sinh: <strong id="display-name"></strong></div>
-      <span class="badge">● Đang kết nối với cô giáo</span>
+      <span class="badge">● Đang kết nối trực tiếp với cô giáo</span>
     </div>
 
     <div class="card">
-      <div class="question" onclick="updateCurrentQuestion('Câu 1')">
+      <div class="question" data-question="1">
         <h3>Câu 1: Kết quả của phép tính 15 × 4 là bao nhiêu?</h3>
-        <label><input type="radio" name="q1" value="50" onchange="updateCurrentQuestion('Câu 1')"> A. 50</label><br><br>
-        <label><input type="radio" name="q1" value="60" onchange="updateCurrentQuestion('Câu 1')"> B. 60</label><br><br>
-        <label><input type="radio" name="q1" value="45" onchange="updateCurrentQuestion('Câu 1')"> C. 45</label>
+        <label><input type="radio" name="q1" value="50" onchange="syncToDashboard('answer_changed', 'Câu 1')"> A. 50</label><br><br>
+        <label><input type="radio" name="q1" value="60" onchange="syncToDashboard('answer_changed', 'Câu 1')"> B. 60</label><br><br>
+        <label><input type="radio" name="q1" value="45" onchange="syncToDashboard('answer_changed', 'Câu 1')"> C. 45</label>
       </div>
 
-      <div class="question" onclick="updateCurrentQuestion('Câu 2')">
+      <div class="question" data-question="2">
         <h3>Câu 2: Điền số thích hợp vào chỗ trống: 120 + ___ = 200</h3>
-        <input type="text" id="q2-input" placeholder="Nhập đáp án..." oninput="updateCurrentQuestion('Câu 2')" />
+        <input type="text" id="q2-input" placeholder="Nhập đáp án..." oninput="syncToDashboard('answer_changed', 'Câu 2')" />
       </div>
 
       <button id="submit-btn" onclick="submitQuiz()">Nộp bài cho cô</button>
@@ -53,23 +49,83 @@
   </div>
 
   <script>
-    // === CẤU HÌNH SUPABASE CỦA BẠN ===
-    const SUPABASE_URL = 'https://qszwqiyppioufaohauen.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzendxaXlwcGlvdWZhb2hhdWVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MzI1MDgsImV4cCI6MjExMDUwODUwOH0.Q1R-M5dOnc0ipp3SfSUutF5FniLAkFPEJdmdj0nKBro';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     let studentName = '';
-    let roomChannel = null;
-    let eventBuffer = [];
+    let latestScore = null;
+    let latestCorrect = 0;
+    let latestWrong = 0;
+    let syncTimer = null;
 
-    function setConnectionBadge(text, isError = false) {
-      const badge = document.querySelector('.badge');
-      badge.innerText = text;
-      badge.style.background = isError ? '#fee2e2' : '#dcfce7';
-      badge.style.color = isError ? '#991b1b' : '#166534';
+    function buildQuestionsSnapshot() {
+      const q1Radios = Array.from(document.querySelectorAll('input[name="q1"]'));
+      const q1Checked = q1Radios.find(r => r.checked);
+      const q1Options = q1Radios.map(r => ({
+        label: r.closest('label')?.innerText?.trim() || r.value,
+        checked: r.checked,
+        value: r.value
+      }));
+
+      const q2Val = (document.getElementById('q2-input')?.value || '').trim();
+
+      const questions = [
+        {
+          index: 1,
+          question: 'Câu 1: Kết quả của phép tính 15 × 4 là bao nhiêu?',
+          options: q1Options,
+          selected_answers: q1Checked ? [q1Checked.closest('label')?.innerText?.trim() || q1Checked.value] : [],
+          input_values: [],
+          feedback: latestScore !== null ? (q1Checked?.value === '60' ? 'Đúng (+5đ)' : 'Sai (Đáp án đúng: B. 60)') : null,
+          completed: !!q1Checked
+        },
+        {
+          index: 2,
+          question: 'Câu 2: Điền số thích hợp vào chỗ trống: 120 + ___ = 200',
+          options: [],
+          selected_answers: [],
+          input_values: [{ label: 'Đáp án', value: q2Val }],
+          feedback: latestScore !== null ? (q2Val === '80' ? 'Đúng (+5đ)' : 'Sai (Đáp án đúng: 80)') : null,
+          completed: q2Val !== ''
+        }
+      ];
+
+      const completedCount = questions.filter(q => q.completed).length;
+      return {
+        questions,
+        total_questions: questions.length,
+        completed_questions: completedCount,
+        progress: Math.round((completedCount / questions.length) * 100)
+      };
     }
 
-    async function startQuiz() {
+    function syncToDashboard(status = 'in_progress', currentQ = 'Câu 1', immediate = false) {
+      const send = () => {
+        const snap = buildQuestionsSnapshot();
+        window.parent.postMessage({
+          type: 'MATH6_LIVE_STATE',
+          session_status: status,
+          current_screen: 'exercise_screen',
+          current_question: currentQ,
+          total_questions: snap.total_questions,
+          completed_questions: snap.completed_questions,
+          correct_count: latestCorrect,
+          wrong_count: latestWrong,
+          score: latestScore,
+          max_score: 10,
+          progress: snap.progress,
+          current_answers: snap.questions,
+          interaction_state: {
+            exercise_title: 'Bài tập Toán tương tác',
+            questions: snap.questions,
+            updated_at: new Date().toISOString()
+          }
+        }, '*');
+      };
+
+      clearTimeout(syncTimer);
+      if (immediate) send();
+      else syncTimer = setTimeout(send, 200);
+    }
+
+    function startQuiz() {
       const input = document.getElementById('student-name-input').value.trim();
       if (!input) return alert('Con hãy nhập tên trước nhé!');
       studentName = input;
@@ -77,100 +133,30 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('quiz-screen').style.display = 'block';
       document.getElementById('display-name').innerText = studentName;
-      setConnectionBadge('● Đang kết nối máy chủ...');
 
-      // 1. Lưu trạng thái bắt đầu làm bài vào Database
-      const { error: dbError } = await sb.from('submissions').upsert({
-        student_name: studentName,
-        current_question: 'Câu 1',
-        status: 'Đang làm bài',
-        score: 0,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'student_name' });
-
-      if (dbError) {
-        console.error('Lỗi DB:', dbError);
-        setConnectionBadge('✖ Lỗi lưu dữ liệu: ' + dbError.message, true);
-        return;
-      }
-
-      // 2. Kết nối kênh Realtime để truyền màn hình trực tiếp
-      roomChannel = sb.channel('lop-hoc-demo', {
-        config: { presence: { key: studentName } }
-      });
-
-      roomChannel.on('broadcast', { event: 'request_snapshot' }, ({ payload }) => {
-        if (payload.target === studentName && window.rrweb) {
-          rrweb.record.takeFullSnapshot();
-        }
-      });
-
-      roomChannel.subscribe(async (status, err) => {
-        console.log('Trạng thái WebSocket:', status, err);
-        if (status === 'SUBSCRIBED') {
-          setConnectionBadge('● Đã kết nối trực tiếp với cô giáo');
-          await roomChannel.track({ online_at: new Date().toISOString() });
-          startScreenRecording();
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setConnectionBadge('✖ Lỗi kênh trực tiếp: ' + status, true);
-        }
-      });
+      // Gửi ngay toàn bộ đề bài lên Dashboard giáo viên
+      syncToDashboard('in_progress', 'Câu 1', true);
     }
 
-    function startScreenRecording() {
-      if (!window.rrweb) {
-        setConnectionBadge('✖ Không tải được thư viện rrweb', true);
-        return;
-      }
-
-      rrweb.record({
-        emit(event) {
-          eventBuffer.push(event);
-        }
-      });
-
-      setInterval(() => {
-        if (eventBuffer.length > 0 && roomChannel) {
-          roomChannel.send({
-            type: 'broadcast',
-            event: 'rrweb_events',
-            payload: { student: studentName, events: eventBuffer }
-          });
-          eventBuffer = [];
-        }
-      }, 300);
-    }
-
-    let lastReportedQ = '';
-    async function updateCurrentQuestion(qName) {
-      if (lastReportedQ === qName) return;
-      lastReportedQ = qName;
-      await sb.from('submissions').update({
-        current_question: qName,
-        updated_at: new Date().toISOString()
-      }).eq('student_name', studentName);
-    }
-
-    async function submitQuiz() {
-      const q1 = document.querySelector('input[name="q1"]:checked')?.value || 'Chưa chọn';
-      const q2 = document.getElementById('q2-input').value.trim() || 'Trống';
+    function submitQuiz() {
+      const q1 = document.querySelector('input[name="q1"]:checked')?.value || '';
+      const q2 = document.getElementById('q2-input').value.trim();
 
       let score = 0;
-      if (q1 === '60') score += 5;
-      if (q2 === '80') score += 5;
+      let correct = 0;
+      if (q1 === '60') { score += 5; correct++; }
+      if (q2 === '80') { score += 5; correct++; }
 
-      await sb.from('submissions').update({
-        status: 'Đã nộp bài',
-        current_question: 'Hoàn thành',
-        score: score,
-        answers: { 'Câu 1': q1, 'Câu 2': q2 },
-        updated_at: new Date().toISOString()
-      }).eq('student_name', studentName);
+      latestScore = score;
+      latestCorrect = correct;
+      latestWrong = 2 - correct;
 
       document.getElementById('submit-btn').disabled = true;
       document.getElementById('result-msg').innerText = `Đã nộp bài thành công! Điểm của con: ${score}/10`;
+
+      // Đồng bộ kết quả chấm và điểm số thực tế ra Dashboard
+      syncToDashboard('submitted', 'Hoàn thành', true);
     }
   </script>
-  <script src="math6-live-bridge.js"></script>
 </body>
 </html>
