@@ -479,6 +479,10 @@
                     <p class="text-[11px] text-spark-text mt-0.5">Thời khóa biểu các lớp Toán 6</p>
                   </div>
                 </div>
+                <button id="schedule-admin-edit-btn" type="button" onclick="HeroScheduleManager.openEditor()" class="hidden shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-spark-pinkPastel/80 hover:bg-spark-pink text-spark-pink hover:text-white text-[11px] font-bold transition-all shadow-sm" title="Admin chỉnh sửa thời khóa biểu">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  <span>Sửa lịch</span>
+                </button>
               </div>
 
               <div class="mt-4 flex items-center justify-between gap-2 bg-spark-bg rounded-2xl p-1.5 border border-gray-100">
@@ -2564,6 +2568,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (teacherBanner) teacherBanner.classList.toggle('hidden', isAdmin);
         if (heroAdminControls) heroAdminControls.classList.toggle('hidden', !isAdmin);
         if (libSupaBtn) libSupaBtn.classList.toggle('hidden', !isAdmin);
+        const schedEditBtn = document.getElementById('schedule-admin-edit-btn');
+        if (schedEditBtn) schedEditBtn.classList.toggle('hidden', !isAdmin);
 
         const supaStatus = SupabaseEngine.getStatus();
         if (dotEl) dotEl.className = `w-1.5 h-1.5 rounded-full ${supaStatus.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-spark-orange'}`;
@@ -3999,10 +4005,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
     })();
 
     const HeroScheduleManager = (() => {
+      const LOCAL_KEY = 'sparkle_weekly_schedules_v1';
       let dayOffset = 0;
+      let editorDay = 1;
+      let editorDraft = null;
+
       const DAYS_VN = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
       const SHORT_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      const WEEKLY_SLOTS = {
+      const DEFAULT_WEEKLY_SLOTS = {
         1: [{ time: '18:00 – 19:30', classes: ['F6.M1', 'F6.M2'] }],
         2: [{ time: '18:00 – 19:30', classes: ['F6.M3'] }, { time: '19:45 – 21:15', classes: ['F6.M4'] }],
         3: [{ time: '18:00 – 19:30', classes: ['F6.M1', 'F6.M2'] }],
@@ -4011,6 +4021,45 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         6: [{ time: '08:30 – 10:00', classes: ['F6.S1', 'F6.S2'] }, { time: '14:00 – 15:30', classes: ['F6.S3'] }],
         0: [{ time: '08:30 – 10:00', classes: ['F6.S4'] }],
       };
+
+      function cloneSlots(obj) {
+        const res = {};
+        [0, 1, 2, 3, 4, 5, 6].forEach((d) => {
+          const arr = Array.isArray(obj[d]) ? obj[d] : [];
+          res[d] = arr.map((s) => ({
+            time: String(s.time || '').trim(),
+            classes: Array.isArray(s.classes) ? s.classes.map((c) => String(c).trim()).filter(Boolean) : [],
+          }));
+        });
+        return res;
+      }
+
+      function loadLocalSlots() {
+        try {
+          const raw = localStorage.getItem(LOCAL_KEY);
+          if (raw) return cloneSlots(JSON.parse(raw));
+        } catch {}
+        return cloneSlots(DEFAULT_WEEKLY_SLOTS);
+      }
+
+      let weeklySlots = loadLocalSlots();
+
+      function saveLocalSlots(data) {
+        weeklySlots = cloneSlots(data);
+        try { localStorage.setItem(LOCAL_KEY, JSON.stringify(weeklySlots)); } catch {}
+      }
+
+      function parseSlotStatus(timeStr, isToday, now) {
+        if (!isToday) return null;
+        const m = String(timeStr || '').match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const curMin = now.getHours() * 60 + now.getMinutes();
+        const startMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+        const endMin = parseInt(m[3], 10) * 60 + parseInt(m[4], 10);
+        if (curMin < startMin) return { dot: 'bg-amber-400', label: 'Sắp diễn ra', cls: 'bg-amber-50 text-amber-700' };
+        if (curMin <= endMin) return { dot: 'bg-emerald-500 animate-pulse', label: 'Đang học', cls: 'bg-emerald-50 text-emerald-700' };
+        return { dot: 'bg-gray-300', label: 'Đã kết thúc', cls: 'bg-gray-100 text-gray-500' };
+      }
 
       function render() {
         const now = new Date();
@@ -4030,26 +4079,192 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (stripEl) {
           stripEl.innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => {
             const active = target.getDay() === d;
-            return `<div class="text-center py-1 rounded-lg text-[10px] font-bold ${active ? 'bg-spark-gradient text-white shadow-sm' : 'bg-spark-bg text-spark-text'}">${SHORT_DAYS[d]}</div>`;
+            return `<button type="button" onclick="HeroScheduleManager.jumpToWeekday(${d})" class="text-center py-1 rounded-lg text-[10px] font-bold transition-all ${active ? 'bg-spark-gradient text-white shadow-sm' : 'bg-spark-bg text-spark-text hover:bg-spark-pinkPastel/50 hover:text-spark-pink'}">${SHORT_DAYS[d]}</button>`;
           }).join('');
         }
 
         if (slotsEl) {
-          const slots = WEEKLY_SLOTS[target.getDay()] || [];
-          slotsEl.innerHTML = slots.map((s) => `
-            <div class="p-3 rounded-2xl bg-spark-bg/80 border border-gray-100 space-y-2">
-              <div class="text-[11px] font-extrabold text-spark-pink">${s.time}</div>
-              <div class="flex flex-wrap gap-2">
-                ${s.classes.map((c) => `<div class="schedule-class-pill px-3 py-1.5 rounded-xl text-xs font-bold text-spark-navy flex items-center gap-1.5"><span>Lớp ${c}</span><span class="pill-arrow text-spark-pink">→</span></div>`).join('')}
-              </div>
-            </div>`).join('') || `<div class="text-xs text-spark-text text-center py-4">Không có ca học cố định trong ngày này.</div>`;
+          const slots = weeklySlots[target.getDay()] || [];
+          slotsEl.innerHTML = slots.map((s) => {
+            const st = parseSlotStatus(s.time, dayOffset === 0, now);
+            return `
+              <div class="p-3 rounded-2xl bg-spark-bg/80 border border-gray-100 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="text-[11px] font-extrabold text-spark-pink">${escapeHtml(s.time)}</div>
+                  ${st ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}"><span class="w-1.5 h-1.5 rounded-full ${st.dot}"></span>${st.label}</span>` : ''}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  ${s.classes.map((c) => `<div class="schedule-class-pill px-3 py-1.5 rounded-xl text-xs font-bold text-spark-navy flex items-center gap-1.5"><span>Lớp ${escapeHtml(c)}</span><span class="pill-arrow text-spark-pink">→</span></div>`).join('')}
+                </div>
+              </div>`;
+          }).join('') || `<div class="text-xs text-spark-text text-center py-4">Không có ca học cố định trong ngày này.</div>`;
         }
+      }
+
+      function jumpToWeekday(targetDay) {
+        const now = new Date();
+        const currentDay = now.getDay();
+        const curMonIdx = currentDay === 0 ? 6 : currentDay - 1;
+        const tgtMonIdx = targetDay === 0 ? 6 : targetDay - 1;
+        dayOffset = tgtMonIdx - curMonIdx;
+        render();
       }
 
       function shiftDay(delta) { dayOffset += delta; render(); }
       function goToday() { dayOffset = 0; render(); }
+
+      function setSlotsFromRemote(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        const merged = cloneSlots(weeklySlots);
+        rows.forEach((r) => {
+          if (typeof r.day_of_week === 'number' && Array.isArray(r.slots)) {
+            merged[r.day_of_week] = r.slots;
+          }
+        });
+        saveLocalSlots(merged);
+        render();
+      }
+
+      function openEditor() {
+        if (!AppState.requireAdmin('chỉnh sửa thời khóa biểu')) return;
+        const now = new Date();
+        const target = new Date(now);
+        target.setDate(now.getDate() + dayOffset);
+        editorDay = target.getDay();
+        editorDraft = cloneSlots(weeklySlots);
+
+        const m = document.getElementById('schedule-editor-modal');
+        if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+        renderEditor();
+      }
+
+      function closeEditor() {
+        const m = document.getElementById('schedule-editor-modal');
+        if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+        editorDraft = null;
+      }
+
+      function selectEditorDay(d) {
+        captureCurrentEditorDay();
+        editorDay = d;
+        renderEditor();
+      }
+
+      function splitTimeRange(timeStr) {
+        const m = String(timeStr || '').match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+        if (!m) return { start: '18:00', end: '19:30' };
+        return {
+          start: `${m[1].padStart(2, '0')}:${m[2]}`,
+          end: `${m[3].padStart(2, '0')}:${m[4]}`,
+        };
+      }
+
+      function captureCurrentEditorDay() {
+        if (!editorDraft) return;
+        const rows = document.querySelectorAll('[data-sched-slot-row]');
+        const updated = [];
+        rows.forEach((row) => {
+          const start = row.querySelector('[data-sched-start]')?.value || '18:00';
+          const end = row.querySelector('[data-sched-end]')?.value || '19:30';
+          const clsRaw = row.querySelector('[data-sched-classes]')?.value || '';
+          const classes = clsRaw.split(',').map((s) => s.trim()).filter(Boolean);
+          if (classes.length > 0) {
+            updated.push({ time: `${start} – ${end}`, classes });
+          }
+        });
+        editorDraft[editorDay] = updated;
+      }
+
+      function addEditorSlot() {
+        captureCurrentEditorDay();
+        if (!editorDraft[editorDay]) editorDraft[editorDay] = [];
+        editorDraft[editorDay].push({ time: '18:00 – 19:30', classes: ['F6.M1'] });
+        renderEditor();
+      }
+
+      function removeEditorSlot(idx) {
+        captureCurrentEditorDay();
+        if (editorDraft && Array.isArray(editorDraft[editorDay])) {
+          editorDraft[editorDay].splice(idx, 1);
+        }
+        renderEditor();
+      }
+
+      function renderEditor() {
+        if (!editorDraft) return;
+        const tabsEl = document.getElementById('sched-editor-day-tabs');
+        const listEl = document.getElementById('sched-editor-slots-list');
+        const dayTitleEl = document.getElementById('sched-editor-day-title');
+
+        if (tabsEl) {
+          tabsEl.innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => {
+            const active = editorDay === d;
+            const cnt = (editorDraft[d] || []).length;
+            return `<button type="button" onclick="HeroScheduleManager.selectEditorDay(${d})" class="py-2 px-2 rounded-xl text-xs font-bold transition-all border ${active ? 'bg-spark-gradient text-white border-transparent shadow-sm' : 'bg-white text-spark-navy border-gray-200 hover:border-spark-pink'}">${SHORT_DAYS[d]} <span class="opacity-75 text-[10px]">(${cnt})</span></button>`;
+          }).join('');
+        }
+
+        if (dayTitleEl) dayTitleEl.textContent = `${DAYS_VN[editorDay]} (${(editorDraft[editorDay] || []).length} ca học)`;
+
+        if (listEl) {
+          const slots = editorDraft[editorDay] || [];
+          if (slots.length === 0) {
+            listEl.innerHTML = `<div class="p-6 rounded-2xl border border-dashed border-gray-200 bg-spark-bg/60 text-center text-xs text-spark-text">Ngày này chưa có ca học nào. Bấm <strong>+ Thêm ca học</strong> để tạo lịch.</div>`;
+          } else {
+            listEl.innerHTML = slots.map((s, idx) => {
+              const t = splitTimeRange(s.time);
+              return `
+                <div data-sched-slot-row="${idx}" class="p-3.5 rounded-2xl bg-spark-bg border border-gray-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  <div class="sm:col-span-3">
+                    <label class="block text-[10px] font-bold text-spark-text mb-1">Giờ bắt đầu</label>
+                    <input data-sched-start type="time" value="${t.start}" class="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white font-semibold outline-none focus:border-spark-pink" />
+                  </div>
+                  <div class="sm:col-span-3">
+                    <label class="block text-[10px] font-bold text-spark-text mb-1">Giờ kết thúc</label>
+                    <input data-sched-end type="time" value="${t.end}" class="w-full px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white font-semibold outline-none focus:border-spark-pink" />
+                  </div>
+                  <div class="sm:col-span-5">
+                    <label class="block text-[10px] font-bold text-spark-text mb-1">Danh sách lớp (cách nhau dấu phẩy)</label>
+                    <input data-sched-classes type="text" value="${escapeHtml(s.classes.join(', '))}" placeholder="VD: F6.M1, F6.M2" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white font-semibold outline-none focus:border-spark-pink" />
+                  </div>
+                  <div class="sm:col-span-1 flex justify-end">
+                    <button type="button" onclick="HeroScheduleManager.removeEditorSlot(${idx})" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold transition-colors" title="Xóa ca học">✕</button>
+                  </div>
+                </div>`;
+            }).join('');
+          }
+        }
+      }
+
+      async function saveEditor() {
+        if (!AppState.requireAdmin('lưu thời khóa biểu')) return;
+        captureCurrentEditorDay();
+        const saveBtn = document.getElementById('sched-editor-save-btn');
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Đang đồng bộ Supabase...'; }
+
+        saveLocalSlots(editorDraft);
+        render();
+
+        let supaErr = null;
+        if (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.saveWeeklySchedule) {
+          supaErr = await window.SparkleSupabaseRBAC.saveWeeklySchedule(weeklySlots);
+        }
+
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Lưu & Đồng bộ Supabase'; }
+
+        if (supaErr) {
+          Toast.show('Đã lưu cục bộ nhưng lỗi đồng bộ Supabase: ' + supaErr, 'error');
+        } else {
+          Toast.show('Đã lưu lịch học và đồng bộ lên Supabase thành công!', 'success');
+          closeEditor();
+        }
+      }
+
       function init() { render(); setInterval(render, 30000); }
-      return { init, shiftDay, goToday };
+      return {
+        init, shiftDay, goToday, jumpToWeekday, setSlotsFromRemote,
+        openEditor, closeEditor, selectEditorDay, addEditorSlot, removeEditorSlot, saveEditor,
+      };
     })();
 
     const HeroBrandManager = (() => {
@@ -4113,6 +4328,41 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
   <!-- ========================================================================= -->
   <!-- SPARKLE SUPABASE AUTH, RLS & ADMIN TEACHER MANAGEMENT LAYER (v3.0)        -->
   <!-- ========================================================================= -->
+  <!-- ========================================================================= -->
+  <!-- MODAL CHỈNH SỬA LỊCH HỌC TUẦN (ADMIN ONLY - ĐỒNG BỘ SUPABASE)             -->
+  <!-- ========================================================================= -->
+  <div id="schedule-editor-modal" class="fixed inset-0 z-[95] hidden items-center justify-center p-4 bg-spark-navy/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-fade-in">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-spark-pinkPastel/40 to-spark-orangePastel/40">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-spark-pink">QUẢN LÝ LỊCH GIẢNG DẠY (ADMIN)</span>
+          <h3 class="text-lg font-extrabold text-spark-navy">Chỉnh sửa Thời khóa biểu các lớp Toán 6</h3>
+        </div>
+        <button type="button" onclick="HeroScheduleManager.closeEditor()" class="p-2 rounded-xl hover:bg-white text-spark-text font-bold">✕</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto flex-1 space-y-4">
+        <div id="sched-editor-day-tabs" class="grid grid-cols-7 gap-1.5"></div>
+
+        <div class="flex items-center justify-between pt-1">
+          <h4 id="sched-editor-day-title" class="text-sm font-extrabold text-spark-navy">Thứ Hai</h4>
+          <button type="button" onclick="HeroScheduleManager.addEditorSlot()" class="px-3.5 py-1.5 rounded-xl bg-spark-pinkPastel/80 hover:bg-spark-pink text-spark-pink hover:text-white text-xs font-bold transition-all">+ Thêm ca học</button>
+        </div>
+
+        <div id="sched-editor-slots-list" class="space-y-3"></div>
+
+        <p class="text-[11px] text-spark-text bg-spark-orangePastel/40 border border-spark-orange/20 rounded-xl p-3">
+          <strong>Lưu ý đồng bộ:</strong> Khi bấm <strong>Lưu &amp; Đồng bộ Supabase</strong>, lịch mới sẽ tự động cập nhật trên bảng <code class="font-mono font-bold">weekly_schedules</code> và hiển thị tức thì cho tất cả tài khoản Giáo viên.
+        </p>
+      </div>
+
+      <div class="px-6 py-4 bg-spark-bg border-t border-gray-100 flex items-center justify-end gap-3">
+        <button type="button" onclick="HeroScheduleManager.closeEditor()" class="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-spark-text">Hủy</button>
+        <button id="sched-editor-save-btn" type="button" onclick="HeroScheduleManager.saveEditor()" class="btn-gradient px-5 py-2.5 rounded-xl text-white text-xs font-bold">Lưu &amp; Đồng bộ Supabase</button>
+      </div>
+    </div>
+  </div>
+
   <div id="sb-auth-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-gradient-to-br from-spark-pinkPastel/95 via-white to-spark-orangePastel/95 backdrop-blur-md">
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 space-y-6 animate-fade-in">
       <div class="text-center space-y-2">
@@ -4249,6 +4499,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         this.showLoginOverlay(false);
         this.injectAdminHeaderButton();
         UIRenderer.renderAll();
+        await this.loadWeeklyScheduleFromSupabase();
+        this.subscribeWeeklyScheduleRealtime();
 
         if (isFreshLogin) {
           await this.logActivity('login', 'auth', user.id);
@@ -4414,6 +4666,43 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (!confirm('Xác nhận xóa vĩnh viễn tài khoản giáo viên này?')) return;
         const res = await this.callEdge({ action: 'delete', user_id });
         if (res?.ok) this.switchAdminTab('teachers');
+      },
+
+      scheduleChannel: null,
+
+      async loadWeeklyScheduleFromSupabase() {
+        try {
+          const { data, error } = await sbClient.from('weekly_schedules').select('day_of_week, slots');
+          if (!error && Array.isArray(data) && data.length > 0 && typeof HeroScheduleManager !== 'undefined') {
+            HeroScheduleManager.setSlotsFromRemote(data);
+          }
+        } catch {}
+      },
+
+      subscribeWeeklyScheduleRealtime() {
+        if (this.scheduleChannel) return;
+        try {
+          this.scheduleChannel = sbClient
+            .channel('sparkle-weekly-schedules-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_schedules' }, () => {
+              this.loadWeeklyScheduleFromSupabase();
+            })
+            .subscribe();
+        } catch {}
+      },
+
+      async saveWeeklySchedule(weeklySlotsObj) {
+        if (this.role !== 'admin') return 'Chỉ Admin mới có quyền sửa lịch.';
+        const rows = [0, 1, 2, 3, 4, 5, 6].map((d) => ({
+          day_of_week: d,
+          slots: Array.isArray(weeklySlotsObj[d]) ? weeklySlotsObj[d] : [],
+          updated_by: this.user?.id || null,
+          updated_at: new Date().toISOString(),
+        }));
+        const { error } = await sbClient.from('weekly_schedules').upsert(rows, { onConflict: 'day_of_week' });
+        if (error) return error.message;
+        await this.logActivity('update_schedule', 'weekly_schedules', 'all', { updated_at: new Date().toISOString() });
+        return null;
       }
     };
 
@@ -4425,4 +4714,4 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
   </script>
 </body>
 </html>
-Diagnosing why the teacher account creation failed
+Integrating the admin schedule editing modal into the existing educational application code
