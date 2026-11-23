@@ -358,6 +358,347 @@
   </style>
 </head>
 <body class="antialiased selection:bg-spark-pinkPastel selection:text-spark-pink">
+  <!-- ========================================================================= -->
+<!-- SPARKLE SUPABASE AUTH, RLS & ADMIN TEACHER MANAGEMENT PATCH (v3.0)        -->
+<!-- Dán toàn bộ đoạn này vào ngay trước thẻ </body> của file gốc              -->
+<!-- ========================================================================= -->
+
+<!-- 1. MÀN HÌNH ĐĂNG NHẬP SUPABASE AUTH (Tự ẩn khi là link học sinh ?student_room=1) -->
+<div id="sb-auth-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-gradient-to-br from-spark-pinkPastel/95 via-white to-spark-orangePastel/95 backdrop-blur-md">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 space-y-6 animate-fade-in">
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-spark-pinkPastel text-spark-pink text-xs font-extrabold tracking-wider">SPARK EDUCATION</div>
+      <h2 class="text-2xl font-extrabold text-spark-navy">SPARKLE <span class="text-spark-gradient">TEACHER</span></h2>
+      <p class="text-xs text-spark-text">Đăng nhập bằng tài khoản Admin hoặc Giáo viên (Supabase Auth)</p>
+    </div>
+
+    <form onsubmit="SparkleSupabaseRBAC.handleLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-spark-navy mb-1.5">Email đăng nhập</label>
+        <input id="sb-login-email" type="email" required placeholder="vd: thitrang.nguyen@e2.com.vn" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none" />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-spark-navy mb-1.5">Mật khẩu</label>
+        <input id="sb-login-password" type="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none" />
+      </div>
+      <div id="sb-login-error" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold"></div>
+      <button id="sb-login-btn" type="submit" class="w-full btn-gradient py-3 rounded-xl text-white font-bold text-sm">ĐĂNG NHẬP HỆ THỐNG</button>
+    </form>
+    <p class="text-[11px] text-center text-spark-text">Tài khoản được quản lý và phân quyền trực tiếp bởi Admin trên Supabase.</p>
+  </div>
+</div>
+
+<!-- 2. MODAL QUẢN LÝ GIÁO VIÊN & NHẬT KÝ (CHỈ HIỆN VỚI ADMIN) -->
+<div id="sb-admin-teachers-modal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4 bg-spark-navy/60 backdrop-blur-sm">
+  <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-fade-in">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-spark-pinkPastel/40 to-spark-orangePastel/40">
+      <div>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-spark-pink">SPARKLE ADMIN – SUPABASE EDGE FUNCTION</span>
+        <h3 class="text-lg font-extrabold text-spark-navy">Quản lý Tài khoản Giáo viên &amp; Nhật ký</h3>
+      </div>
+      <button type="button" onclick="SparkleSupabaseRBAC.closeAdminModal()" class="p-2 rounded-xl hover:bg-white text-spark-text">✕</button>
+    </div>
+
+    <div class="px-6 pt-3 flex gap-2 border-b border-gray-100 pb-3">
+      <button type="button" id="sb-tab-teachers" onclick="SparkleSupabaseRBAC.switchAdminTab('teachers')" class="px-4 py-2 rounded-xl text-xs font-bold bg-spark-gradient text-white">Quản lý Giáo viên</button>
+      <button type="button" id="sb-tab-logs" onclick="SparkleSupabaseRBAC.switchAdminTab('logs')" class="px-4 py-2 rounded-xl text-xs font-bold bg-spark-bg text-spark-navy">Nhật ký hoạt động</button>
+    </div>
+
+    <div id="sb-admin-modal-body" class="p-6 overflow-y-auto flex-1 space-y-5"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const SUPABASE_URL = 'https://kcswjakmlxazmdkbuffk.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjc3dqYWttbHhhem1ka2J1ZmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDY4MzQsImV4cCI6MjExMDk4MjgzNH0.kg9nnqx1R5AMYX5avbvRwa0S1myFuItfyZ4rTNeX0vo';
+
+  const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const SparkleSupabaseRBAC = {
+    user: null,
+    profile: null,
+    role: null,
+
+    async init() {
+      // Bỏ qua màn hình đăng nhập nếu đây là link phòng học sinh
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('student_room') === '1') return;
+
+      // Tự động điền cấu hình Supabase vào StorageAdapter của giao diện gốc
+      if (typeof StorageAdapter !== 'undefined' && StorageAdapter.saveSupabaseConfig) {
+        StorageAdapter.saveSupabaseConfig({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, bucket: 'sparkle-materials' });
+        if (typeof SupabaseEngine !== 'undefined' && SupabaseEngine.connectSupabaseFromConfig) {
+          SupabaseEngine.connectSupabaseFromConfig();
+        }
+      }
+
+      // Ghi đè nút "Đổi tài khoản" của file gốc thành Đăng xuất / Đổi tài khoản Supabase Auth
+      if (typeof ModalManager !== 'undefined') {
+        ModalManager.openLoginModal = () => this.confirmLogoutAndSwitch();
+      }
+
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (session) {
+        await this.applySession(session.user, false);
+      } else {
+        this.showLoginOverlay(true);
+      }
+    },
+
+    showLoginOverlay(show) {
+      const el = document.getElementById('sb-auth-overlay');
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+      el.classList.toggle('flex', show);
+    },
+
+    async handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('sb-login-email').value.trim();
+      const password = document.getElementById('sb-login-password').value;
+      const errBox = document.getElementById('sb-login-error');
+      const btn = document.getElementById('sb-login-btn');
+
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'ĐANG XÁC THỰC...';
+
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+      btn.disabled = false;
+      btn.textContent = 'ĐĂNG NHẬP HỆ THỐNG';
+
+      if (error) {
+        errBox.textContent = 'Đăng nhập thất bại: ' + error.message;
+        errBox.classList.remove('hidden');
+        return;
+      }
+      await this.applySession(data.user, true);
+    },
+
+    async applySession(user, isFreshLogin) {
+      const [{ data: profile }, { data: roleRow }] = await Promise.all([
+        sbClient.from('profiles').select('*').eq('id', user.id).single(),
+        sbClient.from('user_roles').select('role').eq('user_id', user.id).single()
+      ]);
+
+      if (!profile || profile.status === 'locked' || !roleRow) {
+        await sbClient.auth.signOut();
+        const errBox = document.getElementById('sb-login-error');
+        errBox.textContent = 'Tài khoản đã bị khóa hoặc chưa được Admin cấp quyền.';
+        errBox.classList.remove('hidden');
+        this.showLoginOverlay(true);
+        return;
+      }
+
+      this.user = user;
+      this.profile = profile;
+      this.role = roleRow.role;
+
+      // Đồng bộ trực tiếp vào AppState của giao diện gốc để giữ nguyên 100% UI
+      if (typeof AppState !== 'undefined' && AppState.state) {
+        const initials = profile.avatar_initials || (profile.full_name || 'SP').slice(0, 2).toUpperCase();
+        const accObj = {
+          id: user.id,
+          name: profile.full_name,
+          initials: initials,
+          role: roleRow.role,
+          status: profile.status
+        };
+        const idx = AppState.state.accounts.findIndex(a => a.id === user.id);
+        if (idx >= 0) AppState.state.accounts[idx] = accObj;
+        else AppState.state.accounts.unshift(accObj);
+
+        AppState.state.teacherAuth = { teacherId: user.id, authenticated: true };
+        if (typeof StorageAdapter !== 'undefined') StorageAdapter.saveTeacherAuth(AppState.state.teacherAuth);
+      }
+
+      this.showLoginOverlay(false);
+      this.injectAdminHeaderButton();
+
+      if (typeof UIRenderer !== 'undefined' && UIRenderer.renderAll) {
+        UIRenderer.renderAll();
+      }
+
+      if (isFreshLogin) {
+        await this.logActivity('login', 'auth', user.id);
+        if (typeof Toast !== 'undefined') {
+          Toast.show(`Chào mừng ${profile.full_name} (${roleRow.role.toUpperCase()})!`, 'success');
+        }
+      }
+    },
+
+    injectAdminHeaderButton() {
+      const oldBtn = document.getElementById('sb-admin-manage-btn');
+      if (oldBtn) oldBtn.remove();
+      if (this.role !== 'admin') return;
+
+      const headerRight = document.querySelector('#main-header .flex.items-center.gap-2\\.5');
+      if (!headerRight) return;
+
+      const btn = document.createElement('button');
+      btn.id = 'sb-admin-manage-btn';
+      btn.type = 'button';
+      btn.onclick = () => this.openAdminModal();
+      btn.className = 'hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full btn-gradient text-white text-xs font-bold shadow-sm';
+      btn.innerHTML = '<span>Quản lý GV</span>';
+      headerRight.prepend(btn);
+    },
+
+    async confirmLogoutAndSwitch() {
+      if (!confirm('Bạn muốn đăng xuất khỏi tài khoản hiện tại?')) return;
+      await sbClient.auth.signOut();
+      this.user = null; this.profile = null; this.role = null;
+      const oldBtn = document.getElementById('sb-admin-manage-btn');
+      if (oldBtn) oldBtn.remove();
+      this.showLoginOverlay(true);
+    },
+
+    async logActivity(actionType, targetType = null, targetId = null, details = {}) {
+      if (!this.user) return;
+      try {
+        await sbClient.from('activity_logs').insert({
+          actor_id: this.user.id,
+          actor_name: this.profile?.full_name || this.user.email,
+          actor_role: this.role || 'teacher',
+          action_type: actionType,
+          target_type: targetType,
+          target_id: targetId,
+          details
+        });
+      } catch {}
+    },
+
+    openAdminModal() {
+      if (this.role !== 'admin') return;
+      const m = document.getElementById('sb-admin-teachers-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      this.switchAdminTab('teachers');
+    },
+
+    closeAdminModal() {
+      const m = document.getElementById('sb-admin-teachers-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    },
+
+    async switchAdminTab(tab) {
+      document.getElementById('sb-tab-teachers').className = tab === 'teachers'
+        ? 'px-4 py-2 rounded-xl text-xs font-bold bg-spark-gradient text-white'
+        : 'px-4 py-2 rounded-xl text-xs font-bold bg-spark-bg text-spark-navy';
+      document.getElementById('sb-tab-logs').className = tab === 'logs'
+        ? 'px-4 py-2 rounded-xl text-xs font-bold bg-spark-gradient text-white'
+        : 'px-4 py-2 rounded-xl text-xs font-bold bg-spark-bg text-spark-navy';
+
+      const body = document.getElementById('sb-admin-modal-body');
+      body.innerHTML = '<div class="text-xs text-spark-text">Đang tải dữ liệu từ Supabase...</div>';
+
+      if (tab === 'teachers') await this.renderTeachersTab(body);
+      else await this.renderLogsTab(body);
+    },
+
+    async renderTeachersTab(body) {
+      const { data: teachers, error } = await sbClient.from('teachers').select('*').order('created_at', { ascending: true });
+      if (error) { body.innerHTML = `<div class="text-rose-600 text-xs">${error.message}</div>`; return; }
+
+      body.innerHTML = `
+        <div class="p-4 rounded-2xl bg-spark-pinkPastel/25 border border-spark-pink/20 space-y-3">
+          <div class="text-xs font-extrabold text-spark-navy">[+ TẠO TÀI KHOẢN GIÁO VIÊN MỚI]</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <input id="sb-t-title" type="text" placeholder="Danh xưng (VD: Cô Tràng)" class="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white outline-none" />
+            <input id="sb-t-name" type="text" placeholder="Họ tên (VD: Nguyễn Thị Tràng)" class="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white outline-none" />
+            <input id="sb-t-user" type="text" placeholder="Username (VD: cotrang)" class="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white outline-none" />
+            <input id="sb-t-email" type="email" placeholder="Email đăng nhập" class="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white outline-none" />
+            <input id="sb-t-pass" type="password" placeholder="Mật khẩu (>= 6 ký tự)" class="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white outline-none" />
+            <button type="button" onclick="SparkleSupabaseRBAC.createTeacher()" class="btn-gradient py-2 px-4 rounded-xl text-white text-xs font-bold">TẠO TÀI KHOẢN</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-spark-bg text-spark-text uppercase">
+              <tr><th class="p-3">Giáo viên</th><th class="p-3">Email</th><th class="p-3">Trạng thái</th><th class="p-3">Thao tác</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              ${(teachers || []).map(t => `
+                <tr>
+                  <td class="p-3 font-bold text-spark-navy">${t.display_title || ''} – ${t.full_name || ''}</td>
+                  <td class="p-3">${t.email || ''}</td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold ${t.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}">${t.status === 'active' ? 'Hoạt động' : 'Đã khóa'}</span></td>
+                  <td class="p-3 flex flex-wrap gap-1.5">
+                    <button onclick="SparkleSupabaseRBAC.resetPass('${t.user_id}')" class="px-2.5 py-1 rounded-lg bg-spark-orangePastel text-spark-orangeDark font-bold">Đặt lại MK</button>
+                    <button onclick="SparkleSupabaseRBAC.toggleLock('${t.user_id}', '${t.status === 'active' ? 'locked' : 'active'}')" class="px-2.5 py-1 rounded-lg bg-spark-bg text-spark-navy font-bold">${t.status === 'active' ? 'Khóa' : 'Mở khóa'}</button>
+                    <button onclick="SparkleSupabaseRBAC.deleteTeacher('${t.user_id}')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 font-bold">Xóa</button>
+                  </td>
+                </tr>`).join('') || '<tr><td colspan="4" class="p-4 text-center text-spark-text">Chưa có tài khoản giáo viên nào trên Supabase.</td></tr>'}
+            </tbody>
+          </table>
+        </div>`;
+    },
+
+    async renderLogsTab(body) {
+      const { data: logs } = await sbClient.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(50);
+      body.innerHTML = `
+        <div class="divide-y divide-gray-100 border border-gray-100 rounded-2xl text-xs">
+          ${(logs || []).map(l => `
+            <div class="p-3 flex justify-between gap-3">
+              <div><strong>${l.actor_name}</strong> (${l.actor_role}) – <span class="text-spark-pink font-bold">${l.action_type}</span></div>
+              <div class="text-spark-text">${new Date(l.created_at).toLocaleString('vi-VN')}</div>
+            </div>`).join('') || '<div class="p-4 text-center text-spark-text">Chưa có nhật ký hoạt động.</div>'}
+        </div>`;
+    },
+
+    async callEdge(payload) {
+      const { data, error } = await sbClient.functions.invoke('admin-manage-teacher', { body: payload });
+      if (error) { alert('Lỗi Edge Function: ' + error.message); return null; }
+      return data;
+    },
+
+    async createTeacher() {
+      const payload = {
+        action: 'create',
+        display_title: document.getElementById('sb-t-title').value.trim(),
+        full_name: document.getElementById('sb-t-name').value.trim(),
+        username: document.getElementById('sb-t-user').value.trim(),
+        email: document.getElementById('sb-t-email').value.trim(),
+        password: document.getElementById('sb-t-pass').value
+      };
+      if (!payload.email || !payload.password || !payload.full_name) {
+        alert('Vui lòng nhập đầy đủ Họ tên, Email và Mật khẩu.');
+        return;
+      }
+      const res = await this.callEdge(payload);
+      if (res?.ok) this.switchAdminTab('teachers');
+    },
+
+    async resetPass(user_id) {
+      const new_password = prompt('Nhập mật khẩu mới (>= 6 ký tự):');
+      if (!new_password || new_password.length < 6) return;
+      const res = await this.callEdge({ action: 'reset_password', user_id, new_password });
+      if (res?.ok) alert('Đã đặt lại mật khẩu thành công!');
+    },
+
+    async toggleLock(user_id, status) {
+      const res = await this.callEdge({ action: 'toggle_lock', user_id, status });
+      if (res?.ok) this.switchAdminTab('teachers');
+    },
+
+    async deleteTeacher(user_id) {
+      if (!confirm('Xác nhận xóa vĩnh viễn tài khoản giáo viên này?')) return;
+      const res = await this.callEdge({ action: 'delete', user_id });
+      if (res?.ok) this.switchAdminTab('teachers');
+    }
+  };
+
+  window.SparkleSupabaseRBAC = SparkleSupabaseRBAC;
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => SparkleSupabaseRBAC.init(), 150);
+  });
+})();
+</script>
 
   <!-- ===================================================================== -->
   <!-- KHU VỰC 1: STICKY HEADER / NAVIGATION                                 -->
