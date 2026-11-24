@@ -3907,7 +3907,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           if (mobileMode) {
             topRight.innerHTML = `
               <span class="text-xs font-bold text-spark-navy truncate max-w-[110px]">${escapeHtml(currentStudent.studentName)}</span>
-              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">📱 ĐT/Tablet • Đồng bộ trực tiếp</span>`;
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">📸 Chụp ảnh màn hình • Đồng bộ trực tiếp</span>`;
           } else {
             topRight.innerHTML = `
               <span class="text-xs font-bold text-spark-navy hidden sm:inline">${escapeHtml(currentStudent.studentName)}</span>
@@ -3966,9 +3966,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                         <textarea id="stu-ans-${ex.id}" rows="3" oninput="StudentRoomManager.handleLiveDraftInput('${ex.id}', this.value)" placeholder="Nhập bài làm / đáp án của em..." class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none">${escapeHtml(draftText)}</textarea>
                         
                         <div class="p-3 rounded-2xl bg-spark-bg border border-dashed border-spark-pink/40 flex flex-wrap items-center justify-between gap-2">
-                          <div class="text-xs text-spark-navy font-semibold">🖼️ Chọn ảnh chụp MH / bài làm (ĐT &amp; Tablet):</div>
+                          <div class="text-xs text-spark-navy font-semibold">📸 Chụp ảnh màn hình / bài làm gửi giáo viên:</div>
                           <label class="px-3.5 py-1.5 rounded-xl bg-white border border-spark-pink/40 text-spark-pink hover:bg-spark-pink hover:text-white text-xs font-bold cursor-pointer transition-colors">
-                            <span>${photoPreview ? 'Đổi ảnh gửi GV' : 'Chọn ảnh gửi GV'}</span>
+                            <span>${photoPreview ? 'Chụp lại ảnh màn hình gửi GV' : 'Chụp ảnh màn hình gửi GV'}</span>
                             <input type="file" accept="image/*" class="hidden" onchange="StudentRoomManager.handlePhotoUpload('${ex.id}', this.files)" />
                           </label>
                           ${photoPreview ? `<div class="w-full mt-2"><img src="${photoPreview}" alt="Ảnh bài làm" class="max-h-48 rounded-xl border border-gray-200 shadow-sm mx-auto" /></div>` : ''}
@@ -5085,7 +5085,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
     bar.innerHTML = `
       <span>📱 ĐT/Tablet:</span>
       <label style="background:linear-gradient(110deg,#F04491 0%,#FF7900 100%);color:#fff;padding:6px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-        <span>🖼️ Chọn ảnh gửi GV</span>
+        <span>🖼️ Chụp ảnh màn hình gửi GV</span>
         <input id="sparkle-floating-photo-input" type="file" accept="image/*" style="display:none;" />
       </label>
       <span id="sparkle-floating-photo-status" style="font-size:11px;color:#FDE68A;"></span>
@@ -5168,3 +5168,4 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 </body>
 
 </html>
+Analyzing
