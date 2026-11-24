@@ -3539,6 +3539,39 @@ END $$;`;
         }
         const phEl = document.getElementById('teacher-remote-placeholder');
         const videoEl = document.getElementById('teacher-remote-video');
+        const actCard = document.getElementById('monitor-activity-card');
+        const liveFields = p.liveFields && typeof p.liveFields === 'object' ? Object.entries(p.liveFields) : [];
+        const liveAct = Array.isArray(p.liveActivity) ? p.liveActivity : [];
+
+        if (actCard) {
+          actCard.innerHTML = `
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-spark-navy">Bài làm trực tiếp trên HTML (${liveFields.length} mục đã nhập)</span>
+                <span class="text-[11px] text-spark-text">Cập nhật: <strong>${formatDateVN(p.lastSeenAt || p.joinedAt)}</strong></span>
+              </div>
+              ${
+                liveFields.length > 0
+                  ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto">
+                      ${liveFields.map(([k, v]) => `
+                        <div class="p-2.5 rounded-xl bg-spark-bg border border-gray-200/70">
+                          <div class="text-[10px] font-bold text-spark-pink truncate">${escapeHtml(k)}</div>
+                          <div class="text-xs font-semibold text-spark-navy break-words mt-0.5">${escapeHtml(v)}</div>
+                        </div>`).join('')}
+                    </div>`
+                  : `<div class="text-[11px] text-spark-text bg-spark-bg p-3 rounded-xl">Chưa ghi nhận câu trả lời nào học sinh nhập trên bài HTML.</div>`
+              }
+              ${
+                liveAct.length > 0
+                  ? `<div class="pt-2 border-t border-gray-100 space-y-1 max-h-28 overflow-y-auto">
+                      <div class="text-[10px] font-bold uppercase text-spark-text">Thao tác gần đây</div>
+                      ${liveAct.slice(0, 6).map((a) => `<div class="text-[11px] text-spark-navy/90 flex justify-between gap-2"><span class="truncate">• ${escapeHtml(a.label || a.type || '')}</span><span class="text-[10px] text-gray-400 shrink-0">${a.time ? new Date(a.time).toLocaleTimeString('vi-VN') : ''}</span></div>`).join('')}
+                    </div>`
+                  : ''
+              }
+            </div>`;
+        }
+
         if (!phEl) return;
         if (videoEl && videoEl.srcObject) return;
         if (frameImg) {
@@ -3609,10 +3642,7 @@ END $$;`;
             }`;
         }
 
-        const actCard = document.getElementById('monitor-activity-card');
-        if (actCard) {
-          actCard.innerHTML = `<div class="text-xs text-spark-text">Hoạt động gần nhất: <strong class="text-spark-navy">${formatDateVN(p.lastSeenAt || p.joinedAt)}</strong></div>`;
-        }
+
 
         WebRTCManager.attachTeacherViewer(room.id, studentId);
       }
@@ -3755,15 +3785,36 @@ END $$;`;
         return String(label).replace(/\s+/g, ' ').trim().slice(0, 90);
       }
 
+      function collectFieldsFromDoc(doc, out, prefix = '') {
+        if (!doc) return;
+        try {
+          doc.querySelectorAll('textarea,input:not([type="password"]):not([type="file"]),select,[contenteditable="true"]').forEach((el, i) => {
+            if (el.type === 'radio' || el.type === 'checkbox') {
+              if (!el.checked) return;
+            }
+            const rawKey = el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.name || el.id || `Ô ${i + 1}`;
+            const key = (prefix + rawKey).slice(0, 70);
+            const value = el.isContentEditable ? el.innerText : el.value;
+            if (value !== undefined && String(value).trim()) out[key] = String(value).slice(0, 1500);
+          });
+          // Also capture visible score/progress badges inside HTML exercise iframes if present
+          const scoreEl = doc.querySelector('#score, .score, [id*="score"], [id*="diem"], [class*="score"]');
+          if (scoreEl && scoreEl.innerText && scoreEl.innerText.trim()) {
+            out['Điểm / Tiến độ HTML'] = scoreEl.innerText.replace(/\s+/g, ' ').trim().slice(0, 120);
+          }
+        } catch {}
+      }
+
       function collectLiveFields() {
-        const root = document.getElementById('student-room-view') || document.getElementById('student-room-container') || document;
         const out = {};
-        root.querySelectorAll('textarea,input:not([type="password"]):not([type="file"]),select,[contenteditable="true"]').forEach((el, i) => {
-          const key = (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.name || el.id || `Ô nhập ${i + 1}`).slice(0, 70);
-          const value = el.isContentEditable ? el.innerText : el.value;
-          if (value !== undefined && String(value).trim()) out[key] = String(value).slice(0, 1500);
+        const root = document.getElementById('student-room-view') || document.getElementById('student-room-container');
+        if (root) collectFieldsFromDoc(root, out);
+        document.querySelectorAll('#preview-modal iframe, #student-room-view iframe').forEach((frame) => {
+          try {
+            if (frame.contentDocument) collectFieldsFromDoc(frame.contentDocument, out, '[HTML] ');
+          } catch {}
         });
-        return Object.fromEntries(Object.entries(out).slice(0, 24));
+        return Object.fromEntries(Object.entries(out).slice(0, 30));
       }
 
       function makeCanvasPreview(canvas) {
@@ -3855,11 +3906,13 @@ END $$;`;
         if (!observationInstalled) {
           observationInstalled = true;
           attachObservationToDocument(document);
-          const root = document.getElementById('student-room-view') || document.getElementById('student-room-container');
-          if (root && window.MutationObserver) {
-            const observer = new MutationObserver(() => attachObservationToDocument(document));
-            observer.observe(root, { childList: true, subtree: true });
-          }
+          ['student-room-view', 'preview-modal'].forEach((elId) => {
+            const root = document.getElementById(elId);
+            if (root && window.MutationObserver) {
+              const observer = new MutationObserver(() => attachObservationToDocument(document));
+              observer.observe(root, { childList: true, subtree: true });
+            }
+          });
         } else {
           attachObservationToDocument(document);
         }
@@ -3956,7 +4009,7 @@ END $$;`;
 
         if (firstItem && (firstItem.url || firstItem.blobKey)) {
           try {
-            await ModalManager.openPreviewModal(firstItem.id, firstScope);
+            await startAndOpenExercise(firstItem.id, firstScope);
             Toast.show(`Chào ${name}! Bài tập đã được mở.`, 'success');
           } catch (err) {
             console.error('Không thể tự mở bài tập sau khi tham gia phòng:', err);
@@ -4156,7 +4209,8 @@ END $$;`;
         });
 
         renderStudentView();
-        await ModalManager.openMaterialInNewTab(id, scopeType);
+        await ModalManager.openPreviewModal(id, scopeType);
+        installLiveObservation();
       }
 
       function renderStudentView() {
