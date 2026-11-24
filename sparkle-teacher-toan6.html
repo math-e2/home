@@ -3915,7 +3915,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           }
         }
 
-        const exercises = AppState.getRoomExercises(currentRoom.id);
+        let exercises = AppState.getRoomExercises(currentRoom.id);
+        if ((!exercises || exercises.length === 0) && currentRoom.lessonId) {
+          const fallbackMats = AppState.getMaterialsForLesson(currentRoom.lessonId).filter((m) => m.url || m.blobKey);
+          if (fallbackMats.length > 0) {
+            exercises = fallbackMats.map((m) => ({
+              id: m.id,
+              roomId: currentRoom.id,
+              title: m.title,
+              url: m.url || '',
+              format: m.format || 'html',
+              sourceType: m.sourceType || 'link',
+              blobKey: m.blobKey || null,
+              _isMaterialFallback: true,
+            }));
+          }
+        }
         const mySubs = AppState.getRoomSubmissions(currentRoom.id, currentStudent.studentId);
 
         container.innerHTML = `
@@ -3935,11 +3950,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                     const sub = mySubs.find((s) => s.exerciseId === ex.id);
                     const draftText = (currentStudent.liveDrafts && currentStudent.liveDrafts[ex.id]?.text) ?? sub?.answerData?.text ?? '';
                     const photoPreview = (currentStudent.livePhotos && currentStudent.livePhotos[ex.id]) || sub?.answerData?.photoDataUrl || '';
+                    const scopeType = ex._isMaterialFallback ? 'material' : 'exercise';
                     return `
                       <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-soft space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                          <h3 class="text-base font-extrabold text-spark-navy">${escapeHtml(ex.title)}</h3>
-                          <button type="button" onclick="ModalManager.openPreviewModal('${ex.id}', 'exercise')" class="px-3 py-1.5 rounded-xl bg-spark-orangePastel text-spark-orangeDark text-xs font-bold">Mở đề bài</button>
+                          <div class="min-w-0">
+                            <h3 class="text-base font-extrabold text-spark-navy">${escapeHtml(ex.title)}</h3>
+                            ${ex.url ? `<a href="${escapeHtml(ex.url)}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-spark-pink underline break-all font-medium">${escapeHtml(ex.url)}</a>` : ''}
+                          </div>
+                          <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button type="button" onclick="ModalManager.openPreviewModal('${ex.id}', '${scopeType}')" class="px-3 py-1.5 rounded-xl bg-spark-orangePastel text-spark-orangeDark text-xs font-bold">Xem ngay</button>
+                            <button type="button" onclick="ModalManager.openMaterialInNewTab('${ex.id}', '${scopeType}')" class="btn-gradient px-3.5 py-1.5 rounded-xl text-white text-xs font-bold">Mở HTML tab mới</button>
+                          </div>
                         </div>
                         <textarea id="stu-ans-${ex.id}" rows="3" oninput="StudentRoomManager.handleLiveDraftInput('${ex.id}', this.value)" placeholder="Nhập bài làm / đáp án của em..." class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none">${escapeHtml(draftText)}</textarea>
                         
@@ -4123,7 +4145,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       async function openMaterialInNewTab(id, scope = 'material') {
         const { item, href } = await resolveItemUrl(id, scope);
         if (!href) { Toast.show('Không thể mở tài liệu này.', 'error'); return; }
-        if (item.sourceType === 'file') {
+        if (item.sourceType === 'file' && !['html', 'pdf', 'image', 'video'].includes(item.format)) {
           const a = document.createElement('a');
           a.href = href; a.download = item.title; document.body.appendChild(a); a.click(); a.remove();
         } else {
@@ -5146,4 +5168,3 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 </body>
 
 </html>
-Processed and analyzed in code
