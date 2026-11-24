@@ -1110,6 +1110,25 @@
   </div>
 
   <!-- ===================================================================== -->
+  <!-- ===================================================================== -->
+  <!-- MODAL 6: ACTIVE PRACTICE ROOMS OVERVIEW (CLICK FROM STATS CARD)       -->
+  <!-- ===================================================================== -->
+  <div id="active-rooms-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-spark-navy/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[88vh] shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-fade-in">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-spark-pinkPastel/50 to-spark-orangePastel/50">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-spark-pink">GIÁM SÁT PHÒNG LUYỆN TẬP</span>
+          <h3 class="text-lg font-extrabold text-spark-navy">Danh sách Practice Room đang mở</h3>
+        </div>
+        <button type="button" onclick="ModalManager.closeActiveRoomsModal()" class="p-2 rounded-xl hover:bg-white text-spark-text font-bold">✕</button>
+      </div>
+      <div id="active-rooms-modal-body" class="p-6 overflow-y-auto flex-1 space-y-3 bg-spark-bg/40"></div>
+      <div class="px-6 py-3.5 bg-spark-bg border-t border-gray-100 flex items-center justify-end">
+        <button type="button" onclick="ModalManager.closeActiveRoomsModal()" class="px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-spark-navy hover:border-spark-pink">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION CONTAINER                                          -->
   <!-- ===================================================================== -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
@@ -1686,13 +1705,28 @@ END $$;`;
       async function syncFromSupabase() {
         if (!client) return;
         try {
-          const [roomsRes, partsRes, subsRes, exRes, matsRes] = await Promise.all([
+          const [roomsRes, partsRes, subsRes, exRes, matsRes, profRes] = await Promise.all([
             client.from('practice_rooms').select('*'),
             client.from('room_participants').select('*'),
             client.from('student_submissions').select('*'),
             client.from('exercises').select('*'),
             client.from('lesson_materials').select('*'),
+            client.from('profiles').select('id, full_name, avatar_initials, status'),
           ]);
+
+          if (!profRes.error && Array.isArray(profRes.data)) {
+            profRes.data.forEach((pr) => {
+              if (!pr || !pr.id) return;
+              const name = pr.full_name || 'Giáo viên';
+              const initials = pr.avatar_initials || name.slice(0, 2).toUpperCase();
+              const idx = AppState.state.accounts.findIndex((a) => a.id === pr.id);
+              if (idx >= 0) {
+                AppState.state.accounts[idx] = { ...AppState.state.accounts[idx], name, initials, status: pr.status || 'active' };
+              } else {
+                AppState.state.accounts.push({ id: pr.id, name, initials, role: 'teacher', status: pr.status || 'active' });
+              }
+            });
+          }
 
           if (!roomsRes.error && Array.isArray(roomsRes.data)) {
             roomsRes.data.forEach((r) => {
@@ -2766,8 +2800,9 @@ END $$;`;
             icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>`,
           },
           {
-            value: `${openRooms}`, label: 'Practice Room đang mở', sub: `${activeStudents} học sinh thực tế đang tham gia`,
+            value: `${openRooms}`, label: 'Practice Room đang mở', sub: `${activeStudents} học sinh thực tế • Bấm để xem GV nào đang mở →`,
             iconBg: 'bg-spark-pinkPastel text-spark-pink',
+            onClick: 'ModalManager.openActiveRoomsModal()',
             icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
           },
           {
@@ -2778,7 +2813,7 @@ END $$;`;
         ];
 
         grid.innerHTML = cards.map((c) => `
-          <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-soft flex items-start gap-4">
+          <div ${c.onClick ? `onclick="${c.onClick}" role="button" tabindex="0"` : ''} class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-soft flex items-start gap-4 ${c.onClick ? 'cursor-pointer hover:border-spark-pink/60' : ''}">
             <div class="w-12 h-12 rounded-2xl ${c.iconBg} flex items-center justify-center shrink-0">${c.icon}</div>
             <div class="min-w-0">
               <div class="text-2xl sm:text-3xl font-extrabold text-spark-navy leading-none">${c.value}</div>
@@ -4811,6 +4846,65 @@ END $$;`;
         if (window.SparkleSupabaseRBAC) { closeProfileModal(); window.SparkleSupabaseRBAC.openAdminModal(); }
       }
 
+      async function openActiveRoomsModal() {
+        if (SupabaseEngine.syncFromSupabase) await SupabaseEngine.syncFromSupabase();
+        const body = document.getElementById('active-rooms-modal-body');
+        const m = document.getElementById('active-rooms-modal');
+        if (!body || !m) return;
+
+        const openRooms = Object.values(AppState.state.practiceRooms).filter((r) => r && r.status === 'open');
+        const currentAcc = AppState.getCurrentAccount();
+        const isAdmin = AppState.isAdmin();
+
+        if (openRooms.length === 0) {
+          body.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center border border-dashed border-gray-200 text-xs sm:text-sm text-spark-text">Hiện chưa có Practice Room nào đang mở.</div>`;
+        } else {
+          body.innerHTML = openRooms.map((r) => {
+            const lesson = CurriculumData.getLessonById(r.lessonId);
+            const matchedAcc = AppState.state.accounts.find((a) => a.id === r.teacherId);
+            const teacherName = matchedAcc ? matchedAcc.name : (r.teacherId || 'Chưa rõ giáo viên');
+            const stuCount = AppState.getRoomParticipants(r.id).length;
+            const canEnter = isAdmin || (currentAcc && currentAcc.id === r.teacherId);
+            return `
+              <div class="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full bg-spark-gradient text-white text-[10px] font-extrabold">PRACTICE ROOM ${r.roomNumber}</span>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">● ĐANG MỞ</span>
+                    <span class="font-mono text-[11px] font-bold text-spark-pink">${escapeHtml(r.roomCode || '—')}</span>
+                  </div>
+                  <div class="text-sm font-extrabold text-spark-navy truncate">${lesson ? escapeHtml(lesson.fullTitle) : escapeHtml(r.lessonId)}</div>
+                  <div class="text-xs text-spark-text flex flex-wrap items-center gap-3">
+                    <span>Giáo viên: <strong class="text-spark-navy">${escapeHtml(teacherName)}</strong></span>
+                    <span>•</span>
+                    <span>Học sinh: <strong class="text-spark-pink">${stuCount}</strong></span>
+                  </div>
+                </div>
+                <div class="shrink-0">
+                  ${
+                    canEnter
+                      ? `<button type="button" onclick="ModalManager.jumpToActiveRoom('${r.lessonId}', ${r.roomNumber}, '${r.teacherId}')" class="btn-gradient px-4 py-2 rounded-xl text-white text-xs font-bold">Vào phòng</button>`
+                      : `<span class="inline-block px-3 py-1.5 rounded-xl bg-spark-bg border border-gray-200 text-[11px] font-semibold text-spark-text">Phòng của GV khác</span>`
+                  }
+                </div>
+              </div>`;
+          }).join('');
+        }
+
+        m.classList.remove('hidden'); m.classList.add('flex');
+      }
+
+      function closeActiveRoomsModal() {
+        const m = document.getElementById('active-rooms-modal');
+        if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+      }
+
+      function jumpToActiveRoom(lessonId, roomNumber, teacherId) {
+        closeActiveRoomsModal();
+        AppState.state.activeLessonId = lessonId;
+        PracticeRoomManager.openRoomView(lessonId, roomNumber, teacherId);
+      }
+
       return {
         openUploadModal, closeUploadModal, switchUploadTab, handleDragOver, handleDragLeave, handleDrop,
         handleFileSelected, clearSelectedFile, autoDetectLinkFormat, saveMaterial,
@@ -4818,6 +4912,7 @@ END $$;`;
         openProfileModal, closeProfileModal, saveAdminSupabaseSettings,
         openConfirmModal, closeConfirmModal, openLoginModal, closeLoginModal,
         updateLoginRolePreview, submitAccountLogin, adminCreateTeacher,
+        openActiveRoomsModal, closeActiveRoomsModal, jumpToActiveRoom,
       };
     })();
 
@@ -5762,4 +5857,4 @@ END $$;`;
 </body>
 
 </html>
-Patching student view rendering logic
+Synchronizing user profile names for accurate identification
