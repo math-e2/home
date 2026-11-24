@@ -78,11 +78,11 @@
       background-clip: text;
     }
 
-    /* Header Navigation Hover Effect */
+    /* Header Navigation Hover Effect (White on Deep Orange) */
     .nav-link {
       position: relative;
-      color: #2B211B;
-      font-weight: 500;
+      color: rgba(255, 255, 255, 0.86);
+      font-weight: 600;
       transition: color 0.25s ease;
     }
     .nav-link::after {
@@ -93,15 +93,12 @@
       width: 0%;
       height: 2.5px;
       border-radius: 999px;
-      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
+      background: #FFFFFF;
       transition: width 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .nav-link:hover,
     .nav-link.active {
-      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: #FFFFFF;
     }
     .nav-link:hover::after,
     .nav-link.active::after {
@@ -364,25 +361,19 @@
   <!-- ===================================================================== -->
   <!-- KHU VỰC 1: STICKY HEADER / NAVIGATION                                 -->
   <!-- ===================================================================== -->
-  <header id="main-header" class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-shadow duration-300">
+  <header id="main-header" class="sticky top-0 z-40 bg-[#E85A14] text-white border-b border-white/15 shadow-md transition-shadow duration-300">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-      <!-- Left: Official Spark Education Logo -->
+      <!-- Left: Official Spark Education Logo (White on Deep Orange) -->
       <button type="button" onclick="UIActions.goHome()" class="flex items-center focus:outline-none shrink-0" aria-label="Spark Education Trang chủ">
-        <img id="brand-logo-img" src="" alt="Spark Education" class="brand-logo-img hidden" />
+        <img id="brand-logo-img" src="" alt="Spark Education" class="brand-logo-img hidden bg-white/95 rounded-lg px-2 py-0.5" />
         <svg id="brand-logo-svg" class="brand-logo-svg" viewBox="0 0 368 62" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spark Education">
-          <defs>
-            <linearGradient id="sparkRedOrange" x1="20" y1="14" x2="150" y2="52" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#EE3124" />
-              <stop offset="100%" stop-color="#F5511E" />
-            </linearGradient>
-          </defs>
-          <rect x="3" y="25" width="12.5" height="4.2" rx="2.1" transform="rotate(6 3 25)" fill="#FF7900" />
-          <rect x="5" y="16" width="12" height="3.8" rx="1.9" transform="rotate(28 5 16)" fill="#EE3124" />
-          <rect x="11.5" y="9" width="13.5" height="4.4" rx="2.2" transform="rotate(47 11.5 9)" fill="#FF7900" />
-          <rect x="20.5" y="4.5" width="12.5" height="4" rx="2" transform="rotate(66 20.5 4.5)" fill="#EE3124" />
-          <rect x="30" y="3.5" width="13" height="4.4" rx="2.2" transform="rotate(86 30 3.5)" fill="#FF7900" />
-          <text x="19" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.2" fill="url(#sparkRedOrange)">Spark</text>
-          <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FF7900">Education</text>
+          <rect x="3" y="25" width="12.5" height="4.2" rx="2.1" transform="rotate(6 3 25)" fill="#FFE7D9" />
+          <rect x="5" y="16" width="12" height="3.8" rx="1.9" transform="rotate(28 5 16)" fill="#FFFFFF" />
+          <rect x="11.5" y="9" width="13.5" height="4.4" rx="2.2" transform="rotate(47 11.5 9)" fill="#FFE7D9" />
+          <rect x="20.5" y="4.5" width="12.5" height="4" rx="2" transform="rotate(66 20.5 4.5)" fill="#FFFFFF" />
+          <rect x="30" y="3.5" width="13" height="4.4" rx="2.2" transform="rotate(86 30 3.5)" fill="#FFE7D9" />
+          <text x="19" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.2" fill="#FFFFFF">Spark</text>
+          <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FFE7D9">Education</text>
         </svg>
       </button>
 
@@ -397,29 +388,29 @@
 
       <!-- Right: Account Pill (Role Badge + Switch Account / Admin Panel) -->
       <div class="flex items-center gap-2.5">
-        <button type="button" onclick="ModalManager.openProfileModal()" class="flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full border border-gray-200 hover:border-spark-pink/50 hover:bg-spark-pinkPastel/30 transition-all group">
-          <div id="header-teacher-avatar" class="w-9 h-9 rounded-full bg-spark-gradient text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+        <button type="button" onclick="ModalManager.openProfileModal()" class="flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-full bg-white/15 border border-white/25 hover:bg-white/25 transition-all group">
+          <div id="header-teacher-avatar" class="w-9 h-9 rounded-full bg-white text-spark-orangeDark font-extrabold text-xs flex items-center justify-center shadow-sm shrink-0">
             AD
           </div>
           <div class="hidden sm:block text-left leading-tight">
             <div class="flex items-center gap-1.5">
-              <span id="header-teacher-name" class="text-sm font-semibold text-spark-navy group-hover:text-spark-pink transition-colors max-w-[130px] truncate">Quản trị viên</span>
-              <span id="header-role-badge" class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-spark-gradient text-white">ADMIN</span>
+              <span id="header-teacher-name" class="text-sm font-semibold text-white max-w-[130px] truncate">Quản trị viên</span>
+              <span id="header-role-badge" class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-white text-spark-orangeDark">ADMIN</span>
             </div>
-            <div class="text-[11px] text-spark-text flex items-center gap-1 mt-0.5">
-              <span id="storage-mode-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <div class="text-[11px] text-white/85 flex items-center gap-1 mt-0.5">
+              <span id="storage-mode-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
               <span id="storage-mode-label">Cục bộ + Tab Sync</span>
             </div>
           </div>
         </button>
 
-        <button type="button" onclick="ModalManager.openLoginModal()" class="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-spark-bg hover:bg-spark-pinkPastel/60 text-spark-navy hover:text-spark-pink text-xs font-bold border border-gray-200/80 transition-all" title="Đổi tài khoản Admin / Giáo viên">
+        <button type="button" onclick="ModalManager.openLoginModal()" class="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/15 hover:bg-white text-white hover:text-spark-orangeDark text-xs font-bold border border-white/30 transition-all" title="Đổi tài khoản Admin / Giáo viên">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           <span>Đổi tài khoản</span>
         </button>
 
         <!-- Mobile Menu Button -->
-        <button type="button" onclick="UIActions.toggleMobileMenu()" class="lg:hidden p-2.5 rounded-xl border border-gray-200 text-spark-navy hover:bg-gray-50" aria-label="Mở menu">
+        <button type="button" onclick="UIActions.toggleMobileMenu()" class="lg:hidden p-2.5 rounded-xl border border-white/30 text-white hover:bg-white/15" aria-label="Mở menu">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -736,20 +727,19 @@
   <!-- MAIN VIEW 4: STUDENT INTERFACE VIEW (LINK PHÒNG LUYỆN TẬP)            -->
   <!-- ===================================================================== -->
   <section id="student-room-view" class="hidden min-h-screen bg-spark-bg pb-16 animate-fade-in">
-    <div class="bg-white border-b border-gray-100 sticky top-0 z-30">
+    <div class="bg-[#E85A14] text-white border-b border-white/15 shadow-sm sticky top-0 z-30">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <svg class="h-7 w-auto shrink-0" viewBox="0 0 368 62" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Spark Education">
-            <defs><linearGradient id="sparkRedOrangeStu" x1="20" y1="14" x2="150" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#EE3124" /><stop offset="100%" stop-color="#F5511E" /></linearGradient></defs>
-            <rect x="3" y="25" width="12.5" height="4.2" rx="2.1" transform="rotate(6 3 25)" fill="#FF7900" />
-            <rect x="5" y="16" width="12" height="3.8" rx="1.9" transform="rotate(28 5 16)" fill="#EE3124" />
-            <rect x="11.5" y="9" width="13.5" height="4.4" rx="2.2" transform="rotate(47 11.5 9)" fill="#FF7900" />
-            <rect x="20.5" y="4.5" width="12.5" height="4" rx="2" transform="rotate(66 20.5 4.5)" fill="#EE3124" />
-            <rect x="30" y="3.5" width="13" height="4.4" rx="2.2" transform="rotate(86 30 3.5)" fill="#FF7900" />
-            <text x="19" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.2" fill="url(#sparkRedOrangeStu)">Spark</text>
-            <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FF7900">Education</text>
+            <rect x="3" y="25" width="12.5" height="4.2" rx="2.1" transform="rotate(6 3 25)" fill="#FFE7D9" />
+            <rect x="5" y="16" width="12" height="3.8" rx="1.9" transform="rotate(28 5 16)" fill="#FFFFFF" />
+            <rect x="11.5" y="9" width="13.5" height="4.4" rx="2.2" transform="rotate(47 11.5 9)" fill="#FFE7D9" />
+            <rect x="20.5" y="4.5" width="12.5" height="4" rx="2" transform="rotate(66 20.5 4.5)" fill="#FFFFFF" />
+            <rect x="30" y="3.5" width="13" height="4.4" rx="2.2" transform="rotate(86 30 3.5)" fill="#FFE7D9" />
+            <text x="19" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.2" fill="#FFFFFF">Spark</text>
+            <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FFE7D9">Education</text>
           </svg>
-          <span class="hidden sm:inline-block px-2.5 py-1 rounded-full bg-spark-pinkPastel text-spark-pink text-[11px] font-bold">PHÒNG LUYỆN TẬP HỌC SINH</span>
+          <span class="hidden sm:inline-block px-2.5 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold">PHÒNG LUYỆN TẬP HỌC SINH</span>
         </div>
         <div id="student-topbar-right" class="flex items-center gap-2"></div>
       </div>
@@ -2699,14 +2689,14 @@ END $$;`;
         if (avatarEl) {
           avatarEl.textContent = acc.initials;
           avatarEl.className = isAdmin
-            ? 'w-9 h-9 rounded-full bg-spark-gradient text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0'
-            : 'w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0';
+            ? 'w-9 h-9 rounded-full bg-white text-spark-orangeDark font-extrabold text-xs flex items-center justify-center shadow-sm shrink-0'
+            : 'w-9 h-9 rounded-full bg-white/95 text-spark-navy font-extrabold text-xs flex items-center justify-center shadow-sm shrink-0';
         }
         if (roleBadgeEl) {
           roleBadgeEl.textContent = isAdmin ? 'ADMIN' : 'GIÁO VIÊN';
           roleBadgeEl.className = isAdmin
-            ? 'px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-spark-gradient text-white'
-            : 'px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700';
+            ? 'px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-white text-spark-orangeDark'
+            : 'px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-white/20 text-white border border-white/30';
         }
 
         // Toggle role-restricted UI elements globally
@@ -4366,7 +4356,7 @@ END $$;`;
         }
 
         if (topRight) {
-          topRight.innerHTML = `<span class="text-xs font-bold text-spark-navy truncate max-w-[160px]">${escapeHtml(currentStudent.studentName)}</span>`;
+          topRight.innerHTML = `<span class="text-xs font-bold text-white bg-white/15 px-3 py-1 rounded-full truncate max-w-[160px]">${escapeHtml(currentStudent.studentName)}</span>`;
         }
 
         let exercises = AppState.getRoomExercises(currentRoom.id);
@@ -5293,7 +5283,7 @@ END $$;`;
         btn.id = 'sb-admin-manage-btn';
         btn.type = 'button';
         btn.onclick = () => this.openAdminModal();
-        btn.className = 'hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full btn-gradient text-white text-xs font-bold shadow-sm';
+        btn.className = 'hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-spark-pinkPastel text-spark-orangeDark text-xs font-extrabold shadow-sm transition-colors';
         btn.innerHTML = '<span>Quản lý GV</span>';
         headerRight.prepend(btn);
       },
@@ -5626,4 +5616,4 @@ END $$;`;
 </body>
 
 </html>
-Analyzing application color schemes
+Redesigning educational web interface navigation headers
