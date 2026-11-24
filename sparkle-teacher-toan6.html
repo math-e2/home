@@ -3233,10 +3233,20 @@ END $$;`;
         document.getElementById('lesson-detail-view').classList.add('hidden');
         document.getElementById('practice-room-view').classList.remove('hidden');
         renderRoomView();
+        if (window.__sparkleRoomDashPoll) clearInterval(window.__sparkleRoomDashPoll);
+        window.__sparkleRoomDashPoll = setInterval(() => {
+          if (isOpen() && activeTab === 'dashboard' && !monitoringStudentId && SupabaseEngine.syncFromSupabase) {
+            SupabaseEngine.syncFromSupabase();
+          }
+        }, 3000);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
       function closeRoomView() {
+        if (window.__sparkleRoomDashPoll) {
+          clearInterval(window.__sparkleRoomDashPoll);
+          window.__sparkleRoomDashPoll = null;
+        }
         closeStudentMonitor();
         currentLessonId = null;
         currentRoomNumber = null;
@@ -3434,6 +3444,8 @@ END $$;`;
                           ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">📱 ĐT/Tablet đang làm</span>`
                           : `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-spark-text text-[10px] font-medium">Chưa chia sẻ MH</span>`;
 
+                        const liveThumb = p.latestCanvasUrl || p.latestPhotoUrl || '';
+                        const lastTime = p.lastSeenAt ? new Date(p.lastSeenAt).toLocaleTimeString('vi-VN') : '';
                         return `
                           <div class="rounded-2xl p-4 border border-gray-200/80 bg-white shadow-sm flex flex-col justify-between gap-3">
                             <div>
@@ -3441,14 +3453,28 @@ END $$;`;
                                 <span class="text-sm font-extrabold text-spark-navy truncate">${escapeHtml(p.studentName || p.studentId)}</span>
                                 ${statusPill}
                               </div>
-                              <div class="flex flex-wrap items-center gap-1.5 mb-2">${screenPill}</div>
+                              <div class="flex flex-wrap items-center gap-1.5 mb-2.5">${screenPill}</div>
+
+                              <!-- Live Screen Preview directly on card -->
+                              <div onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="relative rounded-xl overflow-hidden bg-spark-navy aspect-video mb-2.5 cursor-pointer group border border-gray-200/80 flex items-center justify-center" title="Bấm để phóng to &amp; chấm điểm">
+                                ${
+                                  liveThumb
+                                    ? `<img src="${liveThumb}" alt="Màn hình trực tiếp của ${escapeHtml(p.studentName || p.studentId)}" class="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-200" />
+                                       <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold shadow">● LIVE${lastTime ? ' • ' + lastTime : ''}</span>`
+                                    : `<div class="text-center px-3 py-4">
+                                         <div class="text-[11px] font-semibold text-white/80">Chờ khung hình từ học sinh...</div>
+                                         <div class="text-[10px] text-white/50 mt-0.5">Tự hiển thị khi HS mở bài tập</div>
+                                       </div>`
+                                }
+                              </div>
+
                               <div class="text-[11px] text-spark-text">
                                 <div>Vào lúc: ${formatDateVN(p.joinedAt)}</div>
                                 <div>Số bài đã nộp: <strong>${pSubs.length}</strong>${latestSub && latestSub.teacherScore !== null && latestSub.teacherScore !== undefined ? ` • Điểm: <strong class="text-spark-pink">${latestSub.teacherScore}</strong>` : ''}</div>
                               </div>
                             </div>
                             <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
-                              <button type="button" onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="flex-1 py-1.5 px-3 rounded-xl btn-gradient text-white text-xs font-bold">Giám sát &amp; Chấm</button>
+                              <button type="button" onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="flex-1 py-1.5 px-3 rounded-xl btn-gradient text-white text-xs font-bold">Phóng to &amp; Chấm</button>
                               <button type="button" onclick="PracticeRoomManager.removeStudent('${p.studentId}')" class="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold transition-colors">Xóa</button>
                             </div>
                           </div>`;
@@ -5600,4 +5626,4 @@ END $$;`;
 </body>
 
 </html>
-Structuring screen capture explanations in Vietnamese
+Monitoring student progress continuously
