@@ -894,13 +894,14 @@
   <!-- MODAL 2: MATERIAL / EXERCISE PREVIEW MODAL                            -->
   <!-- ===================================================================== -->
   <div id="preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-spark-navy/65 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl w-full max-w-5xl h-[88vh] shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-gradient-to-r from-spark-pinkPastel/40 to-spark-orangePastel/40">
+    <div id="preview-modal-card" class="bg-white rounded-3xl w-full max-w-5xl h-[88vh] shadow-2xl flex flex-col overflow-hidden animate-fade-in transition-all duration-200">
+      <div class="px-6 py-3.5 border-b border-gray-100 flex items-center justify-between gap-4 bg-gradient-to-r from-spark-pinkPastel/40 to-spark-orangePastel/40">
         <div class="min-w-0">
           <h3 id="preview-modal-title" class="text-base sm:text-lg font-extrabold text-spark-navy truncate">Xem trước tài liệu</h3>
           <p id="preview-modal-meta" class="text-xs text-spark-text truncate mt-0.5"></p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          <button type="button" id="preview-fullscreen-btn" onclick="ModalManager.togglePreviewFullscreen()" class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:border-spark-pink text-xs font-bold text-spark-navy hover:text-spark-pink transition-colors">⛶ Toàn màn hình</button>
           <button type="button" id="preview-open-tab-btn" class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:border-spark-pink text-xs font-bold text-spark-navy hover:text-spark-pink transition-colors">Mở tab mới</button>
           <button type="button" onclick="ModalManager.closePreviewModal()" class="p-2 rounded-xl hover:bg-white text-spark-text hover:text-spark-navy">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1087,6 +1088,31 @@
         </div>
         <div class="lg:col-span-5 space-y-4">
           <div id="monitor-grading-panel" class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-soft space-y-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5B: CRISP HIGH-RES SCREEN ZOOM MODAL FOR TEACHER                -->
+  <!-- ===================================================================== -->
+  <div id="screen-zoom-modal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-6xl h-[90vh] shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in">
+      <div class="px-6 py-3.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-spark-bg">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-spark-pink">XEM MÀN HÌNH HỌC SINH RÕ NÉT</span>
+          <h3 id="zoom-modal-title" class="text-base font-extrabold text-spark-navy">Màn hình trực tiếp</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="PracticeRoomManager.setZoomScale(0.85)" class="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-spark-navy hover:border-spark-pink">Vừa khung</button>
+          <button type="button" onclick="PracticeRoomManager.setZoomScale(1)" class="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-spark-navy hover:border-spark-pink">100%</button>
+          <button type="button" onclick="PracticeRoomManager.setZoomScale(1.35)" class="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-spark-navy hover:border-spark-pink">135%</button>
+          <button type="button" onclick="PracticeRoomManager.closeZoomModal()" class="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold">✕ Đóng</button>
+        </div>
+      </div>
+      <div id="zoom-modal-canvas-wrap" class="flex-1 bg-slate-900 overflow-auto p-6 flex items-center justify-center">
+        <div id="zoom-modal-inner" style="transform: scale(1); transform-origin: center center; transition: transform 0.2s ease;" class="flex items-center justify-center">
+          <img id="zoom-modal-img" src="" alt="Màn hình phóng to" class="max-w-full max-h-[74vh] rounded-2xl shadow-2xl border border-white/15 bg-white" style="image-rendering: -webkit-optimize-contrast;" />
         </div>
       </div>
     </div>
@@ -3690,13 +3716,19 @@ END $$;`;
           let liveTimeEl = document.getElementById('teacher-live-mirror-time');
           if (!liveImg) {
             phEl.innerHTML = `
-              <div class="relative w-full h-full flex flex-col items-center justify-center p-1 bg-spark-navy">
-                <img id="teacher-live-mirror-img" src="${frameImg}" alt="Màn hình thực tế của học sinh" class="max-h-full max-w-full rounded-xl object-contain shadow-lg cursor-zoom-in" onclick="this.requestFullscreen && this.requestFullscreen()" title="Bấm để phóng to toàn màn hình" />
-                <span id="teacher-live-mirror-time" class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold shadow">● LIVE • ${new Date().toLocaleTimeString('vi-VN')}</span>
+              <div class="relative w-full h-full flex flex-col items-center justify-center p-2 bg-slate-900">
+                <img id="teacher-live-mirror-img" src="${frameImg}" alt="Màn hình thực tế của học sinh" class="max-h-full max-w-full rounded-xl object-contain shadow-lg cursor-zoom-in bg-white" onclick="PracticeRoomManager.openZoomModal()" title="Bấm để phóng to rõ nét" />
+                <span id="teacher-live-mirror-time" class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-500/95 text-white text-[10px] font-bold shadow">● LIVE • ${new Date().toLocaleTimeString('vi-VN')}</span>
+                <button type="button" onclick="PracticeRoomManager.openZoomModal()" class="absolute bottom-2.5 right-2.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-spark-orange text-spark-navy hover:text-white text-[11px] font-extrabold shadow transition-colors">🔍 Phóng to rõ nét</button>
               </div>`;
           } else {
             liveImg.src = frameImg;
             if (liveTimeEl) liveTimeEl.textContent = `● LIVE • ${new Date().toLocaleTimeString('vi-VN')}`;
+            const zoomImg = document.getElementById('zoom-modal-img');
+            const zoomModal = document.getElementById('screen-zoom-modal');
+            if (zoomImg && zoomModal && !zoomModal.classList.contains('hidden')) {
+              zoomImg.src = frameImg;
+            }
           }
           return;
         }
@@ -3848,7 +3880,36 @@ END $$;`;
       }
 
       function getMonitoringStudentId() { return monitoringStudentId; }
+
+      function openZoomModal() {
+        const room = getActiveRoom();
+        const p = room && monitoringStudentId ? AppState.getRoomParticipants(room.id).find((x) => x.studentId === monitoringStudentId) : null;
+        const src = p?.latestCanvasUrl || p?.latestPhotoUrl || document.getElementById('teacher-live-mirror-img')?.src || '';
+        if (!src) {
+          Toast.show('Chưa có ảnh màn hình nào từ học sinh để phóng to.', 'info');
+          return;
+        }
+        const m = document.getElementById('screen-zoom-modal');
+        const img = document.getElementById('zoom-modal-img');
+        const title = document.getElementById('zoom-modal-title');
+        if (title) title.textContent = `Màn hình trực tiếp – ${p?.studentName || 'Học sinh'}`;
+        if (img) img.src = src;
+        setZoomScale(1);
+        if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+      }
+
+      function closeZoomModal() {
+        const m = document.getElementById('screen-zoom-modal');
+        if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+      }
+
+      function setZoomScale(scaleVal) {
+        const inner = document.getElementById('zoom-modal-inner');
+        if (inner) inner.style.transform = `scale(${scaleVal})`;
+      }
+
       return {
+        openZoomModal, closeZoomModal, setZoomScale,
         isOpen, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
         createOrResetRoom, setRoomStatus, toggleAllowRejoin, publishAndCopyLink,
         copyRoomLink, previewStudentInterface, renderRoomView, openStudentMonitor,
@@ -4049,6 +4110,84 @@ END $$;`;
         }
       });
 
+      function isLowDetailCanvas(dataUrl) {
+        if (!dataUrl || typeof dataUrl !== 'string') return true;
+        // Very small dataUrl (< 12KB) usually indicates an empty or mostly flat single-color render
+        return dataUrl.length < 12000;
+      }
+
+      function buildRichFallbackSnapshot(doc, fieldsObj) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1120;
+          canvas.height = 630;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Header strip
+          ctx.fillStyle = '#0F2942';
+          ctx.fillRect(0, 0, canvas.width, 68);
+          ctx.fillStyle = '#FDE047';
+          ctx.font = 'bold 20px Verdana, sans-serif';
+          ctx.fillText(`MÀN HÌNH BÀI LÀM TRỰC TIẾP • ${currentStudent?.studentName || 'Học sinh'}`, 28, 42);
+
+          ctx.fillStyle = '#22C55E';
+          ctx.font = 'bold 14px Verdana, sans-serif';
+          ctx.fillText(`● LIVE • ${new Date().toLocaleTimeString('vi-VN')}`, canvas.width - 190, 41);
+
+          let heading = 'Đang làm bài luyện tập tương tác';
+          let questionText = '';
+          if (doc && doc.body) {
+            const h2 = doc.querySelector('h2, h1, .hdcn-main-heading, .btlt-section-title');
+            if (h2 && h2.innerText) heading = h2.innerText.replace(/\s+/g, ' ').trim().slice(0, 80);
+            const qBox = doc.querySelector('.hdcn-question-banner, .hdcn-yellow-prompt, .btlt-prompt-text');
+            if (qBox && qBox.innerText) questionText = qBox.innerText.replace(/\s+/g, ' ').trim().slice(0, 140);
+          }
+
+          ctx.fillStyle = '#0F2942';
+          ctx.font = 'bold 22px Verdana, sans-serif';
+          ctx.fillText(heading, 32, 112);
+
+          if (questionText) {
+            ctx.fillStyle = '#FFF3B0';
+            ctx.fillRect(32, 130, canvas.width - 64, 54);
+            ctx.strokeStyle = '#E09F3E';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(32, 130, canvas.width - 64, 54);
+            ctx.fillStyle = '#0F2942';
+            ctx.font = 'bold 15px Verdana, sans-serif';
+            ctx.fillText(`Đề bài: ${questionText}`, 46, 163);
+          }
+
+          const entries = Object.entries(fieldsObj || {});
+          ctx.fillStyle = '#F8FAFC';
+          ctx.fillRect(32, 204, canvas.width - 64, 386);
+          ctx.strokeStyle = '#CBD5E1';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(32, 204, canvas.width - 64, 386);
+
+          ctx.fillStyle = '#0284C7';
+          ctx.font = 'bold 16px Verdana, sans-serif';
+          ctx.fillText(`Trạng thái & Dữ liệu bài làm (${entries.length} mục ghi nhận):`, 52, 238);
+
+          ctx.fillStyle = '#1E293B';
+          ctx.font = '15px Verdana, sans-serif';
+          if (entries.length === 0) {
+            ctx.fillText('Học sinh đang tương tác trực tiếp trên slide bài tập HTML.', 52, 276);
+          } else {
+            entries.slice(0, 9).forEach(([k, v], idx) => {
+              const line = `• ${k}: ${String(v).slice(0, 95)}`;
+              ctx.fillText(line, 52, 276 + idx * 32);
+            });
+          }
+
+          return canvas.toDataURL('image/jpeg', 0.85);
+        } catch {
+          return null;
+        }
+      }
+
       async function captureActualExerciseScreen() {
         if (captureInProgress) return currentStudent?.latestCanvasUrl || null;
         captureInProgress = true;
@@ -4056,10 +4195,14 @@ END $$;`;
           const frame = document.querySelector('#preview-modal iframe') || document.querySelector('#student-room-view iframe');
           let targetEl = null;
           let targetWin = window;
+          let frameDoc = null;
           if (frame) {
             try {
-              if (frame.contentDocument && frame.contentDocument.body && frame.contentDocument.body.childElementCount > 0) {
-                targetEl = frame.contentDocument.documentElement || frame.contentDocument.body;
+              frameDoc = frame.contentDocument;
+              if (frameDoc && frameDoc.body && frameDoc.body.childElementCount > 0) {
+                // Capture the active slide or stage cleanly without outer scale transform issues
+                const activeSlide = frameDoc.querySelector('.slide-view.active, #stage-16-9, main') || frameDoc.body;
+                targetEl = activeSlide;
                 targetWin = frame.contentWindow || window;
               }
             } catch {}
@@ -4069,37 +4212,32 @@ END $$;`;
           }
 
           if (typeof window.html2canvas === 'function' && targetEl) {
-            const w = Math.max(targetWin.innerWidth || targetEl.scrollWidth || 960, 320);
-            const h = Math.max(targetWin.innerHeight || targetEl.clientHeight || 540, 240);
-            const scale = Math.min(0.75, 860 / w);
+            const rect = targetEl.getBoundingClientRect();
+            const w = Math.max(Math.round(rect.width || targetEl.scrollWidth || 1024), 320);
+            const h = Math.max(Math.round(rect.height || targetEl.scrollHeight || 576), 240);
+            const scale = Math.min(1.0, 1120 / w);
             const rendered = await window.html2canvas(targetEl, {
               scale,
               useCORS: true,
               allowTaint: true,
               logging: false,
-              backgroundColor: '#0f172a',
+              backgroundColor: '#FFFFFF',
               width: w,
               height: Math.min(h, 900),
-              windowWidth: w,
-              windowHeight: Math.min(h, 900),
-              scrollX: targetWin.scrollX || 0,
-              scrollY: targetWin.scrollY || 0,
+              windowWidth: Math.max(targetWin.innerWidth || w, w),
+              windowHeight: Math.max(targetWin.innerHeight || h, h),
             });
-            return rendered.toDataURL('image/jpeg', 0.62);
-          }
-
-          // Fallback: capture largest visible canvas inside the iframe
-          if (frame && frame.contentDocument) {
-            const canvases = Array.from(frame.contentDocument.querySelectorAll('canvas'));
-            if (canvases.length > 0) {
-              canvases.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-              return makeCanvasPreview(canvases[0]);
+            const dataUrl = rendered.toDataURL('image/jpeg', 0.82);
+            if (!isLowDetailCanvas(dataUrl)) {
+              return dataUrl;
             }
           }
-          return currentStudent?.latestCanvasUrl || null;
+
+          const fallbackUrl = buildRichFallbackSnapshot(frameDoc, collectLiveFields());
+          return fallbackUrl || currentStudent?.latestCanvasUrl || null;
         } catch (err) {
           console.warn('Live mirror capture skipped:', err?.message || err);
-          return currentStudent?.latestCanvasUrl || null;
+          return buildRichFallbackSnapshot(null, collectLiveFields()) || currentStudent?.latestCanvasUrl || null;
         } finally {
           captureInProgress = false;
         }
@@ -4738,14 +4876,59 @@ END $$;`;
         return { item, href: item.url || '' };
       }
 
+      let previewMaximized = false;
+
+      function applyPreviewSize(maximized) {
+        previewMaximized = maximized;
+        const m = document.getElementById('preview-modal');
+        const card = document.getElementById('preview-modal-card');
+        const fsBtn = document.getElementById('preview-fullscreen-btn');
+        const body = document.getElementById('preview-modal-body');
+        if (!m || !card) return;
+        if (maximized) {
+          m.classList.remove('p-3', 'sm:p-5');
+          m.classList.add('p-0');
+          card.classList.remove('max-w-5xl', 'h-[88vh]', 'rounded-3xl');
+          card.classList.add('max-w-none', 'h-screen', 'w-screen', 'rounded-none');
+          if (body) { body.classList.remove('p-4'); body.classList.add('p-1'); }
+          if (fsBtn) fsBtn.textContent = '↙ Thu nhỏ';
+        } else {
+          m.classList.remove('p-0');
+          m.classList.add('p-3', 'sm:p-5');
+          card.classList.remove('max-w-none', 'h-screen', 'w-screen', 'rounded-none');
+          card.classList.add('max-w-5xl', 'h-[88vh]', 'rounded-3xl');
+          if (body) { body.classList.remove('p-1'); body.classList.add('p-4'); }
+          if (fsBtn) fsBtn.textContent = '⛶ Toàn màn hình';
+        }
+      }
+
+      function togglePreviewFullscreen() {
+        const nextMax = !previewMaximized;
+        applyPreviewSize(nextMax);
+        const m = document.getElementById('preview-modal');
+        if (nextMax) {
+          if (m && m.requestFullscreen) m.requestFullscreen().catch(() => {});
+        } else {
+          if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        }
+      }
+
       async function openPreviewModal(id, scope = 'material') {
         const { item, href } = await resolveItemUrl(id, scope);
         if (!item) return;
 
+        const isStudentMode = typeof StudentRoomManager !== 'undefined' && StudentRoomManager.isOpen();
         document.getElementById('preview-modal-title').textContent = item.title;
-        document.getElementById('preview-modal-meta').textContent = `${getFormatMeta(item.format).label} • Cập nhật ${formatDateVN(item.updatedAt)}`;
+        document.getElementById('preview-modal-meta').textContent = isStudentMode
+          ? `${getFormatMeta(item.format).label} • Đang kết nối giám sát trực tiếp với giáo viên`
+          : `${getFormatMeta(item.format).label} • Cập nhật ${formatDateVN(item.updatedAt)}`;
+
         const openBtn = document.getElementById('preview-open-tab-btn');
-        openBtn.onclick = () => { if (href) window.open(href, '_blank'); };
+        if (openBtn) {
+          // Ẩn nút "Mở tab mới" ở giao diện học sinh để HS không thoát khỏi khung giám sát & chấm điểm tự động
+          openBtn.classList.toggle('hidden', isStudentMode);
+          openBtn.onclick = () => { if (href) window.open(href, '_blank'); };
+        }
 
         const body = document.getElementById('preview-modal-body');
         if (!href) {
@@ -4760,9 +4943,15 @@ END $$;`;
 
         const m = document.getElementById('preview-modal');
         m.classList.remove('hidden'); m.classList.add('flex');
+        // Ở chế độ học sinh, mặc định mở rộng toàn màn hình khung làm bài để HS không cần mở tab mới
+        applyPreviewSize(isStudentMode);
       }
 
       function closePreviewModal() {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+        applyPreviewSize(false);
         document.getElementById('preview-modal-body').innerHTML = '';
         const m = document.getElementById('preview-modal');
         m.classList.add('hidden'); m.classList.remove('flex');
@@ -4908,7 +5097,7 @@ END $$;`;
       return {
         openUploadModal, closeUploadModal, switchUploadTab, handleDragOver, handleDragLeave, handleDrop,
         handleFileSelected, clearSelectedFile, autoDetectLinkFormat, saveMaterial,
-        openPreviewModal, closePreviewModal, openMaterialInNewTab,
+        openPreviewModal, closePreviewModal, togglePreviewFullscreen, openMaterialInNewTab,
         openProfileModal, closeProfileModal, saveAdminSupabaseSettings,
         openConfirmModal, closeConfirmModal, openLoginModal, closeLoginModal,
         updateLoginRolePreview, submitAccountLogin, adminCreateTeacher,
@@ -5857,4 +6046,4 @@ END $$;`;
 </body>
 
 </html>
-Synchronizing user profile names for accurate identification
+Processed and analyzed in code
