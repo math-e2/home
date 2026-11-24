@@ -1,0 +1,2935 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE SYMMETRY CHAMPIONSHIP – SPARK MATH (Bài 49)</title>
+<style>
+  :root {
+    --navy: #0f2547;
+    --navy-mid: #1a3a6c;
+    --navy-light: #265194;
+    --teal: #00a896;
+    --teal-bright: #02c39a;
+    --cream: #fff9e6;
+    --cream-dark: #f7eccd;
+    --orange: #ff7b00;
+    --orange-dark: #d96500;
+    --white: #ffffff;
+    --red: #e63946;
+    --green: #2a9d8f;
+    --gold: #ffd166;
+    --shadow: 0 8px 24px rgba(15, 37, 71, 0.18);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Verdana, Geneva, sans-serif;
+    user-select: none;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #081428;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 16:9 Stage Container */
+  #stage-wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #142f59 0%, #071122 100%);
+  }
+
+  #game-stage {
+    width: 1280px;
+    height: 720px;
+    background: var(--cream);
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65), 0 0 0 4px var(--teal);
+    display: flex;
+    flex-direction: column;
+    transform-origin: center center;
+  }
+
+  /* Screens */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.35s ease;
+  }
+  .screen.active {
+    display: flex;
+    animation: fadeInScreen 0.4s ease forwards;
+  }
+
+  @keyframes fadeInScreen {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ==================== SCREEN 1: OPENING ==================== */
+  #screen-opening {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 55%, #0d4b5e 100%);
+    color: var(--white);
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 48px 32px;
+    position: relative;
+  }
+
+  .bg-grid-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .spark-header {
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 8px 24px;
+    border-radius: 40px;
+    border: 2px solid rgba(255, 209, 102, 0.5);
+  }
+
+  .spark-logo-badge {
+    background: var(--orange);
+    color: var(--white);
+    font-weight: bold;
+    font-size: 18px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  .spark-lesson-tag {
+    font-size: 16px;
+    color: var(--cream);
+    font-weight: bold;
+  }
+
+  .opening-title-wrap {
+    z-index: 2;
+    text-align: center;
+    animation: titleDrop 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes titleDrop {
+    from { opacity: 0; transform: translateY(-28px) scale(0.94); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .opening-title {
+    font-size: 46px;
+    font-weight: bold;
+    color: var(--gold);
+    text-shadow: 0 4px 0 #9e5800, 0 10px 25px rgba(0, 0, 0, 0.45);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .opening-subtitle {
+    display: inline-block;
+    background: var(--teal);
+    color: var(--white);
+    font-size: 20px;
+    font-weight: bold;
+    padding: 8px 28px;
+    border-radius: 30px;
+    letter-spacing: 1.5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .opening-center-stage {
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin: 6px 0;
+  }
+
+  .team-preview-card {
+    width: 270px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(6px);
+    border: 3px solid var(--teal-bright);
+    border-radius: 20px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+  }
+  .team-preview-card.t2 {
+    border-color: var(--orange);
+  }
+
+  .team-preview-card input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--navy);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--navy);
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .opening-svg-hub {
+    width: 440px;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes pulseTrophy {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.07); }
+  }
+  @keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes flipSym {
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(-1); }
+  }
+
+  .trophy-center-anim {
+    transform-origin: 220px 125px;
+    animation: pulseTrophy 2.4s ease-in-out infinite;
+  }
+  .shape-spin-anim {
+    transform-origin: 75px 125px;
+    animation: spinSlow 9s linear infinite;
+  }
+  .shape-flip-anim {
+    transform-origin: 365px 125px;
+    animation: flipSym 3.6s ease-in-out infinite;
+  }
+
+  .btn-start-main {
+    z-index: 2;
+    background: linear-gradient(180deg, #ff9500 0%, var(--orange) 100%);
+    color: var(--white);
+    border: 4px solid var(--white);
+    font-size: 26px;
+    font-weight: bold;
+    padding: 16px 54px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 8px 0 var(--orange-dark), 0 14px 28px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 1.5px;
+  }
+  .btn-start-main:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+  }
+  .btn-start-main:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 var(--orange-dark);
+  }
+
+  /* ==================== SCREEN 2: RULES ==================== */
+  #screen-rules {
+    background: var(--cream);
+    padding: 24px 40px;
+    justify-content: space-between;
+  }
+
+  .rules-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 14px 28px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  .rules-header h2 {
+    font-size: 26px;
+    color: var(--gold);
+  }
+
+  .rules-body {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 24px;
+    flex: 1;
+    margin: 18px 0;
+  }
+
+  .rules-card {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 22px 26px;
+    border: 3px solid var(--navy-mid);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .rules-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .rules-list li {
+    font-size: 17px;
+    color: var(--navy);
+    background: #f0f6fc;
+    padding: 11px 16px;
+    border-radius: 12px;
+    border-left: 6px solid var(--teal);
+    line-height: 1.4;
+  }
+  .rules-list li.danger-rule {
+    border-left-color: var(--red);
+    background: #fff2f3;
+  }
+
+  .cup-ladder-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .cup-step-pill {
+    background: var(--navy);
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: bold;
+    padding: 6px 4px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  /* Rules Simulation Box */
+  .sim-box {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: 18px;
+    padding: 20px;
+    border: 3px solid var(--teal);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .sim-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .sim-teams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .sim-team-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  .sim-team-card.highlight-win {
+    border-color: var(--teal-bright);
+    background: rgba(2, 195, 154, 0.25);
+    transform: scale(1.04);
+  }
+  .sim-team-card.highlight-lose {
+    border-color: var(--red);
+    background: rgba(230, 57, 70, 0.28);
+    animation: shakeBox 0.4s ease;
+  }
+
+  @keyframes shakeBox {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .sim-status-banner {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 15px;
+    line-height: 1.45;
+    text-align: center;
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cream);
+  }
+
+  .sim-step-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .sim-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sim-dot.active {
+    background: var(--orange);
+    color: var(--white);
+    transform: scale(1.15);
+  }
+
+  .rules-footer {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .btn-action {
+    border: none;
+    border-radius: 14px;
+    padding: 14px 32px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.18);
+  }
+  .btn-action:hover { transform: translateY(-2px); filter: brightness(1.05); }
+  .btn-action:active { transform: translateY(2px); }
+
+  .btn-primary { background: var(--orange); color: var(--white); }
+  .btn-secondary { background: var(--teal); color: var(--white); }
+  .btn-navy { background: var(--navy); color: var(--white); }
+
+  /* ==================== SCREEN 3: GAMEPLAY ==================== */
+  #screen-game {
+    background: var(--cream);
+    padding: 12px 20px 10px;
+    justify-content: space-between;
+  }
+
+  /* Fixed Top Scoreboard */
+  .scoreboard-bar {
+    display: grid;
+    grid-template-columns: 1fr 290px 1fr;
+    gap: 14px;
+    align-items: stretch;
+    height: 112px;
+  }
+
+  .team-hud {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: 16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 3px solid var(--teal);
+    box-shadow: 0 4px 12px rgba(15, 37, 71, 0.2);
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .team-hud.team2 {
+    border-color: var(--orange);
+  }
+  .team-hud.buzzed-winner {
+    box-shadow: 0 0 0 4px var(--gold), 0 0 25px rgba(255, 209, 102, 0.85);
+    background: #173b70;
+    transform: scale(1.015);
+  }
+  .team-hud.buzzed-locked {
+    opacity: 0.62;
+  }
+
+  .team-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .team-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .team-name-label {
+    font-size: 19px;
+    font-weight: bold;
+    color: var(--white);
+  }
+  .rank-badge {
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 9px;
+    border-radius: 12px;
+  }
+
+  .team-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .cup-score-pill {
+    background: rgba(255, 209, 102, 0.18);
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    font-size: 18px;
+    font-weight: bold;
+    padding: 3px 12px;
+    border-radius: 10px;
+  }
+  .stat-mini {
+    color: #dbe7f7;
+    font-weight: bold;
+  }
+
+  .btn-buzzer {
+    height: 76px;
+    min-width: 132px;
+    border-radius: 16px;
+    border: 3px solid var(--white);
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--white);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+    transition: transform 0.12s, filter 0.15s;
+  }
+  .btn-buzzer.t1 {
+    background: linear-gradient(180deg, var(--teal-bright), var(--teal));
+  }
+  .btn-buzzer.t2 {
+    background: linear-gradient(180deg, #ff9900, var(--orange));
+  }
+  .btn-buzzer:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+  }
+  .btn-buzzer:active:not(:disabled) {
+    transform: translateY(3px);
+  }
+  .btn-buzzer:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+    opacity: 0.65;
+  }
+  .buzzer-ring {
+    animation: bellShake 0.45s ease infinite;
+  }
+  @keyframes bellShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-14deg); }
+    75% { transform: rotate(14deg); }
+  }
+
+  /* Center Progress & Reward Box */
+  .progress-hub {
+    background: var(--white);
+    border: 3px solid var(--navy);
+    border-radius: 16px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(15, 37, 71, 0.12);
+  }
+
+  .q-progress-text {
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+  }
+
+  .progress-dots-bar {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    justify-content: center;
+  }
+  .p-dot {
+    width: 21px;
+    height: 8px;
+    border-radius: 4px;
+    background: #d5dfec;
+    transition: background 0.25s;
+  }
+  .p-dot.done { background: var(--teal); }
+  .p-dot.current { background: var(--orange); transform: scaleY(1.3); }
+
+  .cup-reward-banner {
+    background: linear-gradient(90deg, var(--navy), var(--navy-light));
+    color: var(--gold);
+    font-size: 16px;
+    font-weight: bold;
+    padding: 4px 14px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .timer-pill {
+    background: var(--red);
+    color: var(--white);
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 14px;
+    display: none;
+  }
+  .timer-pill.visible {
+    display: inline-block;
+  }
+
+  /* Main Question & Visual Area */
+  .arena-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.28fr 0.72fr;
+    gap: 16px;
+    margin: 10px 0 8px;
+    min-height: 0;
+  }
+
+  .question-panel {
+    background: var(--white);
+    border-radius: 18px;
+    border: 3px solid var(--navy-mid);
+    padding: 16px 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+
+  .question-panel.finale-mode {
+    border: 4px solid var(--orange);
+    background: linear-gradient(180deg, #fffdf5 0%, #fff4d4 100%);
+    box-shadow: 0 0 28px rgba(255, 123, 0, 0.35);
+  }
+
+  .q-header-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .q-topic-badge {
+    background: var(--teal);
+    color: var(--white);
+    font-size: 14px;
+    font-weight: bold;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+  .q-topic-badge.finale {
+    background: var(--orange);
+  }
+
+  .turn-indicator-pill {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: #eef3fa;
+    color: var(--navy);
+    border: 1.5px solid var(--navy-light);
+  }
+  .turn-indicator-pill.active-t1 {
+    background: var(--teal);
+    color: var(--white);
+    border-color: var(--teal);
+  }
+  .turn-indicator-pill.active-t2 {
+    background: var(--orange);
+    color: var(--white);
+    border-color: var(--orange);
+  }
+
+  .q-prompt-text {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--navy);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+
+  /* Teacher Review Notice for Q6 */
+  .q6-audit-bar {
+    background: #fff3cd;
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    color: #663c00;
+  }
+  .q6-audit-bar.visible {
+    display: flex;
+  }
+  .btn-approve-q6 {
+    background: var(--green);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-approve-q6.approved {
+    background: var(--navy);
+  }
+
+  /* Options Grid */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+
+  .option-btn {
+    background: #f4f8fd;
+    border: 2.5px solid #bfd1e8;
+    border-radius: 14px;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 16px;
+    color: var(--navy);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    line-height: 1.35;
+    min-height: 66px;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: #e3effc;
+    border-color: var(--navy-light);
+    transform: translateY(-1px);
+  }
+  .option-btn:disabled {
+    cursor: not-allowed;
+  }
+  .option-letter {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+    background: var(--navy);
+    color: var(--white);
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .option-btn.selected-pending {
+    border-color: var(--orange);
+    background: #fff3e0;
+  }
+  .option-btn.correct-ans {
+    background: #d8f5ee;
+    border-color: var(--green);
+    color: #0b4f45;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px var(--green);
+  }
+  .option-btn.correct-ans .option-letter {
+    background: var(--green);
+  }
+  .option-btn.wrong-ans {
+    background: #fde2e4;
+    border-color: var(--red);
+    color: #78121a;
+    animation: shakeBox 0.35s ease;
+  }
+  .option-btn.wrong-ans .option-letter {
+    background: var(--red);
+  }
+  .option-btn.finale-glow {
+    box-shadow: 0 0 14px rgba(255, 123, 0, 0.65);
+    border-color: var(--orange);
+  }
+
+  /* Feedback Strip inside Question Panel */
+  .feedback-banner {
+    margin-top: 8px;
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #eef4fb;
+    color: var(--navy);
+    border: 2px solid #cbd9ec;
+    min-height: 44px;
+  }
+  .feedback-banner.fb-correct {
+    background: #d8f5ee;
+    border-color: var(--green);
+    color: #0b4f45;
+  }
+  .feedback-banner.fb-wrong {
+    background: #fde2e4;
+    border-color: var(--red);
+    color: #82141d;
+  }
+
+  /* Visual / Animation Stage */
+  .visual-panel {
+    background: var(--white);
+    border-radius: 18px;
+    border: 3px solid var(--teal);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+
+  .visual-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--navy);
+  }
+
+  .visual-canvas-box {
+    width: 100%;
+    flex: 1;
+    background: #f8fbff;
+    border: 2px dashed #c4d6eb;
+    border-radius: 14px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .visual-controls {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .btn-vis {
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-vis:hover { background: var(--teal); }
+
+  /* Teacher Control Toolbar */
+  .teacher-toolbar {
+    background: var(--navy);
+    border-radius: 14px;
+    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    height: 48px;
+  }
+
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .tb-label {
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 4px;
+  }
+
+  .btn-tb {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--white);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-tb:hover {
+    background: var(--teal);
+    border-color: var(--white);
+  }
+  .btn-tb.warn:hover {
+    background: var(--red);
+  }
+  .btn-tb.active-toggle {
+    background: var(--orange);
+    border-color: var(--gold);
+  }
+
+  /* ==================== SCREEN 4: END SCREEN ==================== */
+  #screen-end {
+    background: linear-gradient(135deg, var(--navy) 0%, #163a70 60%, #0b525b 100%);
+    color: var(--white);
+    padding: 26px 44px;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .end-header {
+    z-index: 2;
+    text-align: center;
+  }
+  .end-header h1 {
+    font-size: 38px;
+    color: var(--gold);
+    text-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    margin-bottom: 6px;
+  }
+  .winner-announcement {
+    font-size: 24px;
+    font-weight: bold;
+    background: var(--orange);
+    color: var(--white);
+    padding: 8px 30px;
+    border-radius: 30px;
+    display: inline-block;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  }
+
+  .podium-grid {
+    z-index: 2;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 240px 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .final-team-card {
+    background: var(--white);
+    color: var(--navy);
+    border-radius: 20px;
+    padding: 22px;
+    text-align: center;
+    border: 4px solid var(--teal);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  .final-team-card.champion {
+    border-color: var(--gold);
+    box-shadow: 0 0 35px rgba(255, 209, 102, 0.85);
+    transform: scale(1.04);
+  }
+
+  .final-cup-big {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--orange-dark);
+    margin: 12px 0;
+  }
+
+  .final-metrics {
+    display: flex;
+    justify-content: space-around;
+    background: #f0f5fc;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .end-footer-btns {
+    z-index: 2;
+    display: flex;
+    gap: 18px;
+  }
+
+  /* ==================== MODALS & OVERLAYS ==================== */
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 20, 40, 0.78);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .modal-backdrop.open {
+    display: flex;
+  }
+
+  .modal-card {
+    background: var(--white);
+    color: var(--navy);
+    border-radius: 20px;
+    border: 4px solid var(--teal);
+    padding: 24px 28px;
+    max-width: 680px;
+    width: 90%;
+    max-height: 620px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--navy);
+    margin-bottom: 12px;
+    border-bottom: 2px solid #e2ebf5;
+    padding-bottom: 8px;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  /* Confetti Canvas */
+  #confetti-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+  }
+</style>
+</head>
+<body>
+<div id="stage-wrapper">
+  <div id="game-stage">
+    <canvas id="confetti-canvas" width="1280" height="720"></canvas>
+
+    <!-- ==================== MÀN HÌNH 1: OPENING GAME ==================== -->
+    <section id="screen-opening" class="screen active">
+      <div class="bg-grid-pattern"></div>
+
+      <div class="spark-header">
+        <span class="spark-logo-badge">SPARK MATH</span>
+        <span class="spark-lesson-tag">TOÁN LỚP 6 • BÀI 49: LUYỆN TẬP CHUNG HÌNH CÓ TRỤC ĐỐI XỨNG, TÂM ĐỐI XỨNG</span>
+      </div>
+
+      <div class="opening-title-wrap">
+        <h1 class="opening-title">THE SYMMETRY CHAMPIONSHIP</h1>
+        <div class="opening-subtitle">CHINH PHỤC 10 THỬ THÁCH ĐỐI XỨNG</div>
+      </div>
+
+      <div class="opening-center-stage">
+        <div class="team-preview-card">
+          <div style="font-size: 14px; color: var(--gold); font-weight: bold;">ĐỘI THI ĐẤU 1</div>
+          <svg width="64" height="64" viewBox="0 0 64 64" style="margin: 8px auto;">
+            <circle cx="32" cy="32" r="28" fill="#00a896" stroke="#ffffff" stroke-width="3"/>
+            <text x="32" y="40" text-anchor="middle" fill="#ffffff" font-size="24" font-weight="bold">1</text>
+          </svg>
+          <input type="text" id="input-team1-name" value="ĐỘI 1" maxlength="18" aria-label="Tên Đội 1">
+        </div>
+
+        <div class="opening-svg-hub">
+          <svg width="440" height="250" viewBox="0 0 440 250">
+            <!-- Rotating Square with Symmetry Axes (Left) -->
+            <g class="shape-spin-anim">
+              <rect x="35" y="85" width="80" height="80" rx="8" fill="rgba(2,195,154,0.25)" stroke="#02c39a" stroke-width="3.5"/>
+              <line x1="75" y1="72" x2="75" y2="178" stroke="#ffd166" stroke-width="2" stroke-dasharray="5,4"/>
+              <line x1="22" y1="125" x2="128" y2="125" stroke="#ffd166" stroke-width="2" stroke-dasharray="5,4"/>
+              <circle cx="75" cy="125" r="5" fill="#ff7b00"/>
+            </g>
+
+            <!-- Center Gold Trophy -->
+            <g class="trophy-center-anim">
+              <circle cx="220" cy="125" r="78" fill="rgba(255, 209, 102, 0.14)" stroke="#ffd166" stroke-width="2" stroke-dasharray="6,6"/>
+              <!-- Trophy Cup -->
+              <path d="M182 78 H258 V116 C258 142 240 158 220 158 C200 158 182 142 182 116 Z" fill="#ffd166" stroke="#ffffff" stroke-width="3"/>
+              <!-- Handles -->
+              <path d="M182 88 H164 C160 88 158 94 160 104 C163 118 173 125 182 125" fill="none" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>
+              <path d="M258 88 H276 C280 88 282 94 280 104 C277 118 267 125 258 125" fill="none" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>
+              <!-- Stem & Base -->
+              <rect x="211" y="158" width="18" height="24" fill="#ff9f1c"/>
+              <rect x="190" y="182" width="60" height="14" rx="5" fill="#ffd166" stroke="#ffffff" stroke-width="2"/>
+              <!-- Star on Trophy -->
+              <polygon points="220,94 225,107 239,107 228,115 232,128 220,120 208,128 212,115 201,107 215,107" fill="#ff7b00"/>
+            </g>
+
+            <!-- Symmetric Star & Circle (Right) -->
+            <g class="shape-flip-anim">
+              <circle cx="365" cy="125" r="46" fill="rgba(255,123,0,0.22)" stroke="#ff7b00" stroke-width="3.5"/>
+              <polygon points="365,86 375,112 403,112 380,128 389,155 365,139 341,155 350,128 327,112 355,112" fill="#ffd166" stroke="#ffffff" stroke-width="2"/>
+              <line x1="365" y1="68" x2="365" y2="182" stroke="#02c39a" stroke-width="2.5" stroke-dasharray="5,4"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="team-preview-card t2">
+          <div style="font-size: 14px; color: var(--gold); font-weight: bold;">ĐỘI THI ĐẤU 2</div>
+          <svg width="64" height="64" viewBox="0 0 64 64" style="margin: 8px auto;">
+            <circle cx="32" cy="32" r="28" fill="#ff7b00" stroke="#ffffff" stroke-width="3"/>
+            <text x="32" y="40" text-anchor="middle" fill="#ffffff" font-size="24" font-weight="bold">2</text>
+          </svg>
+          <input type="text" id="input-team2-name" value="ĐỘI 2" maxlength="18" aria-label="Tên Đội 2">
+        </div>
+      </div>
+
+      <button class="btn-start-main" id="btn-start-game">START GAME</button>
+    </section>
+
+    <!-- ==================== MÀN HÌNH 2: LUẬT CHƠI ==================== -->
+    <section id="screen-rules" class="screen">
+      <div class="rules-header">
+        <h2>LUẬT CHƠI – THE SYMMETRY CHAMPIONSHIP</h2>
+        <span style="font-size: 15px; color: var(--cream);">Bài 49 • Luyện tập chung</span>
+      </div>
+
+      <div class="rules-body">
+        <div class="rules-card">
+          <div>
+            <h3 style="color: var(--navy); font-size: 20px; margin-bottom: 12px;">Thể lệ thi đấu chính thức:</h3>
+            <ul class="rules-list">
+              <li><strong>1. Số lượng thử thách:</strong> Gồm <strong>10 câu hỏi</strong> trắc nghiệm về hình có trục đối xứng và tâm đối xứng.</li>
+              <li><strong>2. Mức thưởng tăng dần:</strong> Từ <strong>0,5 cup</strong> ở Câu 1 tăng đều mỗi câu 0,5 cup lên đến <strong>5 cup</strong> ở Câu 10.</li>
+              <li><strong>3. Giành quyền trả lời:</strong> Hai đội bấm chuông nhanh để giành quyền chọn đáp án (A, B, C hoặc D).</li>
+              <li class="danger-rule"><strong>4. Quy tắc phạt theo luật gốc:</strong> Đội trả lời đúng được cộng số cup của câu hỏi và lên hạng; đội trả lời <strong>chưa đúng sẽ bị đưa điểm về 0 cup</strong>!</li>
+            </ul>
+          </div>
+
+          <div>
+            <div style="font-size: 14px; font-weight: bold; color: var(--navy); margin-bottom: 6px;">Thang thưởng 10 câu hỏi:</div>
+            <div class="cup-ladder-strip">
+              <div class="cup-step-pill">C1: 0,5 cup</div>
+              <div class="cup-step-pill">C2: 1 cup</div>
+              <div class="cup-step-pill">C3: 1,5 cup</div>
+              <div class="cup-step-pill">C4: 2 cup</div>
+              <div class="cup-step-pill">C5: 2,5 cup</div>
+              <div class="cup-step-pill">C6: 3 cup</div>
+              <div class="cup-step-pill">C7: 3,5 cup</div>
+              <div class="cup-step-pill">C8: 4 cup</div>
+              <div class="cup-step-pill">C9: 4,5 cup</div>
+              <div class="cup-step-pill">C10: 5 cup</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-box">
+          <div class="sim-title">HOẠT ẢNH MÔ PHỎNG TÍNH ĐIỂM</div>
+
+          <div class="sim-teams">
+            <div class="sim-team-card" id="sim-card-1">
+              <div style="font-weight: bold; font-size: 16px; color: var(--teal-bright);" id="sim-name-1">ĐỘI 1</div>
+              <div style="font-size: 24px; font-weight: bold; color: var(--gold); margin: 6px 0;" id="sim-score-1">1,0 cup</div>
+              <div style="font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 8px;" id="sim-rank-1">Hạng: Đồng hạng 1</div>
+            </div>
+            <div class="sim-team-card" id="sim-card-2">
+              <div style="font-weight: bold; font-size: 16px; color: var(--orange);" id="sim-name-2">ĐỘI 2</div>
+              <div style="font-size: 24px; font-weight: bold; color: var(--gold); margin: 6px 0;" id="sim-score-2">1,0 cup</div>
+              <div style="font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 8px;" id="sim-rank-2">Hạng: Đồng hạng 1</div>
+            </div>
+          </div>
+
+          <div class="sim-status-banner" id="sim-status-text">
+            Đang chạy mô phỏng 6 bước luật chơi...
+          </div>
+
+          <div>
+            <div class="sim-step-dots">
+              <div class="sim-dot" id="sdot-1">1</div>
+              <div class="sim-dot" id="sdot-2">2</div>
+              <div class="sim-dot" id="sdot-3">3</div>
+              <div class="sim-dot" id="sdot-4">4</div>
+              <div class="sim-dot" id="sdot-5">5</div>
+              <div class="sim-dot" id="sdot-6">6</div>
+            </div>
+            <div style="text-align: center; margin-top: 10px;">
+              <button class="btn-vis" id="btn-replay-sim" style="background: var(--teal); padding: 7px 16px;">Chạy lại mô phỏng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rules-footer">
+        <button class="btn-action btn-secondary" id="btn-review-rules">XEM LẠI LUẬT</button>
+        <button class="btn-action btn-primary" id="btn-begin-match">BẮT ĐẦU THI ĐẤU</button>
+      </div>
+    </section>
+
+    <!-- ==================== MÀN HÌNH 3: BẢNG THI ĐẤU ==================== -->
+    <section id="screen-game" class="screen">
+      <!-- Fixed Top Scoreboard -->
+      <header class="scoreboard-bar">
+        <!-- Team 1 -->
+        <div class="team-hud" id="hud-team-1">
+          <div class="team-info-col">
+            <div class="team-name-row">
+              <span class="team-name-label" id="hud-name-1">ĐỘI 1</span>
+              <span class="rank-badge" id="hud-rank-1">Hạng 1</span>
+            </div>
+            <div class="team-stats-row">
+              <span class="cup-score-pill" id="hud-cups-1">0 cup</span>
+              <span class="stat-mini">Đúng: <strong id="hud-correct-1" style="color:#4ade80;">0</strong></span>
+              <span class="stat-mini">Sai: <strong id="hud-wrong-1" style="color:#f87171;">0</strong></span>
+            </div>
+          </div>
+          <div id="bell-icon-1" style="font-size: 26px; padding: 0 8px;">🏆</div>
+        </div>
+
+        <!-- Center Countdown Timer Hub -->
+        <div class="progress-hub" id="countdown-hub" style="justify-content: center; gap: 4px; background: linear-gradient(180deg, #ffffff 0%, #f0f6fc 100%);">
+          <div style="font-size: 13px; font-weight: bold; color: var(--navy); letter-spacing: 0.8px;">⏱ THỜI GIAN ĐẾM NGƯỢC</div>
+          <div id="center-countdown-value" style="font-size: 40px; font-weight: bold; color: var(--orange); line-height: 1.05; text-shadow: 0 2px 0 rgba(15,37,71,0.12);">15s</div>
+          <div style="width: 88%; height: 8px; background: #dce6f2; border-radius: 6px; overflow: hidden;">
+            <div id="center-countdown-bar" style="width: 100%; height: 100%; background: var(--teal); transition: width 0.3s linear, background-color 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <!-- Team 2 -->
+        <div class="team-hud team2" id="hud-team-2">
+          <div id="bell-icon-2" style="font-size: 26px; padding: 0 8px;">🏆</div>
+          <div class="team-info-col" style="align-items: flex-end;">
+            <div class="team-name-row">
+              <span class="rank-badge" id="hud-rank-2">Hạng 1</span>
+              <span class="team-name-label" id="hud-name-2">ĐỘI 2</span>
+            </div>
+            <div class="team-stats-row">
+              <span class="stat-mini">Đúng: <strong id="hud-correct-2" style="color:#4ade80;">0</strong></span>
+              <span class="stat-mini">Sai: <strong id="hud-wrong-2" style="color:#f87171;">0</strong></span>
+              <span class="cup-score-pill" id="hud-cups-2">0 cup</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Question + Visual Workspace -->
+      <main class="arena-main">
+        <div class="question-panel" id="question-panel">
+          <div>
+            <div class="q-header-strip">
+              <span class="q-topic-badge" id="q-topic-badge">CÂU 1 – NHẬN BIẾT TRỤC ĐỐI XỨNG</span>
+              <span class="turn-indicator-pill" id="turn-indicator">Sẵn sàng: Hai đội bấm chuông!</span>
+            </div>
+
+            <!-- Question 6 Teacher Audit Banner -->
+            <div class="q6-audit-bar" id="q6-audit-bar">
+              <span>⚠️ <strong>Cần GV duyệt (Câu 6):</strong> Bản gốc có 2 câu sai (C &amp; D). Đề xuất sửa D thành <em>"Hình tròn có vô số trục đối xứng"</em> để C là đáp án duy nhất.</span>
+              <button class="btn-approve-q6" id="btn-approve-q6" onclick="Game.toggleApproveQ6()">Duyệt đề &amp; Mở tính điểm</button>
+            </div>
+
+            <div class="q-prompt-text" id="q-prompt-text"></div>
+          </div>
+
+          <div class="options-grid" id="options-grid"></div>
+
+          <div class="feedback-banner" id="feedback-banner">
+            <span id="feedback-text">Mời hai đội bấm chuông giành quyền trả lời câu hỏi này.</span>
+            <span id="feedback-sub" style="font-size: 13px;"></span>
+          </div>
+        </div>
+
+        <!-- Geometry & Math Animation Panel -->
+        <aside class="visual-panel">
+          <div class="visual-header">
+            <span id="visual-title">MINH HỌA TRỰC QUAN</span>
+            <span id="visual-hint-tag" style="color: var(--teal);">Hình học SVG</span>
+          </div>
+
+          <div class="visual-canvas-box" id="visual-canvas-box"></div>
+
+          <div class="visual-controls" id="visual-controls" style="font-size:12px; color:#475569; font-weight:bold;">
+            Minh họa tự động kích hoạt khi xác nhận kết quả
+          </div>
+        </aside>
+      </main>
+
+      <!-- Teacher Control Toolbar (Streamlined) -->
+      <footer class="teacher-toolbar">
+        <div class="toolbar-group">
+          <span class="tb-label">ĐIỀU KHIỂN:</span>
+          <button class="btn-tb" onclick="TeacherCtrl.selectTeam(1)">Chọn Đội 1</button>
+          <button class="btn-tb" onclick="TeacherCtrl.selectTeam(2)">Chọn Đội 2</button>
+          <button class="btn-tb" id="btn-confirm-result" onclick="TeacherCtrl.confirmResult()">✔ Xác nhận kết quả</button>
+        </div>
+
+        <div class="toolbar-group" style="color: var(--gold); font-size: 13px; font-weight: bold;">
+          <span id="progress-label" style="cursor:pointer;" title="Nhấn để chuyển câu tiếp">CÂU 1/10</span> • <span id="reward-label">0,5 cup</span>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="btn-tb warn" onclick="TeacherCtrl.confirmResetTeamScore(1)">↺ Reset điểm Đội 1</button>
+          <button class="btn-tb warn" onclick="TeacherCtrl.confirmResetTeamScore(2)">↺ Reset điểm Đội 2</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ==================== MÀN HÌNH 4: KẾT THÚC ==================== -->
+    <section id="screen-end" class="screen">
+      <div class="bg-grid-pattern"></div>
+
+      <div class="end-header">
+        <h1>TỔNG KẾT – THE SYMMETRY CHAMPIONSHIP</h1>
+        <div class="winner-announcement" id="end-winner-banner">CHÚC MỪNG ĐỘI CHIẾN THẮNG!</div>
+      </div>
+
+      <div class="podium-grid">
+        <div class="final-team-card" id="end-card-1">
+          <div style="font-size: 16px; font-weight: bold; color: var(--teal);" id="end-rank-1">HẠNG 1</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 4px;" id="end-name-1">ĐỘI 1</div>
+          <div class="final-cup-big" id="end-cups-1">0 cup</div>
+          <div class="final-metrics">
+            <span>Số câu đúng: <strong style="color: var(--green);" id="end-correct-1">0</strong></span>
+            <span>Số câu sai: <strong style="color: var(--red);" id="end-wrong-1">0</strong></span>
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <svg width="220" height="230" viewBox="0 0 220 230" class="trophy-center-anim" style="transform-origin: 110px 115px;">
+            <circle cx="110" cy="115" r="95" fill="rgba(255, 209, 102, 0.16)" stroke="#ffd166" stroke-width="3" stroke-dasharray="8,6"/>
+            <path d="M68 62 H152 V108 C152 138 132 158 110 158 C88 158 68 138 68 108 Z" fill="#ffd166" stroke="#ffffff" stroke-width="4"/>
+            <path d="M68 74 H48 C43 74 41 82 44 94 C48 110 58 118 68 118" fill="none" stroke="#ffd166" stroke-width="6" stroke-linecap="round"/>
+            <path d="M152 74 H172 C177 74 179 82 176 94 C172 110 162 118 152 118" fill="none" stroke="#ffd166" stroke-width="6" stroke-linecap="round"/>
+            <rect x="99" y="158" width="22" height="28" fill="#ff9f1c"/>
+            <rect x="74" y="186" width="72" height="16" rx="6" fill="#ffd166" stroke="#ffffff" stroke-width="2.5"/>
+            <polygon points="110,80 116,96 133,96 119,106 124,122 110,112 96,122 101,106 87,96 104,96" fill="#ff7b00"/>
+          </svg>
+          <div style="font-size: 16px; font-weight: bold; color: var(--gold);">TỔNG CUP TOÀN TRẬN: <span id="end-total-cups">0</span> CUP</div>
+        </div>
+
+        <div class="final-team-card" id="end-card-2">
+          <div style="font-size: 16px; font-weight: bold; color: var(--orange);" id="end-rank-2">HẠNG 1</div>
+          <div style="font-size: 28px; font-weight: bold; margin-top: 4px;" id="end-name-2">ĐỘI 2</div>
+          <div class="final-cup-big" id="end-cups-2">0 cup</div>
+          <div class="final-metrics">
+            <span>Số câu đúng: <strong style="color: var(--green);" id="end-correct-2">0</strong></span>
+            <span>Số câu sai: <strong style="color: var(--red);" id="end-wrong-2">0</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="end-footer-btns">
+        <button class="btn-action btn-primary" onclick="TeacherCtrl.confirmPlayAgain()">CHƠI LẠI</button>
+        <button class="btn-action btn-secondary" onclick="Game.openSummaryModal()">XEM KẾT QUẢ</button>
+        <button class="btn-action btn-navy" style="border: 2px solid var(--white);" onclick="Game.goToScreen('opening')">QUAY VỀ BÀI HỌC</button>
+      </div>
+    </section>
+
+    <!-- ==================== MODAL OVERLAY ==================== -->
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-title" id="modal-title">Thông báo</div>
+        <div id="modal-body" style="font-size: 16px; line-height: 1.5;"></div>
+        <div class="modal-actions" id="modal-actions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. QUESTION REPOSITORY (100% FIDELITY TO PPTX SLIDES 3–27)
+   ========================================================================== */
+const QUESTIONS = [
+  {
+    id: 1,
+    cup: 0.5,
+    badge: "CÂU 1 – NHẬN BIẾT TRỤC ĐỐI XỨNG",
+    prompt: "Khi nào một đường thẳng d được gọi là trục đối xứng của hình?",
+    options: [
+      "Khi d chia hình thành hai phần có diện tích bằng nhau.",
+      "Khi d đi qua một đỉnh của hình.",
+      "Khi gấp hình theo d, hai phần của hình chồng khít lên nhau.",
+      "Khi d là cạnh dài nhất của hình."
+    ],
+    correctIndex: 2, // C
+    visualTitle: "GẤP HÌNH THEO TRỤC d",
+    visualTag: "Đối xứng trục",
+    explanation: "Đáp án C: Khi gấp hình theo đường thẳng d, hai phần của hình chồng khít lên nhau."
+  },
+  {
+    id: 2,
+    cup: 1.0,
+    badge: "CÂU 2 – NHẬN BIẾT TÂM ĐỐI XỨNG",
+    prompt: "Điểm O là tâm đối xứng của hình khi nào?",
+    options: [
+      "Khi quay hình 180° quanh O, hình trùng với ban đầu.",
+      "Khi gấp hình theo một đường thẳng đi qua O.",
+      "Khi quay hình 90° quanh O, hình trùng với ban đầu.",
+      "Khi O nằm trên đường bao của hình."
+    ],
+    correctIndex: 0, // A
+    visualTitle: "QUAY HÌNH 180° QUANH TÂM O",
+    visualTag: "Đối xứng tâm",
+    explanation: "Đáp án A: Khi quay hình 180° quanh điểm O, hình thu được trùng khít với hình ban đầu."
+  },
+  {
+    id: 3,
+    cup: 1.5,
+    badge: "CÂU 3 – SỐ TRỤC ĐỐI XỨNG",
+    prompt: "Hình vuông có bao nhiêu trục đối xứng?",
+    options: [
+      "1 trục.",
+      "2 trục.",
+      "3 trục.",
+      "4 trục."
+    ],
+    correctIndex: 3, // D
+    visualTitle: "4 TRỤC ĐỐI XỨNG CỦA HÌNH VUÔNG",
+    visualTag: "Hình vuông",
+    explanation: "Đáp án D: Hình vuông có 4 trục đối xứng (2 đường nối trung điểm cạnh đối diện và 2 đường chéo)."
+  },
+  {
+    id: 4,
+    cup: 2.0,
+    badge: "CÂU 4 – CHỮ CÁI CÓ TÂM ĐỐI XỨNG",
+    prompt: "Trong các chữ cái in hoa dạng nét thẳng thông dụng, nhóm chữ nào có tâm đối xứng?",
+    options: [
+      "H, N, X.",
+      "A, M, T.",
+      "P, R, F.",
+      "B, C, D."
+    ],
+    correctIndex: 0, // A
+    visualTitle: "QUAY NỬA VÒNG (180°) CÁC CHỮ CÁI",
+    visualTag: "Chữ cái in hoa",
+    explanation: "Đáp án A: Các chữ H, N, X khi quay 180° quanh tâm đều trùng khít với chính nó."
+  },
+  {
+    id: 5,
+    cup: 2.5,
+    badge: "CÂU 5 – TÍNH ĐỘ DÀI ĐOẠN THẲNG",
+    prompt: "A và A′ đối xứng nhau qua tâm O. Nếu OA = 3 cm thì độ dài AA′ bằng bao nhiêu?",
+    options: [
+      "1,5 cm.",
+      "3 cm.",
+      "6 cm.",
+      "9 cm."
+    ],
+    correctIndex: 2, // C
+    visualTitle: "ĐOẠN THẲNG A – O – A′",
+    visualTag: "OA = OA′ = 3 cm",
+    explanation: "Đáp án C: Vì O là trung điểm của AA′ nên AA′ = OA + OA′ = 3 + 3 = 6 cm."
+  },
+  {
+    id: 6,
+    cup: 3.0,
+    badge: "CÂU 6 – NHẬN BIẾT KHẲNG ĐỊNH SAI",
+    prompt: "Trong các khẳng định sau, khẳng định nào sai?",
+    optionsOriginal: [
+      "Hình thang cân không có tâm đối xứng.",
+      "Hình thoi có một tâm đối xứng.",
+      "Hình tam giác đều có một tâm đối xứng.",
+      "Hình tròn có vô số tâm đối xứng."
+    ],
+    optionsRevised: [
+      "Hình thang cân không có tâm đối xứng.",
+      "Hình thoi có một tâm đối xứng.",
+      "Hình tam giác đều có một tâm đối xứng.",
+      "Hình tròn có vô số trục đối xứng."
+    ],
+    correctIndex: 2, // C (after teacher approval of D revision)
+    requiresTeacherApproval: true,
+    visualTitle: "KIỂM CHỨNG CÁC HÌNH PHẲNG",
+    visualTag: "4 hình đối chiếu",
+    explanation: "Đáp án C sai: Hình tam giác đều có 3 trục đối xứng nhưng KHÔNG có tâm đối xứng."
+  },
+  {
+    id: 7,
+    cup: 3.5,
+    badge: "CÂU 7 – TÂM ĐỐI XỨNG CỦA HÌNH",
+    prompt: "Cho hình bên, chọn câu sai trong các câu sau:",
+    options: [
+      "Tâm đối xứng của hình lục giác ABCDEF là trung điểm CF.",
+      "Tâm đối xứng của hình chữ nhật ABCD là trung điểm của BE.",
+      "Hình lục giác có nhiều hơn hình chữ nhật 2 tâm đối xứng.",
+      "Hình lục giác và hình chữ nhật có cùng tâm đối xứng."
+    ],
+    correctIndex: 2, // C (Hinh luc giac va hinh chu nhat deu co 1 tam doi xung)
+    hasZoomFigure: true,
+    visualTitle: "HÌNH LỤC GIÁC ABCDEF & HÌNH CHỮ NHẬT",
+    visualTag: "Hình gốc PPTX",
+    explanation: "Đáp án C sai: Cả hình lục giác đều ABCDEF và hình chữ nhật ABDE đều chỉ có 1 tâm đối xứng chung."
+  },
+  {
+    id: 8,
+    cup: 4.0,
+    badge: "CÂU 8 – TÂM ĐỐI XỨNG HÌNH CHỮ NHẬT",
+    prompt: "Tâm đối xứng của hình chữ nhật là?",
+    options: [
+      "Cả ba đáp án trên đều sai.",
+      "Trung điểm chiều dài.",
+      "Trung điểm của chiều rộng.",
+      "Trung điểm của đường chéo."
+    ],
+    correctIndex: 3, // D
+    visualTitle: "GIAO ĐIỂM HAI ĐƯỜNG CHÉO O",
+    visualTag: "Hình chữ nhật",
+    explanation: "Đáp án D: Tâm đối xứng của hình chữ nhật là giao điểm (trung điểm) của hai đường chéo."
+  },
+  {
+    id: 9,
+    cup: 4.5,
+    badge: "CÂU 9 – ĐẾM SỐ TRỤC ĐỐI XỨNG",
+    prompt: "Trong các khẳng định sau, khẳng định nào sai?",
+    options: [
+      "Hình lục giác đều có đúng 3 trục đối xứng.",
+      "Hình vuông có đúng 4 trục đối xứng.",
+      "Hình thoi có các góc khác 90° có đúng 2 trục đối xứng.",
+      "Hình chữ nhật có hai kích thước khác nhau có đúng 2 trục đối xứng."
+    ],
+    correctIndex: 0, // A
+    visualTitle: "6 TRỤC ĐỐI XỨNG HÌNH LỤC GIÁC ĐỀU",
+    visualTag: "Hình lục giác đều",
+    explanation: "Đáp án A sai: Hình lục giác đều có tới 6 trục đối xứng (3 trục qua đỉnh đối diện và 3 trục qua trung điểm cạnh đối diện)."
+  },
+  {
+    id: 10,
+    cup: 5.0,
+    badge: "CÂU 10 – CHUNG KẾT",
+    prompt: "Trong các khẳng định sau, khẳng định nào đúng?",
+    options: [
+      "Hình tam giác đều có tâm đối xứng là giao điểm của ba trục đối xứng.",
+      "Hình thang cân có các góc ở đáy khác 90° có tâm đối xứng là giao điểm của hai đường chéo.",
+      "Hình chữ nhật có tâm đối xứng là giao điểm của hai đường chéo.",
+      "Hình thang có tâm đối xứng là giao điểm của hai đường chéo."
+    ],
+    correctIndex: 2, // C
+    isFinale: true,
+    visualTitle: "THỬ THÁCH CHUNG KẾT – 5 CUP",
+    visualTag: "Chinh phục cúp vàng",
+    explanation: "Đáp án C đúng: Hình chữ nhật có tâm đối xứng chính là giao điểm của hai đường chéo."
+  }
+];
+
+/* ==========================================================================
+   2. GAME STATE & PERSISTENCE MANAGER
+   ========================================================================== */
+const STORAGE_KEY = "spark_math_b49_symmetry_championship_v4";
+
+const defaultState = () => ({
+  screen: "opening",
+  currentIndex: 0,
+  teams: {
+    1: { name: "ĐỘI 1", cups: 0, correct: 0, wrong: 0 },
+    2: { name: "ĐỘI 2", cups: 0, correct: 0, wrong: 0 }
+  },
+  // Per-question runtime state
+  questionStates: Array.from({ length: 10 }, () => ({
+    activeTeam: null,        // 1 | 2 | null
+    buzzerLocked: false,
+    attemptedTeams: [],      // teams that already answered wrong on this question
+    wrongOptions: [],        // indices chosen wrongly
+    pendingOption: null,     // option clicked before confirmation (optional instant or confirmed)
+    answeredCorrectly: false,
+    scored: false,           // strict guard against double scoring
+    skipped: false,
+    selectedByTeam: null
+  })),
+  q6Approved: false,
+  timerMode: false
+});
+
+let state = defaultState();
+let timerInterval = null;
+let timeLeft = 10;
+let simInterval = null;
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.teams && parsed.questionStates && parsed.questionStates.length === 10) {
+        state = parsed;
+      }
+    }
+  } catch (e) {}
+}
+
+function formatCup(num) {
+  return num.toString().replace(".", ",") + " cup";
+}
+
+/* ==========================================================================
+   3. SOUND SYNTHESIZER (WEB AUDIO API - NO EXTERNAL FILES)
+   ========================================================================== */
+const SoundFX = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+  },
+  playTone(freq, type, duration, delay = 0) {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.16, this.ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(this.ctx.currentTime + delay);
+      osc.stop(this.ctx.currentTime + delay + duration);
+    } catch (e) {}
+  },
+  buzz() {
+    this.playTone(660, "triangle", 0.14, 0);
+    this.playTone(880, "triangle", 0.24, 0.1);
+  },
+  correct() {
+    this.playTone(523.25, "sine", 0.15, 0);
+    this.playTone(659.25, "sine", 0.15, 0.12);
+    this.playTone(783.99, "sine", 0.18, 0.24);
+    this.playTone(1046.5, "sine", 0.35, 0.36);
+  },
+  wrong() {
+    this.playTone(240, "sawtooth", 0.22, 0);
+    this.playTone(175, "sawtooth", 0.36, 0.18);
+  }
+};
+
+/* ==========================================================================
+   4. CONFETTI PARTICLE ENGINE
+   ========================================================================== */
+const Confetti = {
+  particles: [],
+  running: false,
+  launch(durationMs = 2600) {
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+    const colors = ["#ffd166", "#02c39a", "#ff7b00", "#ffffff", "#38bdf8", "#f43f5e"];
+    this.particles = Array.from({ length: 110 }, () => ({
+      x: Math.random() * 1280,
+      y: -20 - Math.random() * 250,
+      w: 8 + Math.random() * 8,
+      h: 5 + Math.random() * 6,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 3 + Math.random() * 4.5,
+      rot: Math.random() * 360,
+      vrot: (Math.random() - 0.5) * 10,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    }));
+    const endTime = Date.now() + durationMs;
+    if (this.running) return;
+    this.running = true;
+
+    const tick = () => {
+      ctx.clearRect(0, 0, 1280, 720);
+      this.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      if (Date.now() < endTime) {
+        requestAnimationFrame(tick);
+      } else {
+        ctx.clearRect(0, 0, 1280, 720);
+        this.running = false;
+      }
+    };
+    requestAnimationFrame(tick);
+  }
+};
+
+/* ==========================================================================
+   5. MATHEMATICAL SVG ANIMATION ENGINE (DEDICATED PER QUESTION)
+   ========================================================================== */
+const VisualEngine = {
+  animTimers: [],
+  clearTimers() {
+    this.animTimers.forEach(id => clearTimeout(id));
+    this.animTimers = [];
+  },
+  schedule(fn, delay) {
+    const id = setTimeout(fn, delay);
+    this.animTimers.push(id);
+  },
+
+  renderBase(qIndex) {
+    this.clearTimers();
+    const box = document.getElementById("visual-canvas-box");
+    const q = QUESTIONS[qIndex];
+    document.getElementById("visual-title").textContent = q.visualTitle;
+    document.getElementById("visual-hint-tag").textContent = q.visualTag;
+    const zoomBtn = document.getElementById("btn-zoom-fig");
+    if (zoomBtn) zoomBtn.style.display = q.hasZoomFigure ? "inline-block" : "none";
+
+    switch (q.id) {
+      case 1:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <!-- Left Half of Heart/Butterfly -->
+            <path d="M180 75 C140 35, 75 75, 95 140 C110 185, 180 225, 180 225 Z" fill="#00a896" fill-opacity="0.78" stroke="#0f2547" stroke-width="2.5"/>
+            <!-- Right Half (Foldable) -->
+            <g id="q1-right-half" style="transform-origin: 180px 150px; transition: transform 1.2s ease-in-out;">
+              <path d="M180 75 C220 35, 285 75, 265 140 C250 185, 180 225, 180 225 Z" fill="#ff7b00" fill-opacity="0.72" stroke="#0f2547" stroke-width="2.5"/>
+            </g>
+            <!-- Axis d -->
+            <line x1="180" y1="32" x2="180" y2="255" stroke="#e63946" stroke-width="3.5" stroke-dasharray="8,6"/>
+            <text x="190" y="48" fill="#e63946" font-size="18" font-weight="bold">d</text>
+            <text id="q1-caption" x="180" y="274" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Nhấn "Chạy minh họa" để gấp hình theo trục d</text>
+          </svg>`;
+        break;
+
+      case 2:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <!-- Ghost original outline -->
+            <polygon points="110,95 250,95 225,195 85,195" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,5"/>
+            <!-- Rotating Parallelogram -->
+            <g id="q2-rot-group" style="transform-origin: 167.5px 145px; transition: transform 1.4s cubic-bezier(0.34,1.56,0.64,1);">
+              <polygon points="110,95 250,95 225,195 85,195" fill="#02c39a" fill-opacity="0.35" stroke="#0f2547" stroke-width="3"/>
+              <circle cx="110" cy="95" r="5" fill="#ff7b00"/>
+              <text x="95" y="88" fill="#0f2547" font-size="14" font-weight="bold">A</text>
+              <circle cx="225" cy="195" r="5" fill="#00a896"/>
+              <text x="232" y="210" fill="#0f2547" font-size="14" font-weight="bold">A'</text>
+            </g>
+            <circle cx="167.5" cy="145" r="6" fill="#e63946"/>
+            <text x="176" y="140" fill="#e63946" font-size="16" font-weight="bold">O</text>
+            <text id="q2-caption" x="180" y="262" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Quay hình 180° quanh tâm O</text>
+          </svg>`;
+        break;
+
+      case 3:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <rect x="105" y="70" width="150" height="150" fill="#e0f2fe" stroke="#0f2547" stroke-width="3.5"/>
+            <!-- 4 Symmetry Axes -->
+            <line id="q3-ax1" x1="180" y1="45" x2="180" y2="245" stroke="#e63946" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <line id="q3-ax2" x1="80" y1="145" x2="280" y2="145" stroke="#e63946" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <line id="q3-ax3" x1="85" y1="50" x2="275" y2="240" stroke="#ff7b00" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <line id="q3-ax4" x1="275" y1="50" x2="85" y2="240" stroke="#ff7b00" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <text id="q3-caption" x="180" y="264" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Quan sát các trục đối xứng của hình vuông</text>
+          </svg>`;
+        break;
+
+      case 4:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <g id="q4-l1" style="transform-origin: 85px 140px; transition: transform 1.2s ease;">
+              <rect x="48" y="95" width="74" height="90" rx="12" fill="#e6f7f4" stroke="#00a896" stroke-width="2.5"/>
+              <text x="85" y="158" text-anchor="middle" fill="#0f2547" font-size="54" font-weight="bold">H</text>
+              <circle cx="85" cy="140" r="4" fill="#e63946"/>
+            </g>
+            <g id="q4-l2" style="transform-origin: 180px 140px; transition: transform 1.2s ease;">
+              <rect x="143" y="95" width="74" height="90" rx="12" fill="#e6f7f4" stroke="#00a896" stroke-width="2.5"/>
+              <text x="180" y="158" text-anchor="middle" fill="#0f2547" font-size="54" font-weight="bold">N</text>
+              <circle cx="180" cy="140" r="4" fill="#e63946"/>
+            </g>
+            <g id="q4-l3" style="transform-origin: 275px 140px; transition: transform 1.2s ease;">
+              <rect x="238" y="95" width="74" height="90" rx="12" fill="#e6f7f4" stroke="#00a896" stroke-width="2.5"/>
+              <text x="275" y="158" text-anchor="middle" fill="#0f2547" font-size="54" font-weight="bold">X</text>
+              <circle cx="275" cy="140" r="4" fill="#e63946"/>
+            </g>
+            <text id="q4-caption" x="180" y="245" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Quay từng chữ cái 180° quanh tâm đỏ</text>
+          </svg>`;
+        break;
+
+      case 5:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <line id="q5-line" x1="70" y1="145" x2="290" y2="145" stroke="#0f2547" stroke-width="3.5" opacity="0.35"/>
+            <line id="q5-seg1" x1="70" y1="145" x2="180" y2="145" stroke="#00a896" stroke-width="6" opacity="0"/>
+            <line id="q5-seg2" x1="180" y1="145" x2="290" y2="145" stroke="#ff7b00" stroke-width="6" opacity="0"/>
+            <circle cx="70" cy="145" r="7" fill="#0f2547"/>
+            <text x="70" y="128" text-anchor="middle" fill="#0f2547" font-size="18" font-weight="bold">A</text>
+            <circle cx="180" cy="145" r="7" fill="#e63946"/>
+            <text x="180" y="128" text-anchor="middle" fill="#e63946" font-size="18" font-weight="bold">O</text>
+            <circle id="q5-pt-a2" cx="180" cy="145" r="7" fill="#0f2547" style="transition: cx 0.9s ease;"/>
+            <text id="q5-lbl-a2" x="290" y="128" text-anchor="middle" fill="#0f2547" font-size="18" font-weight="bold" opacity="0">A′</text>
+            <text id="q5-t1" x="125" y="175" text-anchor="middle" fill="#00a896" font-size="15" font-weight="bold" opacity="0">OA = 3 cm</text>
+            <text id="q5-t2" x="235" y="175" text-anchor="middle" fill="#ff7b00" font-size="15" font-weight="bold" opacity="0">OA′ = 3 cm</text>
+            <text id="q5-total" x="180" y="225" text-anchor="middle" fill="#e63946" font-size="18" font-weight="bold" opacity="0">AA′ = 3 + 3 = 6 cm</text>
+          </svg>`;
+        break;
+
+      case 6:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="16" y="16" width="328" height="258" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <!-- A: Isosceles Trapezoid -->
+            <g transform="translate(30,28)">
+              <polygon points="35,15 95,15 115,65 15,65" fill="#e0f2fe" stroke="#0f2547" stroke-width="2.5"/>
+              <text x="65" y="84" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f2547">Hình thang cân (0 tâm)</text>
+            </g>
+            <!-- B: Rhombus -->
+            <g transform="translate(195,28)">
+              <polygon points="65,10 110,40 65,70 20,40" fill="#dcfce7" stroke="#0f2547" stroke-width="2.5"/>
+              <circle cx="65" cy="40" r="4" fill="#e63946"/>
+              <text x="65" y="84" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f2547">Hình thoi (1 tâm O)</text>
+            </g>
+            <!-- C: Equilateral Triangle -->
+            <g id="q6-tri-group" transform="translate(30,145)" style="transform-origin: 65px 45px; transition: transform 1.2s ease;">
+              <polygon points="65,10 112,72 18,72" fill="#fee2e2" stroke="#e63946" stroke-width="2.5"/>
+              <text x="65" y="92" text-anchor="middle" font-size="11" font-weight="bold" fill="#e63946">Tam giác đều (0 tâm!)</text>
+            </g>
+            <!-- D: Circle -->
+            <g transform="translate(195,145)">
+              <circle cx="65" cy="42" r="30" fill="#fef3c7" stroke="#0f2547" stroke-width="2.5"/>
+              <circle cx="65" cy="42" r="4" fill="#e63946"/>
+              <line x1="30" y1="42" x2="100" y2="42" stroke="#00a896" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <line x1="65" y1="8" x2="65" y2="76" stroke="#00a896" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <text x="65" y="92" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f2547">Hình tròn (1 tâm, ∞ trục)</text>
+            </g>
+          </svg>`;
+        break;
+
+      case 7:
+        // Exact Hexagon ABCDEF with rectangle ABDE (diagonals BE, AD) matching PPTX slide 16
+        box.innerHTML = getQ7FigureSVG(false);
+        break;
+
+      case 8:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+            <rect x="75" y="80" width="210" height="125" fill="#e6f7f4" stroke="#0f2547" stroke-width="3.5"/>
+            <line id="q8-d1" x1="75" y1="80" x2="285" y2="205" stroke="#ff7b00" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <line id="q8-d2" x1="285" y1="80" x2="75" y2="205" stroke="#ff7b00" stroke-width="3" stroke-dasharray="7,5" opacity="0"/>
+            <g id="q8-center" opacity="0">
+              <circle cx="180" cy="142.5" r="7" fill="#e63946"/>
+              <text x="180" y="126" text-anchor="middle" fill="#e63946" font-size="18" font-weight="bold">O</text>
+            </g>
+            <text x="180" y="246" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Giao điểm O của hai đường chéo</text>
+          </svg>`;
+        break;
+
+      case 9:
+        box.innerHTML = getQ9HexagonSVG();
+        break;
+
+      case 10:
+        box.innerHTML = `
+          <svg width="360" height="290" viewBox="0 0 360 290">
+            <rect x="20" y="20" width="320" height="250" rx="12" fill="#fffdf5" stroke="#ff7b00" stroke-width="2.5"/>
+            <rect x="80" y="75" width="200" height="120" fill="#fff3cd" stroke="#0f2547" stroke-width="3.5"/>
+            <line id="q10-d1" x1="80" y1="75" x2="280" y2="195" stroke="#00a896" stroke-width="3" stroke-dasharray="6,4" opacity="0"/>
+            <line id="q10-d2" x1="280" y1="75" x2="80" y2="195" stroke="#00a896" stroke-width="3" stroke-dasharray="6,4" opacity="0"/>
+            <circle id="q10-o" cx="180" cy="135" r="7" fill="#e63946" opacity="0"/>
+            <text id="q10-olbl" x="180" y="118" text-anchor="middle" fill="#e63946" font-size="18" font-weight="bold" opacity="0">O</text>
+            <text x="180" y="235" text-anchor="middle" fill="#0f2547" font-size="14" font-weight="bold">CHUNG KẾT • MỨC THƯỞNG 5 CUP</text>
+          </svg>`;
+        break;
+    }
+  },
+
+  play() {
+    const q = QUESTIONS[state.currentIndex];
+    this.renderBase(state.currentIndex);
+
+    if (q.id === 1) {
+      this.schedule(() => {
+        const half = document.getElementById("q1-right-half");
+        const cap = document.getElementById("q1-caption");
+        if (half) half.style.transform = "scaleX(-1)";
+        if (cap) cap.textContent = "Hai nửa hình chồng khít hoàn toàn lên nhau!";
+      }, 200);
+    } else if (q.id === 2) {
+      this.schedule(() => {
+        const g = document.getElementById("q2-rot-group");
+        const cap = document.getElementById("q2-caption");
+        if (g) g.style.transform = "rotate(180deg)";
+        if (cap) cap.textContent = "Sau khi quay 180°, hình trùng khít vị trí ban đầu!";
+      }, 200);
+    } else if (q.id === 3) {
+      ["q3-ax1", "q3-ax2", "q3-ax3", "q3-ax4"].forEach((id, idx) => {
+        this.schedule(() => {
+          const el = document.getElementById(id);
+          if (el) el.setAttribute("opacity", "1");
+        }, (idx + 1) * 420);
+      });
+    } else if (q.id === 4) {
+      ["q4-l1", "q4-l2", "q4-l3"].forEach((id, idx) => {
+        this.schedule(() => {
+          const el = document.getElementById(id);
+          if (el) el.style.transform = "rotate(180deg)";
+        }, (idx + 1) * 450);
+      });
+    } else if (q.id === 5) {
+      this.schedule(() => {
+        const s1 = document.getElementById("q5-seg1");
+        const t1 = document.getElementById("q5-t1");
+        if (s1) s1.setAttribute("opacity", "1");
+        if (t1) t1.setAttribute("opacity", "1");
+      }, 300);
+      this.schedule(() => {
+        const pt = document.getElementById("q5-pt-a2");
+        const lbl = document.getElementById("q5-lbl-a2");
+        const s2 = document.getElementById("q5-seg2");
+        const t2 = document.getElementById("q5-t2");
+        if (pt) pt.setAttribute("cx", "290");
+        if (lbl) lbl.setAttribute("opacity", "1");
+        if (s2) s2.setAttribute("opacity", "1");
+        if (t2) t2.setAttribute("opacity", "1");
+      }, 950);
+      this.schedule(() => {
+        const tot = document.getElementById("q5-total");
+        if (tot) tot.setAttribute("opacity", "1");
+      }, 1700);
+    } else if (q.id === 6) {
+      this.schedule(() => {
+        const tri = document.getElementById("q6-tri-group");
+        if (tri) tri.style.transform = "rotate(180deg)";
+      }, 250);
+    } else if (q.id === 7) {
+      this.schedule(() => {
+        const diag = document.getElementById("q7-center-overlay");
+        if (diag) diag.setAttribute("opacity", "1");
+      }, 250);
+    } else if (q.id === 8) {
+      this.schedule(() => {
+        const d1 = document.getElementById("q8-d1");
+        if (d1) d1.setAttribute("opacity", "1");
+      }, 250);
+      this.schedule(() => {
+        const d2 = document.getElementById("q8-d2");
+        if (d2) d2.setAttribute("opacity", "1");
+      }, 750);
+      this.schedule(() => {
+        const c = document.getElementById("q8-center");
+        if (c) c.setAttribute("opacity", "1");
+      }, 1250);
+    } else if (q.id === 9) {
+      for (let i = 1; i <= 6; i++) {
+        this.schedule(() => {
+          const ax = document.getElementById("q9-ax-" + i);
+          if (ax) ax.setAttribute("opacity", "1");
+        }, i * 340);
+      }
+    } else if (q.id === 10) {
+      this.schedule(() => {
+        document.getElementById("q10-d1")?.setAttribute("opacity", "1");
+        document.getElementById("q10-d2")?.setAttribute("opacity", "1");
+      }, 300);
+      this.schedule(() => {
+        document.getElementById("q10-o")?.setAttribute("opacity", "1");
+        document.getElementById("q10-olbl")?.setAttribute("opacity", "1");
+      }, 850);
+    }
+  },
+
+  reset() {
+    this.renderBase(state.currentIndex);
+  }
+};
+
+/* Exact SVG for Question 7 matching PPTX Slide 16 (Hexagon ABCDEF with chords BD and AE) */
+function getQ7FigureSVG(large) {
+  const w = large ? 480 : 350;
+  const h = large ? 400 : 285;
+  // Regular hexagon vertices centered at (180, 145), radius 92
+  // B(134, 65), C(226, 65), D(272, 145), E(226, 225), F(134, 225), A(88, 145)
+  return `
+    <svg width="${w}" height="${h}" viewBox="0 0 360 290">
+      <rect x="16" y="14" width="328" height="262" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+      <!-- Hexagon ABCDEF -->
+      <polygon points="88,145 134,65 226,65 272,145 226,225 134,225" fill="#f8fafc" stroke="#0f2547" stroke-width="2.8"/>
+      <!-- Chords BD and AE forming rectangle ABDE -->
+      <line x1="134" y1="65" x2="272" y2="145" stroke="#0f2547" stroke-width="2.4"/>
+      <line x1="88" y1="145" x2="226" y2="225" stroke="#0f2547" stroke-width="2.4"/>
+      <!-- Optional symmetry center overlay (hidden until user clicks animate) -->
+      <g id="q7-center-overlay" opacity="0">
+        <line x1="226" y1="65" x2="134" y2="225" stroke="#e63946" stroke-width="2" stroke-dasharray="5,4"/>
+        <line x1="134" y1="65" x2="226" y2="225" stroke="#00a896" stroke-width="2" stroke-dasharray="5,4"/>
+        <circle cx="180" cy="145" r="5" fill="#e63946"/>
+      </g>
+      <!-- Vertex Labels matching PPTX Slide 16 -->
+      <text x="64" y="150" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">A</text>
+      <text x="120" y="54" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">B</text>
+      <text x="228" y="54" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">C</text>
+      <text x="280" y="150" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">D</text>
+      <text x="228" y="246" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">E</text>
+      <text x="118" y="246" font-size="20" font-style="italic" font-family="Times New Roman, serif" fill="#0f2547">F</text>
+    </svg>`;
+}
+
+function getQ9HexagonSVG() {
+  return `
+    <svg width="360" height="290" viewBox="0 0 360 290">
+      <rect x="20" y="20" width="320" height="250" rx="12" fill="#ffffff" stroke="#dce7f5"/>
+      <polygon points="100,145 140,76 220,76 260,145 220,214 140,214" fill="#e0f2fe" stroke="#0f2547" stroke-width="3"/>
+      <!-- 3 vertex-to-vertex axes -->
+      <line id="q9-ax-1" x1="82" y1="145" x2="278" y2="145" stroke="#e63946" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <line id="q9-ax-2" x1="131" y1="60" x2="229" y2="230" stroke="#e63946" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <line id="q9-ax-3" x1="229" y1="60" x2="131" y2="230" stroke="#e63946" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <!-- 3 edge-midpoint axes -->
+      <line id="q9-ax-4" x1="180" y1="56" x2="180" y2="234" stroke="#00a896" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <line id="q9-ax-5" x1="102" y1="100" x2="258" y2="190" stroke="#00a896" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <line id="q9-ax-6" x1="258" y1="100" x2="102" y2="190" stroke="#00a896" stroke-width="2.5" stroke-dasharray="6,4" opacity="0"/>
+      <text x="180" y="258" text-anchor="middle" fill="#0f2547" font-size="13" font-weight="bold">Hình lục giác đều có 6 trục đối xứng</text>
+    </svg>`;
+}
+
+/* ==========================================================================
+   6. CORE GAME CONTROLLER
+   ========================================================================== */
+const Game = {
+  init() {
+    loadState();
+    this.fitStageToViewport();
+    window.addEventListener("resize", () => this.fitStageToViewport());
+
+    // Bind Opening & Rules Buttons
+    document.getElementById("btn-start-game").addEventListener("click", () => {
+      const t1 = document.getElementById("input-team1-name").value.trim() || "ĐỘI 1";
+      const t2 = document.getElementById("input-team2-name").value.trim() || "ĐỘI 2";
+      state.teams[1].name = t1;
+      state.teams[2].name = t2;
+      saveState();
+      this.goToScreen("rules");
+    });
+
+    document.getElementById("btn-replay-sim").addEventListener("click", () => this.startRulesSimulation());
+    document.getElementById("btn-review-rules").addEventListener("click", () => {
+      this.openModal(
+        "TÓM TẮT LUẬT CHƠI BÀI 49",
+        `<ul style="padding-left:20px; display:flex; flex-direction:column; gap:8px;">
+          <li>Trò chơi gồm <strong>10 câu hỏi</strong> với mức thưởng tăng dần: 0,5 → 1 → 1,5 → 2 → 2,5 → 3 → 3,5 → 4 → 4,5 → 5 cup.</li>
+          <li>Hai đội bấm chuông giành quyền trả lời. Khi một đội bấm trước, chuông đội còn lại tự động khóa.</li>
+          <li><strong>Trả lời đúng:</strong> Cộng số cup tương ứng của câu hỏi và cập nhật thứ hạng.</li>
+          <li><strong>Trả lời sai:</strong> Điểm của đội đó bị đưa về <strong>0 cup</strong> theo luật gốc, và giáo viên có thể chuyển quyền cho đội còn lại.</li>
+        </ul>`,
+        [{ text: "Đã hiểu", cls: "btn-primary", action: () => this.closeModal() }]
+      );
+    });
+
+    document.getElementById("btn-begin-match").addEventListener("click", () => {
+      this.goToScreen("game");
+    });
+
+    // Restore saved inputs
+    document.getElementById("input-team1-name").value = state.teams[1].name;
+    document.getElementById("input-team2-name").value = state.teams[2].name;
+
+    this.goToScreen(state.screen, true);
+  },
+
+  fitStageToViewport() {
+    const stage = document.getElementById("game-stage");
+    const scaleX = window.innerWidth / 1280;
+    const scaleY = window.innerHeight / 720;
+    const scale = Math.min(scaleX, scaleY);
+    stage.style.transform = `scale(${scale})`;
+  },
+
+  goToScreen(screenName, isInitial = false) {
+    state.screen = screenName;
+    saveState();
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("screen-" + screenName).classList.add("active");
+
+    if (simInterval) {
+      clearInterval(simInterval);
+      simInterval = null;
+    }
+    this.stopTimer();
+
+    if (screenName === "rules") {
+      this.startRulesSimulation();
+    } else if (screenName === "game") {
+      this.resetQuestionClock();
+      this.startQuestionClock();
+      this.renderGameScreen();
+    } else if (screenName === "end") {
+      this.stopQuestionClock();
+      this.renderEndScreen();
+    }
+  },
+
+  /* Rules 6-step Simulation */
+  startRulesSimulation() {
+    if (simInterval) clearInterval(simInterval);
+    const t1Name = state.teams[1].name;
+    const t2Name = state.teams[2].name;
+    document.getElementById("sim-name-1").textContent = t1Name;
+    document.getElementById("sim-name-2").textContent = t2Name;
+
+    const steps = [
+      {
+        step: 1,
+        s1: "1,0 cup", r1: "Hạng: Đồng hạng 1", c1: "highlight-win",
+        s2: "1,0 cup", r2: "Hạng: Đồng hạng 1", c2: "",
+        msg: `Bước 1: ${t1Name} bấm chuông nhanh hơn và giành quyền trả lời Câu 3 (1,5 cup)!`
+      },
+      {
+        step: 2,
+        s1: "1,0 cup", r1: "Hạng: Đồng hạng 1", c1: "highlight-win",
+        s2: "1,0 cup", r2: "Hạng: Đồng hạng 1", c2: "",
+        msg: `Bước 2: ${t1Name} chọn đáp án CHÍNH XÁC!`
+      },
+      {
+        step: 3,
+        s1: "2,5 cup", r1: "Hạng: HẠNG 1 ▲", c1: "highlight-win",
+        s2: "1,0 cup", r2: "Hạng: Hạng 2 ▼", c2: "",
+        msg: `Bước 3: ${t1Name} được cộng +1,5 cup → đạt 2,5 cup và vươn lên HẠNG 1!`
+      },
+      {
+        step: 4,
+        s1: "2,5 cup", r1: "Hạng: Hạng 1", c1: "",
+        s2: "1,0 cup", r2: "Hạng: Hạng 2", c2: "highlight-win",
+        msg: `Bước 4: Sang câu tiếp theo, ${t2Name} bấm chuông giành quyền trả lời!`
+      },
+      {
+        step: 5,
+        s1: "2,5 cup", r1: "Hạng: Hạng 1", c1: "",
+        s2: "1,0 cup", r2: "Hạng: Hạng 2", c2: "highlight-lose",
+        msg: `Bước 5: ${t2Name} chọn đáp án CHƯA ĐÚNG!`
+      },
+      {
+        step: 6,
+        s1: "2,5 cup", r1: "Hạng: Hạng 1", c1: "",
+        s2: "0 cup", r2: "Hạng: Hạng 2", c2: "highlight-lose",
+        msg: `Bước 6: Theo luật gốc, điểm của ${t2Name} bị đưa về 0 cup!`
+      }
+    ];
+
+    let idx = 0;
+    const applyStep = () => {
+      const st = steps[idx];
+      document.getElementById("sim-score-1").textContent = st.s1;
+      document.getElementById("sim-rank-1").textContent = st.r1;
+      document.getElementById("sim-score-2").textContent = st.s2;
+      document.getElementById("sim-rank-2").textContent = st.r2;
+
+      const card1 = document.getElementById("sim-card-1");
+      const card2 = document.getElementById("sim-card-2");
+      card1.className = "sim-team-card " + st.c1;
+      card2.className = "sim-team-card " + st.c2;
+
+      document.getElementById("sim-status-text").textContent = st.msg;
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById("sdot-" + i).classList.toggle("active", i === st.step);
+      }
+      idx = (idx + 1) % steps.length;
+    };
+
+    applyStep();
+    simInterval = setInterval(applyStep, 2300);
+  },
+
+  /* Compute Live Ranks */
+  getRanks() {
+    const c1 = state.teams[1].cups;
+    const c2 = state.teams[2].cups;
+    if (c1 > c2) return { 1: "Hạng 1", 2: "Hạng 2" };
+    if (c2 > c1) return { 1: "Hạng 2", 2: "Hạng 1" };
+    return { 1: "Đồng hạng 1", 2: "Đồng hạng 1" };
+  },
+
+  /* Render Main Gameplay Screen */
+  renderGameScreen() {
+    const idx = state.currentIndex;
+    const q = QUESTIONS[idx];
+    const qs = state.questionStates[idx];
+    const ranks = this.getRanks();
+
+    // Update Team HUDs
+    [1, 2].forEach(t => {
+      const team = state.teams[t];
+      document.getElementById("hud-name-" + t).textContent = team.name;
+      document.getElementById("hud-cups-" + t).textContent = formatCup(team.cups);
+      document.getElementById("hud-correct-" + t).textContent = team.correct;
+      document.getElementById("hud-wrong-" + t).textContent = team.wrong;
+      document.getElementById("hud-rank-" + t).textContent = ranks[t];
+
+      const hud = document.getElementById("hud-team-" + t);
+      const btn = document.getElementById("buzzer-" + t);
+      const bell = document.getElementById("bell-icon-" + t);
+
+      hud.classList.remove("buzzed-winner", "buzzed-locked");
+      if (bell) bell.classList.remove("buzzer-ring");
+
+      if (qs.activeTeam === t) {
+        hud.classList.add("buzzed-winner");
+        if (bell) bell.classList.add("buzzer-ring");
+      } else if (qs.activeTeam !== null || qs.buzzerLocked || qs.answeredCorrectly || qs.skipped) {
+        hud.classList.add("buzzed-locked");
+      }
+
+      const canBuzz = !qs.buzzerLocked &&
+                      qs.activeTeam === null &&
+                      !qs.answeredCorrectly &&
+                      !qs.skipped &&
+                      !qs.attemptedTeams.includes(t) &&
+                      !(q.requiresTeacherApproval && !state.q6Approved);
+      if (btn) btn.disabled = !canBuzz;
+    });
+
+    // Progress & Reward Labels
+    const progLbl = document.getElementById("progress-label");
+    const rewLbl = document.getElementById("reward-label");
+    if (progLbl) progLbl.textContent = `CÂU ${idx + 1}/10`;
+    if (rewLbl) rewLbl.textContent = formatCup(q.cup);
+    const dotsWrap = document.getElementById("progress-dots");
+    if (dotsWrap) {
+      dotsWrap.innerHTML = QUESTIONS.map((_, i) => {
+        const st = state.questionStates[i];
+        let cls = "p-dot";
+        if (i === idx) cls += " current";
+        else if (st.answeredCorrectly || st.skipped) cls += " done";
+        return `<div class="${cls}"></div>`;
+      }).join("");
+    }
+
+    // Question Panel & Finale Styling
+    const qPanel = document.getElementById("question-panel");
+    const qBadge = document.getElementById("q-topic-badge");
+    qPanel.classList.toggle("finale-mode", !!q.isFinale);
+    qBadge.classList.toggle("finale", !!q.isFinale);
+    qBadge.textContent = q.badge;
+    document.getElementById("q-prompt-text").textContent = q.prompt;
+
+    // Q6 Approval Bar
+    const q6Bar = document.getElementById("q6-audit-bar");
+    const q6Btn = document.getElementById("btn-approve-q6");
+    if (q.requiresTeacherApproval) {
+      q6Bar.classList.add("visible");
+      q6Btn.textContent = state.q6Approved ? "✔ Đã duyệt (Đang tính điểm)" : "Duyệt đề & Mở tính điểm";
+      q6Btn.classList.toggle("approved", state.q6Approved);
+    } else {
+      q6Bar.classList.remove("visible");
+    }
+
+    // Turn Indicator
+    const turnPill = document.getElementById("turn-indicator");
+    turnPill.className = "turn-indicator-pill";
+    if (q.requiresTeacherApproval && !state.q6Approved) {
+      turnPill.textContent = "Chờ giáo viên duyệt câu hỏi 6";
+    } else if (qs.answeredCorrectly) {
+      turnPill.textContent = `Hoàn thành • ${state.teams[qs.selectedByTeam].name} ghi điểm!`;
+    } else if (qs.skipped) {
+      turnPill.textContent = "Câu hỏi đã được bỏ qua";
+    } else if (qs.activeTeam === 1) {
+      turnPill.classList.add("active-t1");
+      turnPill.textContent = `🔔 Quyền trả lời: ${state.teams[1].name}`;
+    } else if (qs.activeTeam === 2) {
+      turnPill.classList.add("active-t2");
+      turnPill.textContent = `🔔 Quyền trả lời: ${state.teams[2].name}`;
+    } else if (qs.buzzerLocked) {
+      turnPill.textContent = "🔒 Chuông đang khóa";
+    } else {
+      turnPill.textContent = "Sẵn sàng: Hai đội bấm chuông!";
+    }
+
+    // Options Rendering
+    const opts = q.requiresTeacherApproval
+      ? (state.q6Approved ? q.optionsRevised : q.optionsOriginal)
+      : q.options;
+
+    const letters = ["A", "B", "C", "D"];
+    const optGrid = document.getElementById("options-grid");
+    const canChooseOption = qs.activeTeam !== null &&
+                            !qs.answeredCorrectly &&
+                            !qs.skipped &&
+                            !(q.requiresTeacherApproval && !state.q6Approved);
+
+    optGrid.innerHTML = opts.map((text, oIdx) => {
+      let cls = "option-btn";
+      if (qs.answeredCorrectly && oIdx === q.correctIndex) cls += " correct-ans";
+      if (qs.wrongOptions.includes(oIdx)) cls += " wrong-ans";
+      if (qs.pendingOption === oIdx && !qs.answeredCorrectly) cls += " selected-pending";
+      const disabled = !canChooseOption || qs.wrongOptions.includes(oIdx);
+      return `
+        <button class="${cls}" id="opt-btn-${oIdx}" ${disabled ? "disabled" : ""} onclick="Game.selectOption(${oIdx})">
+          <span class="option-letter">${letters[oIdx]}</span>
+          <span>${text}</span>
+        </button>`;
+    }).join("");
+
+    // Finale option sequential glow effect
+    if (q.isFinale && !qs.answeredCorrectly && qs.activeTeam === null) {
+      letters.forEach((_, i) => {
+        setTimeout(() => {
+          const el = document.getElementById("opt-btn-" + i);
+          if (el) {
+            el.classList.add("finale-glow");
+            setTimeout(() => el.classList.remove("finale-glow"), 500);
+          }
+        }, i * 260);
+      });
+    }
+
+    // Feedback Banner
+    const fb = document.getElementById("feedback-banner");
+    const fbText = document.getElementById("feedback-text");
+    const fbSub = document.getElementById("feedback-sub");
+    fb.className = "feedback-banner";
+
+    if (q.requiresTeacherApproval && !state.q6Approved) {
+      fbText.textContent = "⚠️ Câu 6 tạm khóa tính điểm để giáo viên duyệt phương án D.";
+      fbSub.textContent = "";
+    } else if (qs.answeredCorrectly) {
+      fb.classList.add("fb-correct");
+      fbText.textContent = `🎉 CHÍNH XÁC! ${state.teams[qs.selectedByTeam].name} giành được +${formatCup(q.cup)}!`;
+      fbSub.textContent = q.explanation;
+    } else if (qs.pendingOption !== null) {
+      fbText.textContent = `${state.teams[qs.activeTeam].name} đang chọn phương án ${letters[qs.pendingOption]}. Nhấn lần nữa hoặc "Xác nhận KQ" để chốt!`;
+      fbSub.textContent = "";
+    } else if (qs.wrongOptions.length > 0 && qs.activeTeam === null) {
+      fb.classList.add("fb-wrong");
+      const lastTeam = qs.attemptedTeams[qs.attemptedTeams.length - 1];
+      fbText.textContent = `❌ CHƯA ĐÚNG! Điểm của ${state.teams[lastTeam].name} đã trở về 0 cup.`;
+      fbSub.textContent = qs.attemptedTeams.length < 2 ? "Mời đội còn lại bấm chuông hoặc GV chọn đội!" : "Cả hai đội đã thử sức.";
+    } else if (qs.activeTeam !== null) {
+      fbText.textContent = `🔔 ${state.teams[qs.activeTeam].name} giành quyền! Mời chọn đáp án A, B, C hoặc D.`;
+      fbSub.textContent = "";
+    } else {
+      fbText.textContent = "Mời hai đội bấm chuông giành quyền trả lời câu hỏi này.";
+      fbSub.textContent = "";
+    }
+
+    // Timer button state (if present)
+    const timerBtn = document.getElementById("btn-toggle-timer");
+    if (timerBtn) {
+      timerBtn.textContent = state.timerMode ? "⏱ 10s: BẬT" : "⏱ 10s: TẮT";
+      timerBtn.classList.toggle("active-toggle", state.timerMode);
+    }
+
+    // Highlight Confirm button when ready
+    const confirmBtn = document.getElementById("btn-confirm-result");
+    if (confirmBtn) {
+      const readyToConfirm = (qs.activeTeam !== null && qs.pendingOption !== null && !qs.answeredCorrectly) || qs.answeredCorrectly;
+      confirmBtn.style.background = readyToConfirm ? "var(--orange)" : "";
+      confirmBtn.style.borderColor = readyToConfirm ? "var(--gold)" : "";
+    }
+
+    // Render SVG Visual
+    VisualEngine.renderBase(idx);
+    if (qs.answeredCorrectly) {
+      VisualEngine.play();
+    }
+  },
+
+  /* Buzzer Handler */
+  buzz(teamId) {
+    const idx = state.currentIndex;
+    const q = QUESTIONS[idx];
+    const qs = state.questionStates[idx];
+
+    if (q.requiresTeacherApproval && !state.q6Approved) return;
+    if (qs.buzzerLocked || qs.activeTeam !== null || qs.answeredCorrectly || qs.skipped) return;
+    if (qs.attemptedTeams.includes(teamId)) return;
+
+    SoundFX.buzz();
+    qs.activeTeam = teamId;
+    qs.buzzerLocked = true;
+    qs.pendingOption = null;
+    saveState();
+    this.renderGameScreen();
+
+    if (state.timerMode) {
+      this.startTimer();
+    }
+  },
+
+  /* Option Selection & Lock-In */
+  selectOption(optIdx) {
+    const idx = state.currentIndex;
+    const q = QUESTIONS[idx];
+    const qs = state.questionStates[idx];
+
+    if (q.requiresTeacherApproval && !state.q6Approved) return;
+    if (qs.activeTeam === null || qs.answeredCorrectly || qs.skipped) return;
+    if (qs.wrongOptions.includes(optIdx)) return;
+
+    // Two-click confirmation or direct lock-in if already selected
+    if (qs.pendingOption !== optIdx) {
+      qs.pendingOption = optIdx;
+      saveState();
+      this.renderGameScreen();
+      return;
+    }
+
+    this.evaluateAnswer(optIdx);
+  },
+
+  evaluateAnswer(optIdx) {
+    const idx = state.currentIndex;
+    const q = QUESTIONS[idx];
+    const qs = state.questionStates[idx];
+    const teamId = qs.activeTeam;
+    if (teamId === null || qs.answeredCorrectly) return;
+
+    this.stopTimer();
+    qs.pendingOption = null;
+
+    if (optIdx === q.correctIndex) {
+      // CORRECT ANSWER
+      SoundFX.correct();
+      qs.answeredCorrectly = true;
+      qs.selectedByTeam = teamId;
+      qs.buzzerLocked = true;
+
+      // Guard against duplicate score addition
+      if (!qs.scored) {
+        state.teams[teamId].cups = Math.round((state.teams[teamId].cups + q.cup) * 10) / 10;
+        state.teams[teamId].correct += 1;
+        qs.scored = true;
+      }
+
+      saveState();
+      this.renderGameScreen();
+      Confetti.launch(2400);
+    } else {
+      // WRONG ANSWER -> Reset team's cup score to 0 per original PPTX rule
+      SoundFX.wrong();
+      qs.wrongOptions.push(optIdx);
+      if (!qs.attemptedTeams.includes(teamId)) {
+        qs.attemptedTeams.push(teamId);
+      }
+      state.teams[teamId].cups = 0;
+      state.teams[teamId].wrong += 1;
+
+      // Release turn so teacher can allow the other team
+      qs.activeTeam = null;
+      qs.buzzerLocked = qs.attemptedTeams.length >= 2;
+
+      saveState();
+      this.renderGameScreen();
+    }
+  },
+
+  toggleApproveQ6() {
+    state.q6Approved = !state.q6Approved;
+    saveState();
+    this.renderGameScreen();
+  },
+
+  startTimer() {
+    this.stopTimer();
+    timeLeft = 10;
+    const pill = document.getElementById("timer-display");
+    pill.textContent = timeLeft + "s";
+    pill.classList.add("visible");
+
+    timerInterval = setInterval(() => {
+      timeLeft -= 1;
+      pill.textContent = timeLeft + "s";
+      if (timeLeft <= 0) {
+        this.stopTimer();
+        SoundFX.wrong();
+        const qs = state.questionStates[state.currentIndex];
+        if (qs.activeTeam !== null) {
+          const expiredTeam = qs.activeTeam;
+          if (!qs.attemptedTeams.includes(expiredTeam)) {
+            qs.attemptedTeams.push(expiredTeam);
+          }
+          qs.activeTeam = null;
+          qs.pendingOption = null;
+          qs.buzzerLocked = qs.attemptedTeams.length >= 2;
+          saveState();
+          this.renderGameScreen();
+          document.getElementById("feedback-text").textContent =
+            `⏰ Hết 10 giây suy nghĩ của ${state.teams[expiredTeam].name}!`;
+        }
+      }
+    }, 1000);
+  },
+
+  countdownMax: 15,
+  questionSeconds: 15,
+  questionClockInterval: null,
+
+  startQuestionClock() {
+    this.stopQuestionClock();
+    this.updateClockUI();
+    this.questionClockInterval = setInterval(() => {
+      if (state.screen === "game") {
+        const qs = state.questionStates[state.currentIndex];
+        if (qs && (qs.answeredCorrectly || qs.skipped)) {
+          this.stopQuestionClock();
+          return;
+        }
+        if (this.questionSeconds > 0) {
+          this.questionSeconds -= 1;
+          this.updateClockUI();
+          if (this.questionSeconds <= 5 && this.questionSeconds > 0) {
+            SoundFX.playTone(720, "sine", 0.08, 0);
+          }
+          if (this.questionSeconds === 0) {
+            this.stopQuestionClock();
+            SoundFX.wrong();
+            const fbText = document.getElementById("feedback-text");
+            if (fbText) {
+              fbText.textContent = "⏰ HẾT GIỜ ĐẾM NGƯỢC!";
+            }
+          }
+        }
+      }
+    }, 1000);
+  },
+
+  resetQuestionClock() {
+    this.questionSeconds = this.countdownMax;
+    this.updateClockUI();
+  },
+
+  stopQuestionClock() {
+    if (this.questionClockInterval) {
+      clearInterval(this.questionClockInterval);
+      this.questionClockInterval = null;
+    }
+  },
+
+  updateClockUI() {
+    const valEl = document.getElementById("center-countdown-value");
+    const barEl = document.getElementById("center-countdown-bar");
+    if (valEl) {
+      valEl.textContent = String(this.questionSeconds).padStart(2, "0") + "s";
+      valEl.style.color = this.questionSeconds <= 5 ? "var(--red)" : "var(--orange)";
+    }
+    if (barEl) {
+      const pct = Math.max(0, Math.min(100, (this.questionSeconds / this.countdownMax) * 100));
+      barEl.style.width = pct + "%";
+      barEl.style.backgroundColor = this.questionSeconds <= 5 ? "var(--red)" : "var(--teal)";
+    }
+  },
+
+  stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    const pill = document.getElementById("timer-display");
+    if (pill) pill.classList.remove("visible");
+  },
+
+  /* Zoom Modal for Question 7 */
+  openZoomModal() {
+    this.openModal(
+      "HÌNH MINH HỌA CÂU 7 (PHÓNG TO)",
+      `<div style="display:flex; justify-content:center; padding:8px;">${getQ7FigureSVG(true)}</div>`,
+      [{ text: "Đóng", cls: "btn-navy", action: () => this.closeModal() }]
+    );
+  },
+
+  /* Render End Screen */
+  renderEndScreen() {
+    const t1 = state.teams[1];
+    const t2 = state.teams[2];
+    const ranks = this.getRanks();
+
+    document.getElementById("end-name-1").textContent = t1.name;
+    document.getElementById("end-cups-1").textContent = formatCup(t1.cups);
+    document.getElementById("end-correct-1").textContent = t1.correct;
+    document.getElementById("end-wrong-1").textContent = t1.wrong;
+    document.getElementById("end-rank-1").textContent = ranks[1].toUpperCase();
+
+    document.getElementById("end-name-2").textContent = t2.name;
+    document.getElementById("end-cups-2").textContent = formatCup(t2.cups);
+    document.getElementById("end-correct-2").textContent = t2.correct;
+    document.getElementById("end-wrong-2").textContent = t2.wrong;
+    document.getElementById("end-rank-2").textContent = ranks[2].toUpperCase();
+
+    const totalCups = Math.round((t1.cups + t2.cups) * 10) / 10;
+    document.getElementById("end-total-cups").textContent = totalCups.toString().replace(".", ",");
+
+    const c1 = document.getElementById("end-card-1");
+    const c2 = document.getElementById("end-card-2");
+    c1.classList.remove("champion");
+    c2.classList.remove("champion");
+
+    const banner = document.getElementById("end-winner-banner");
+    if (t1.cups > t2.cups) {
+      banner.textContent = `🏆 NHÀ VÔ ĐỊCH: ${t1.name} (${formatCup(t1.cups)})!`;
+      c1.classList.add("champion");
+    } else if (t2.cups > t1.cups) {
+      banner.textContent = `🏆 NHÀ VÔ ĐỊCH: ${t2.name} (${formatCup(t2.cups)})!`;
+      c2.classList.add("champion");
+    } else {
+      banner.textContent = `🤝 HAI ĐỘI HÒA NHAU (${formatCup(t1.cups)})!`;
+      c1.classList.add("champion");
+      c2.classList.add("champion");
+    }
+
+    Confetti.launch(3500);
+  },
+
+  openSummaryModal() {
+    const rows = QUESTIONS.map((q, i) => {
+      const qs = state.questionStates[i];
+      let status = "Chưa trả lời";
+      if (qs.answeredCorrectly) {
+        status = `✔ ${state.teams[qs.selectedByTeam].name} (+${formatCup(q.cup)})`;
+      } else if (qs.skipped) {
+        status = "⏭ Đã bỏ qua";
+      } else if (qs.attemptedTeams.length > 0) {
+        status = "❌ Trả lời sai";
+      }
+      return `<tr>
+        <td style="padding:7px; border-bottom:1px solid #e2e8f0; font-weight:bold;">Câu ${q.id}</td>
+        <td style="padding:7px; border-bottom:1px solid #e2e8f0;">${formatCup(q.cup)}</td>
+        <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Đáp án ${["A","B","C","D"][q.correctIndex]}</td>
+        <td style="padding:7px; border-bottom:1px solid #e2e8f0;">${status}</td>
+      </tr>`;
+    }).join("");
+
+    this.openModal(
+      "BẢNG CHI TIẾT KẾT QUẢ 10 CÂU HỎI",
+      `<table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <thead>
+          <tr style="background:#0f2547; color:#ffffff; text-align:left;">
+            <th style="padding:8px;">Câu</th>
+            <th style="padding:8px;">Mức thưởng</th>
+            <th style="padding:8px;">Đáp án đúng</th>
+            <th style="padding:8px;">Kết quả thi đấu</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`,
+      [{ text: "Đóng", cls: "btn-navy", action: () => this.closeModal() }]
+    );
+  },
+
+  openModal(title, htmlBody, buttons) {
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-body").innerHTML = htmlBody;
+    const act = document.getElementById("modal-actions");
+    act.innerHTML = "";
+    buttons.forEach(b => {
+      const btn = document.createElement("button");
+      btn.className = "btn-action " + (b.cls || "btn-navy");
+      btn.style.padding = "10px 22px";
+      btn.style.fontSize = "15px";
+      btn.textContent = b.text;
+      btn.onclick = b.action;
+      act.appendChild(btn);
+    });
+    document.getElementById("modal-backdrop").classList.add("open");
+  },
+
+  closeModal() {
+    document.getElementById("modal-backdrop").classList.remove("open");
+  }
+};
+
+/* ==========================================================================
+   7. TEACHER CONTROL PANEL ACTIONS
+   ========================================================================== */
+const TeacherCtrl = {
+  prevQuestion() {
+    if (state.currentIndex > 0) {
+      Game.stopTimer();
+      state.currentIndex -= 1;
+      saveState();
+      Game.renderGameScreen();
+    }
+  },
+
+  nextQuestion() {
+    Game.stopTimer();
+    if (state.currentIndex < QUESTIONS.length - 1) {
+      state.currentIndex += 1;
+      saveState();
+      Game.renderGameScreen();
+    } else {
+      this.confirmEndGame();
+    }
+  },
+
+  lockBuzzers() {
+    const qs = state.questionStates[state.currentIndex];
+    qs.buzzerLocked = true;
+    saveState();
+    Game.renderGameScreen();
+  },
+
+  unlockBuzzers() {
+    const qs = state.questionStates[state.currentIndex];
+    if (!qs.answeredCorrectly && !qs.skipped) {
+      qs.buzzerLocked = false;
+      qs.activeTeam = null;
+      qs.pendingOption = null;
+      Game.stopTimer();
+      saveState();
+      Game.renderGameScreen();
+    }
+  },
+
+  selectTeam(teamId) {
+    const idx = state.currentIndex;
+    const q = QUESTIONS[idx];
+    const qs = state.questionStates[idx];
+    if (q.requiresTeacherApproval && !state.q6Approved) {
+      state.q6Approved = true;
+    }
+    if (qs.answeredCorrectly) return;
+
+    SoundFX.buzz();
+    qs.activeTeam = teamId;
+    qs.buzzerLocked = false;
+    qs.pendingOption = null;
+    Game.resetQuestionClock();
+    Game.startQuestionClock();
+    saveState();
+    Game.renderGameScreen();
+  },
+
+  confirmResult() {
+    const idx = state.currentIndex;
+    const qs = state.questionStates[idx];
+    // If question already answered correctly, advance immediately
+    if (qs.answeredCorrectly) {
+      if (state.currentIndex < QUESTIONS.length - 1) {
+        state.currentIndex += 1;
+        Game.resetQuestionClock();
+        Game.startQuestionClock();
+        saveState();
+        Game.renderGameScreen();
+      } else {
+        Game.goToScreen("end");
+      }
+      return;
+    }
+
+    if (qs.activeTeam === null) {
+      const fbText = document.getElementById("feedback-text");
+      if (fbText) fbText.textContent = "⚠️ Vui lòng bấm 'Chọn Đội 1' hoặc 'Chọn Đội 2' trước!";
+      return;
+    }
+
+    if (qs.pendingOption === null) {
+      const fbText = document.getElementById("feedback-text");
+      if (fbText) fbText.textContent = "⚠️ Vui lòng chọn một phương án A, B, C hoặc D trước khi xác nhận!";
+      return;
+    }
+
+    const chosenOpt = qs.pendingOption;
+    const isCorrect = (chosenOpt === QUESTIONS[idx].correctIndex);
+    Game.evaluateAnswer(chosenOpt);
+
+    // Advance automatically if answered correctly OR if both teams have attempted
+    const updatedQs = state.questionStates[idx];
+    if (isCorrect || updatedQs.attemptedTeams.length >= 2) {
+      setTimeout(() => {
+        if (state.screen === "game" && state.currentIndex === idx) {
+          if (state.currentIndex < QUESTIONS.length - 1) {
+            state.currentIndex += 1;
+            Game.resetQuestionClock();
+            Game.startQuestionClock();
+            saveState();
+            Game.renderGameScreen();
+          } else {
+            Game.goToScreen("end");
+          }
+        }
+      }, 2600);
+    }
+  },
+
+  confirmResetTeamScore(teamId) {
+    const teamName = state.teams[teamId].name;
+    Game.openModal(
+      `XÁC NHẬN RESET ĐIỂM ${teamName}`,
+      `Đưa điểm cup, số câu đúng và số câu sai của <strong>${teamName}</strong> về 0?`,
+      [
+        { text: "Hủy", cls: "btn-navy", action: () => Game.closeModal() },
+        {
+          text: `Reset ${teamName}`,
+          cls: "btn-primary",
+          action: () => {
+            state.teams[teamId].cups = 0;
+            state.teams[teamId].correct = 0;
+            state.teams[teamId].wrong = 0;
+            saveState();
+            Game.closeModal();
+            Game.renderGameScreen();
+          }
+        }
+      ]
+    );
+  },
+
+  toggleTimerMode() {
+    state.timerMode = !state.timerMode;
+    if (!state.timerMode) Game.stopTimer();
+    saveState();
+    Game.renderGameScreen();
+  },
+
+  skipQuestion() {
+    const qs = state.questionStates[state.currentIndex];
+    Game.stopTimer();
+    qs.skipped = true;
+    qs.buzzerLocked = true;
+    qs.activeTeam = null;
+    saveState();
+    if (state.currentIndex < QUESTIONS.length - 1) {
+      state.currentIndex += 1;
+      saveState();
+    }
+    Game.renderGameScreen();
+  },
+
+  confirmResetScores() {
+    Game.openModal(
+      "XÁC NHẬN RESET ĐIỂM SỐ",
+      "Thao tác này sẽ đưa điểm cup, số câu đúng/sai của cả hai đội và trạng thái các câu hỏi về ban đầu. Giáo viên có chắc chắn muốn tiếp tục?",
+      [
+        { text: "Hủy", cls: "btn-navy", action: () => Game.closeModal() },
+        {
+          text: "Đồng ý Reset",
+          cls: "btn-primary",
+          action: () => {
+            const t1Name = state.teams[1].name;
+            const t2Name = state.teams[2].name;
+            const approved = state.q6Approved;
+            state = defaultState();
+            state.teams[1].name = t1Name;
+            state.teams[2].name = t2Name;
+            state.q6Approved = approved;
+            state.screen = "game";
+            saveState();
+            Game.closeModal();
+            Game.renderGameScreen();
+          }
+        }
+      ]
+    );
+  },
+
+  confirmEndGame() {
+    Game.openModal(
+      "XÁC NHẬN KẾT THÚC TRÒ CHƠI",
+      "Chuyển sang màn hình vinh danh tổng kết kết quả thi đấu của hai đội?",
+      [
+        { text: "Tiếp tục thi đấu", cls: "btn-navy", action: () => Game.closeModal() },
+        {
+          text: "Kết thúc & Vinh danh",
+          cls: "btn-primary",
+          action: () => {
+            Game.closeModal();
+            Game.goToScreen("end");
+          }
+        }
+      ]
+    );
+  },
+
+  confirmPlayAgain() {
+    Game.openModal(
+      "XÁC NHẬN CHƠI LẠI TỪ ĐẦU",
+      "Toàn bộ điểm số hiện tại sẽ được xóa để bắt đầu lượt thi đấu mới. Giáo viên xác nhận?",
+      [
+        { text: "Hủy", cls: "btn-navy", action: () => Game.closeModal() },
+        {
+          text: "Chơi lại ngay",
+          cls: "btn-primary",
+          action: () => {
+            const t1Name = state.teams[1].name;
+            const t2Name = state.teams[2].name;
+            state = defaultState();
+            state.teams[1].name = t1Name;
+            state.teams[2].name = t2Name;
+            saveState();
+            Game.closeModal();
+            Game.goToScreen("opening");
+          }
+        }
+      ]
+    );
+  }
+};
+
+window.addEventListener("DOMContentLoaded", () => Game.init());
+</script>
+</body>
+</html>
