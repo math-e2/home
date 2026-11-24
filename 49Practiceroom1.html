@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPARK MATH – PHÒNG LUYỆN TẬP TƯƠNG TÁC BÀI 49 (SLIDE 33–44)</title>
+<style>
+  :root {
+    --navy: #0f2547;
+    --navy-mid: #1a3b6e;
+    --jade: #00a878;
+    --jade-dark: #007f5b;
+    --pastel-yellow: #fff8dc;
+    --pastel-yellow-deep: #fdf0b8;
+    --white: #ffffff;
+    --orange: #ff7b00;
+    --orange-dark: #d96500;
+    --red: #e63946;
+    --slate: #475569;
+    --border: #cbd5e1;
+    --shadow: 0 8px 24px rgba(15, 37, 71, 0.14);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Verdana, Geneva, sans-serif;
+    user-select: none;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #09172e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #viewport-wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #153260 0%, #071224 100%);
+  }
+
+  /* 16:9 Fixed Design Canvas Scaled Responsively */
+  #app-stage {
+    width: 1280px;
+    height: 720px;
+    background: var(--pastel-yellow);
+    border-radius: 16px;
+    border: 4px solid var(--jade);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transform-origin: center center;
+  }
+
+  /* ==================== ZONE 1: TOP HEADER BAR ==================== */
+  .top-bar {
+    height: 68px;
+    background: var(--navy);
+    color: var(--white);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--jade);
+    flex-shrink: 0;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-pill {
+    background: var(--orange);
+    color: var(--white);
+    font-weight: bold;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .lesson-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--white);
+  }
+
+  .student-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .meta-badge {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    padding: 5px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .progress-track-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 170px;
+  }
+  .progress-track-label {
+    font-size: 11px;
+    color: var(--pastel-yellow-deep);
+    text-align: right;
+    font-weight: bold;
+  }
+  .progress-track {
+    width: 100%;
+    height: 9px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--jade);
+    transition: width 0.35s ease;
+  }
+
+  .btn-mode-switch {
+    background: var(--jade);
+    color: var(--white);
+    border: 2px solid var(--white);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  .btn-mode-switch:hover { filter: brightness(1.1); }
+
+  /* ==================== ZONE 2: WORKSPACE AREA ==================== */
+  .workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 440px 1fr;
+    gap: 14px;
+    padding: 12px 16px;
+    min-height: 0;
+  }
+
+  /* Left Column: Prompt, Reference Diagram & Steps */
+  .left-panel {
+    background: var(--white);
+    border: 2.5px solid var(--navy-mid);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .q-tag-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .q-badge {
+    background: var(--navy);
+    color: var(--pastel-yellow);
+    font-size: 13px;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 16px;
+  }
+
+  .q-points-tag {
+    background: var(--pastel-yellow-deep);
+    color: var(--navy);
+    border: 1.5px solid var(--orange);
+    font-size: 13px;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 14px;
+  }
+
+  .q-statement {
+    font-size: 14.5px;
+    color: var(--navy);
+    line-height: 1.45;
+    background: #f8fafc;
+    border-left: 4px solid var(--jade);
+    padding: 9px 11px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .ref-diagram-box {
+    background: var(--pastel-yellow);
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .ref-caption {
+    font-size: 11px;
+    color: var(--slate);
+    font-weight: bold;
+    margin-top: 3px;
+  }
+
+  .steps-card {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+    color: var(--navy);
+    line-height: 1.45;
+  }
+  .steps-card strong {
+    color: var(--jade-dark);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .feedback-box {
+    margin-top: 8px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    font-weight: bold;
+    background: #eef2ff;
+    color: var(--navy);
+    border: 2px solid #c7d2fe;
+    min-height: 54px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .feedback-box.level-1 {
+    background: #fff7ed;
+    border-color: var(--orange);
+    color: #9a3412;
+  }
+  .feedback-box.level-2 {
+    background: #fef2f2;
+    border-color: var(--red);
+    color: #991b1b;
+  }
+  .feedback-box.level-3 {
+    background: #ecfdf5;
+    border-color: var(--jade);
+    color: #065f46;
+  }
+
+  /* Right Column: Interactive Drawing Board */
+  .right-panel {
+    background: var(--white);
+    border: 2.5px solid var(--jade);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+
+  .drawing-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid #e2e8f0;
+    flex-wrap: wrap;
+  }
+
+  .tool-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .tool-btn {
+    background: #f1f5f9;
+    color: var(--navy);
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 11.5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tool-btn:hover {
+    background: #e2e8f0;
+  }
+  .tool-btn.active {
+    background: var(--navy);
+    color: var(--white);
+    border-color: var(--navy);
+    box-shadow: 0 2px 6px rgba(15, 37, 71, 0.25);
+  }
+
+  .canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--pastel-yellow);
+    border-radius: 10px;
+    border: 2px solid #cbd5e1;
+    margin: 6px 0;
+    overflow: hidden;
+  }
+
+  svg#board-svg {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .board-status-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--slate);
+    font-weight: bold;
+  }
+
+  /* ==================== ZONE 3: BOTTOM CONTROL BAR ==================== */
+  .bottom-bar {
+    height: 62px;
+    background: var(--navy);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 3px solid var(--jade);
+    flex-shrink: 0;
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-ctrl {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.12s, filter 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-ctrl:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.07);
+  }
+  .btn-ctrl:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+    background: #64748b !important;
+    color: #e2e8f0 !important;
+  }
+
+  .btn-undo { background: #334155; color: var(--white); }
+  .btn-erase { background: #475569; color: var(--white); }
+  .btn-reset { background: var(--red); color: var(--white); }
+  .btn-submit { background: var(--orange); color: var(--white); font-size: 14px; padding: 10px 22px; }
+  .btn-next { background: var(--jade); color: var(--white); font-size: 14px; padding: 10px 22px; }
+
+  .lock-hint-text {
+    color: var(--pastel-yellow-deep);
+    font-size: 12px;
+    font-weight: bold;
+    max-width: 340px;
+  }
+
+  /* ==================== OVERLAY SCREENS (LOGIN, SUMMARY, TEACHER) ==================== */
+  .overlay-screen {
+    position: absolute;
+    inset: 0;
+    background: var(--pastel-yellow);
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+  }
+  .overlay-screen.active {
+    display: flex;
+  }
+
+  .login-card {
+    margin: auto;
+    background: var(--white);
+    border: 4px solid var(--navy);
+    border-radius: 20px;
+    padding: 32px 38px;
+    width: 540px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(15, 37, 71, 0.25);
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border: 2px solid var(--navy);
+    border-radius: 10px;
+    margin: 14px 0;
+    font-weight: bold;
+    color: var(--navy);
+  }
+
+  .summary-container {
+    flex: 1;
+    padding: 20px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    flex: 1;
+    margin: 14px 0;
+  }
+
+  .card-box {
+    background: var(--white);
+    border: 2.5px solid var(--navy);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.data-table th {
+    background: var(--navy);
+    color: var(--white);
+    padding: 9px 10px;
+    text-align: left;
+  }
+  table.data-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  /* Modal */
+  .modal-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 37, 71, 0.72);
+    z-index: 60;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-mask.open { display: flex; }
+  .modal-dialog {
+    background: var(--white);
+    border: 3px solid var(--jade);
+    border-radius: 16px;
+    padding: 22px 26px;
+    width: 640px;
+    max-width: 92%;
+    max-height: 600px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  }
+</style>
+</head>
+<body>
+<div id="viewport-wrapper">
+  <div id="app-stage">
+
+    <!-- ==================== ENTRY / STUDENT LOGIN OVERLAY ==================== -->
+    <div id="screen-login" class="overlay-screen active" style="background: linear-gradient(135deg, var(--navy) 0%, #173c73 100%);">
+      <div class="login-card">
+        <div style="display:inline-block; background:var(--orange); color:var(--white); font-weight:bold; padding:5px 16px; border-radius:20px; font-size:13px; margin-bottom:10px;">
+          SPARK MATH • SMART CLASSROOM
+        </div>
+        <h1 style="color:var(--navy); font-size:24px; margin-bottom:6px;">PHÒNG LUYỆN TẬP TƯƠNG TÁC</h1>
+        <p style="color:var(--jade-dark); font-weight:bold; font-size:15px; margin-bottom:14px;">
+          Bài 49: Luyện tập dựng hình đối xứng (Slide 33–44)
+        </p>
+        <div style="text-align:left; font-size:13px; color:var(--slate); background:var(--pastel-yellow); padding:10px 12px; border-radius:10px; border:1.5px solid #eab308;">
+          <strong>Quy tắc phòng luyện tập:</strong><br>
+          • Học sinh tự xác định điểm và dựng hình đối xứng trực tiếp trên lưới ô vuông.<br>
+          • Hệ thống chấm tự động theo dữ liệu tọa độ &amp; quan hệ đối xứng (thang 10 điểm).<br>
+          • Hoàn thành đúng câu hiện tại mới mở khóa câu tiếp theo.
+        </div>
+        <input type="text" id="student-name-input" placeholder="Nhập họ và tên học sinh..." maxlength="36">
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:6px;">
+          <button class="btn-ctrl btn-submit" style="font-size:15px; padding:12px 28px;" onclick="App.startPractice()">BẮT ĐẦU LÀM BÀI</button>
+          <button class="btn-ctrl btn-undo" style="font-size:14px; padding:12px 20px;" onclick="App.openTeacherDashboard()">CHẾ ĐỘ GIÁO VIÊN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ZONE 1: TOP INFO BAR ==================== -->
+    <header class="top-bar">
+      <div class="brand-group">
+        <span class="brand-pill">SPARK MATH</span>
+        <span class="lesson-title">Bài 49 – Luyện tập chung</span>
+      </div>
+
+      <div class="student-meta">
+        <div class="meta-badge">Học sinh: <span id="hdr-student-name" style="color:var(--pastel-yellow);">---</span></div>
+        <div class="meta-badge">Tiến độ: <span id="hdr-progress-text" style="color:var(--pastel-yellow);">Câu 1/6</span></div>
+        <div class="meta-badge">Điểm hiện tại: <span id="hdr-score-text" style="color:#4ade80;">0/10</span></div>
+
+        <div class="progress-track-wrap">
+          <div class="progress-track-label" id="hdr-percent-label">Hoàn thành: 0%</div>
+          <div class="progress-track">
+            <div class="progress-fill" id="hdr-progress-fill"></div>
+          </div>
+        </div>
+
+        <button class="btn-mode-switch" onclick="App.openTeacherDashboard()">👩‍🏫 Giáo viên</button>
+      </div>
+    </header>
+
+    <!-- ==================== ZONE 2: PRACTICE WORKSPACE ==================== -->
+    <main class="workspace">
+      <!-- Left: Problem Statement, PPTX Reference Figure, Steps, Feedback -->
+      <section class="left-panel">
+        <div>
+          <div class="q-tag-row">
+            <span class="q-badge" id="q-badge">CÂU 1/6 – HOÀN THIỆN HÌNH TRÁI TIM</span>
+            <span class="q-points-tag" id="q-points-tag">1,5 điểm</span>
+          </div>
+
+          <div class="q-statement" id="q-statement"></div>
+
+          <div class="ref-diagram-box">
+            <div id="ref-svg-container"></div>
+            <div class="ref-caption" id="ref-caption">Hình minh họa đề bài gốc (PPTX Bài 49)</div>
+          </div>
+
+          <div class="steps-card" id="q-steps"></div>
+        </div>
+
+        <div class="feedback-box" id="feedback-box">
+          <div id="feedback-main">Sử dụng công cụ vẽ trên lưới ô vuông bên phải rồi nhấn "NỘP BÀI KIỂM TRA".</div>
+          <div id="feedback-detail" style="font-weight:normal; font-size:12px; margin-top:2px;"></div>
+        </div>
+      </section>
+
+      <!-- Right: Interactive SVG Drawing Board -->
+      <section class="right-panel">
+        <div class="drawing-toolbar">
+          <div class="tool-group">
+            <button class="tool-btn active" id="tool-segment" onclick="Board.setTool('segment')">📏 Đoạn thẳng</button>
+            <button class="tool-btn" id="tool-polyline" onclick="Board.setTool('polyline')">📐 Đường gấp khúc</button>
+            <button class="tool-btn" id="tool-polygon" onclick="Board.setTool('polygon')">⬠ Đa giác</button>
+            <button class="tool-btn" id="tool-curve" onclick="Board.setTool('curve')">〰 Đường cong</button>
+            <button class="tool-btn" id="tool-point" onclick="Board.setTool('point')">📍 Điểm</button>
+            <button class="tool-btn" id="tool-label" onclick="Board.setTool('label')">🏷 Ghi nhãn</button>
+          </div>
+
+          <div class="tool-group">
+            <button class="tool-btn" id="tool-eraser" onclick="Board.setTool('eraser')">🧽 Tẩy nét</button>
+            <button class="tool-btn" id="btn-finish-poly" style="display:none; background:var(--jade); color:var(--white); border-color:var(--jade);" onclick="Board.finishMultiPointShape()">✔ Kết thúc hình</button>
+          </div>
+        </div>
+
+        <div class="canvas-container">
+          <svg id="board-svg" viewBox="0 0 760 490"></svg>
+        </div>
+
+        <div class="board-status-strip">
+          <span id="tool-instruction">Công cụ: Đoạn thẳng — Nhấn chọn điểm đầu và điểm cuối trên giao điểm lưới ô vuông.</span>
+          <span id="coord-readout">Tọa độ lưới: (0, 0)</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- ==================== ZONE 3: BOTTOM CONTROL BAR ==================== -->
+    <footer class="bottom-bar">
+      <div class="ctrl-group">
+        <button class="btn-ctrl btn-undo" onclick="Board.undo()">↩ HOÀN TÁC</button>
+        <button class="btn-ctrl btn-erase" onclick="Board.setTool('eraser')">🧽 XÓA NÉT VẼ</button>
+        <button class="btn-ctrl btn-reset" onclick="Board.confirmClearAll()">🗑 LÀM LẠI</button>
+      </div>
+
+      <div class="lock-hint-text" id="lock-hint-text">
+        🔒 Em cần hoàn thành đúng câu hiện tại trước khi chuyển sang câu tiếp theo nhé!
+      </div>
+
+      <div class="ctrl-group">
+        <button class="btn-ctrl btn-submit" id="btn-submit" onclick="Grader.gradeCurrent()">✔ NỘP BÀI KIỂM TRA</button>
+        <button class="btn-ctrl btn-next" id="btn-next" disabled onclick="App.nextQuestion()">🔒 CHUYỂN CÂU TIẾP THEO</button>
+      </div>
+    </footer>
+
+    <!-- ==================== END SUMMARY SCREEN ==================== -->
+    <div id="screen-summary" class="overlay-screen">
+      <header class="top-bar">
+        <div class="brand-group">
+          <span class="brand-pill">SPARK MATH</span>
+          <span class="lesson-title">TỔNG KẾT PHÒNG LUYỆN TẬP – BÀI 49</span>
+        </div>
+        <button class="btn-mode-switch" onclick="App.openTeacherDashboard()">👩‍🏫 Bảng theo dõi Giáo viên</button>
+      </header>
+
+      <div class="summary-container">
+        <div style="text-align:center;">
+          <h2 style="color:var(--navy); font-size:26px;">CHÚC MỪNG EM ĐÃ HOÀN THÀNH BÀI LUYỆN TẬP!</h2>
+          <p style="color:var(--jade-dark); font-weight:bold; font-size:15px;">Kết quả được lưu tự động vào hồ sơ học tập</p>
+        </div>
+
+        <div class="summary-grid">
+          <div class="card-box" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <h3 style="color:var(--navy); border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">PHIẾU KẾT QUẢ CÁ NHÂN</h3>
+              <p style="margin-bottom:8px; font-size:14px;"><strong>Học sinh:</strong> <span id="sum-name"></span></p>
+              <p style="margin-bottom:8px; font-size:14px;"><strong>Số câu hoàn thành:</strong> <span id="sum-completed">6/6</span></p>
+              <p style="margin-bottom:8px; font-size:14px;"><strong>Thời gian hoàn thành:</strong> <span id="sum-time"></span></p>
+              <p style="margin-bottom:8px; font-size:14px;"><strong>Tổng số lần nộp bài:</strong> <span id="sum-attempts"></span></p>
+              <p style="margin-bottom:8px; font-size:14px;"><strong>Trạng thái:</strong> <span style="color:var(--jade-dark); font-weight:bold;">Đạt yêu cầu 100%</span></p>
+            </div>
+
+            <div style="background:var(--pastel-yellow); border:2px solid var(--orange); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:13px; color:var(--slate); font-weight:bold;">TỔNG ĐIỂM THANG 10</div>
+              <div style="font-size:34px; font-weight:bold; color:var(--orange-dark); margin:4px 0;" id="sum-score">10/10</div>
+              <div style="font-size:15px; font-weight:bold; color:var(--navy);">Xếp loại: <span id="sum-rank" style="color:var(--jade-dark);">Xuất sắc</span></div>
+            </div>
+          </div>
+
+          <div class="card-box" style="overflow-y:auto;">
+            <h3 style="color:var(--navy); margin-bottom:10px;">CHI TIẾT ĐIỂM TỪNG CÂU (SLIDE 33–44)</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Câu</th>
+                  <th>Nội dung bài tập</th>
+                  <th>Điểm đạt</th>
+                  <th>Số lần nộp</th>
+                  <th>Số lỗi đã sửa</th>
+                </tr>
+              </thead>
+              <tbody id="sum-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:16px;">
+          <button class="btn-ctrl btn-undo" onclick="App.reviewWork()">🔍 XEM LẠI BÀI LÀM</button>
+          <button class="btn-ctrl btn-submit" onclick="App.showFixedErrorsModal()">📋 XEM CÁC LỖI ĐÃ SỬA</button>
+          <button class="btn-ctrl btn-next" onclick="App.finishSession()">✔ HOÀN THÀNH</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TEACHER MODE SCREEN ==================== -->
+    <div id="screen-teacher" class="overlay-screen">
+      <header class="top-bar">
+        <div class="brand-group">
+          <span class="brand-pill" style="background:var(--jade);">CHẾ ĐỘ GIÁO VIÊN</span>
+          <span class="lesson-title">GIÁM SÁT PHÒNG LUYỆN TẬP BÀI 49 (SLIDE 33–44)</span>
+        </div>
+        <button class="btn-mode-switch" style="background:var(--orange);" onclick="App.closeTeacherDashboard()">← Quay lại bài làm</button>
+      </header>
+
+      <div class="summary-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--white); padding:12px 18px; border-radius:12px; border:2px solid var(--navy);">
+          <div style="font-size:13.5px; color:var(--navy);">
+            <strong>Trạng thái phát bài:</strong> <span id="teacher-assign-status" style="color:var(--jade-dark); font-weight:bold;">Đang mở phát bài tập (Slide 33–44)</span>
+            <span style="margin-left:14px; color:var(--slate);">| Nguồn dữ liệu: Phòng học thực tế (Local / Supabase Ready)</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-ctrl btn-next" style="padding:7px 14px; font-size:12px;" onclick="TeacherMode.toggleAssignment(true)">📢 Phát bài tập</button>
+            <button class="btn-ctrl btn-reset" style="padding:7px 14px; font-size:12px;" onclick="TeacherMode.toggleAssignment(false)">⛔ Thu hồi bài</button>
+          </div>
+        </div>
+
+        <div class="card-box" style="flex:1; margin:12px 0; overflow-y:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Học sinh</th>
+                <th>Câu hiện tại</th>
+                <th>Tiến độ</th>
+                <th>Điểm từng câu</th>
+                <th>Tổng điểm</th>
+                <th>Lần nộp</th>
+                <th>Câu đang lỗi</th>
+                <th>Bài vẽ</th>
+              </tr>
+            </thead>
+            <tbody id="teacher-students-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL DIALOG ==================== -->
+    <div class="modal-mask" id="modal-mask">
+      <div class="modal-dialog">
+        <h3 id="modal-title" style="color:var(--navy); border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">Thông báo</h3>
+        <div id="modal-content" style="font-size:14px; color:var(--navy); line-height:1.5;"></div>
+        <div id="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. ANSWER KEY & GEOMETRIC SPECIFICATIONS (SEPARATED FROM STUDENT VIEW)
+   Exact coordinates extracted from PPTX Bài 49 (Slides 33–44)
+   ========================================================================== */
+const GRID_STEP = 28;        // 28px per grid square
+const ORIGIN_X = 380;        // Center X on 760x490 SVG canvas
+const ORIGIN_Y = 245;        // Center Y on 760x490 SVG canvas
+const COLS_HALF = 12;        // x in [-12, 12]
+const ROWS_HALF = 8;         // y in [-8, 8] (mathematical y: positive UP)
+
+function toPixel(gx, gy) {
+  return {
+    px: ORIGIN_X + gx * GRID_STEP,
+    py: ORIGIN_Y - gy * GRID_STEP
+  };
+}
+
+function toGrid(px, py) {
+  const gx = Math.round((px - ORIGIN_X) / GRID_STEP);
+  const gy = Math.round((ORIGIN_Y - py) / GRID_STEP);
+  return {
+    gx: Math.max(-COLS_HALF, Math.min(COLS_HALF, gx)),
+    gy: Math.max(-ROWS_HALF, Math.min(ROWS_HALF, gy))
+  };
+}
+
+/* Secret Answer Key Repository (Decoupled from Student Rendering) */
+const ANSWER_KEY = {
+  1: {
+    // Slide 33–34: Half Heart on left of vertical axis d (x = 0)
+    // Given vertices (top-to-bottom): (0,3) -> (-2,5) -> (-5,5) -> (-7,3) -> (-7,0) -> (-5,-3) -> (0,-8)
+    // Required symmetric vertices on right (x > 0): (2,5), (5,5), (7,3), (7,0), (5,-3) connecting (0,3) to (0,-8)
+    type: "axial_vertical",
+    axisX: 0,
+    requiredPoints: [
+      { gx: 2, gy: 5 },
+      { gx: 5, gy: 5 },
+      { gx: 7, gy: 3 },
+      { gx: 7, gy: 0 },
+      { gx: 5, gy: -3 }
+    ],
+    requiredEdges: [
+      [[0, 3], [2, 5]],
+      [[2, 5], [5, 5]],
+      [[5, 5], [7, 3]],
+      [[7, 3], [7, 0]],
+      [[7, 0], [5, -3]],
+      [[5, -3], [0, -8]]
+    ]
+  },
+  2: {
+    // Slide 35–36: Upper half of kite above horizontal axis d (y = 0)
+    // Given vertices: (-6,0) -> (-2,6) -> (6,0)
+    // Required symmetric vertex below (y < 0): (-2,-6) connected to (-6,0) and (6,0)
+    type: "axial_horizontal",
+    axisY: 0,
+    requiredPoints: [
+      { gx: -2, gy: -6 }
+    ],
+    requiredEdges: [
+      [[-6, 0], [-2, -6]],
+      [[-2, -6], [6, 0]]
+    ]
+  },
+  3: {
+    // Slide 37–38: Polyline ABCD with Center O(0,0)
+    // A(-7,6), B(-2,7), C(-1,3), D(-5,1)
+    // Central symmetry P' = 2O - P: A'(7,-6), B'(2,-7), C'(1,-3), D'(5,-1)
+    type: "central_O",
+    center: { gx: 0, gy: 0 },
+    requiredPoints: [
+      { gx: 7, gy: -6, label: "A'" },
+      { gx: 2, gy: -7, label: "B'" },
+      { gx: 1, gy: -3, label: "C'" },
+      { gx: 5, gy: -1, label: "D'" }
+    ],
+    requiredEdges: [
+      [[7, -6], [2, -7]],
+      [[2, -7], [1, -3]],
+      [[1, -3], [5, -1]]
+    ]
+  },
+  4: {
+    // Slide 39–40: Parallelogram with given vertices A(-5,5), B(3,5), D(-3,-5) and center O(0,0)
+    // Missing vertex C = 2O - A = (5,-5)
+    // Missing edges: B(3,5)-C(5,-5) and D(-3,-5)-C(5,-5)
+    type: "central_O",
+    center: { gx: 0, gy: 0 },
+    requiredPoints: [
+      { gx: 5, gy: -5, label: "C" }
+    ],
+    requiredEdges: [
+      [[3, 5], [5, -5]],
+      [[-3, -5], [5, -5]]
+    ]
+  },
+  5: {
+    // Slide 41–42: 4-petal flower with perpendicular axes d1 (x=0) and d2 (y=0)
+    // Given petal in Q2: (0,0) to (-6,6)
+    // Required 3 symmetric petals in Q1 (6,6), Q3 (-6,-6), Q4 (6,-6)
+    type: "flower_4",
+    requiredPetals: [
+      { tip: [6, 6] },
+      { tip: [-6, -6] },
+      { tip: [6, -6] }
+    ]
+  },
+  6: {
+    // Slide 43–44: Upper half of block letter E above horizontal axis d (y = 0)
+    // Given upper half: outer left x=-5 (y=0..6), top bar y=6 (x=-5..4), y=4 (x=-3..4), middle bar y=2 (x=-3..1), right of middle x=1 (y=0..2)
+    // Required lower half symmetric across y=0:
+    // (-5,0)->(-5,-6)->(4,-6)->(4,-4)->(-3,-4)->(-3,-2)->(1,-2)->(1,0)
+    type: "axial_horizontal",
+    axisY: 0,
+    requiredPoints: [
+      { gx: -5, gy: -6 },
+      { gx: 4, gy: -6 },
+      { gx: 4, gy: -4 },
+      { gx: -3, gy: -4 },
+      { gx: -3, gy: -2 },
+      { gx: 1, gy: -2 }
+    ],
+    requiredEdges: [
+      [[-5, 0], [-5, -6]],
+      [[-5, -6], [4, -6]],
+      [[4, -6], [4, -4]],
+      [[4, -4], [-3, -4]],
+      [[-3, -4], [-3, -2]],
+      [[-3, -2], [1, -2]],
+      [[1, -2], [1, 0]]
+    ]
+  }
+};
+
+/* ==========================================================================
+   2. STUDENT-FACING QUESTION METADATA (SLIDES 33–44)
+   ========================================================================== */
+const QUESTIONS = [
+  {
+    id: 1,
+    points: 1.5,
+    badge: "CÂU 1/6 – HOÀN THIỆN HÌNH TRÁI TIM",
+    statement: "Cho một nửa hình trái tim và trục đối xứng d thẳng đứng. Hãy xác định các điểm tương ứng trên lưới ô vuông và vẽ nửa còn lại để hoàn thiện hình trái tim.",
+    steps: [
+      "1. Xác định các đỉnh của nửa trái tim bên trái.",
+      "2. Đếm số ô vuông từ mỗi đỉnh đến trục thẳng đứng d.",
+      "3. Lấy các điểm đối xứng sang bên phải trục d và nối các đoạn thẳng hoàn thiện."
+    ],
+    axisMode: "vertical_d",
+    givenPolylines: [
+      [[0, 3], [-2, 5], [-5, 5], [-7, 3], [-7, 0], [-5, -3], [0, -8]]
+    ],
+    givenPoints: [
+      { gx: 0, gy: 3, label: "" },
+      { gx: -2, gy: 5, label: "" },
+      { gx: -5, gy: 5, label: "" },
+      { gx: -7, gy: 3, label: "" },
+      { gx: -7, gy: 0, label: "" },
+      { gx: -5, gy: -3, label: "" },
+      { gx: 0, gy: -8, label: "" }
+    ]
+  },
+  {
+    id: 2,
+    points: 1.5,
+    badge: "CÂU 2/6 – HOÀN THIỆN HÌNH CÁNH DIỀU",
+    statement: "Cho nửa trên của một hình cánh diều và trục đối xứng d nằm ngang. Hãy vẽ nửa phía dưới để hoàn thiện hình.",
+    steps: [
+      "1. Xác định đỉnh nhọn phía trên của cánh diều và đếm số ô vuông đến trục ngang d.",
+      "2. Giữ nguyên cột dọc, lấy điểm đối xứng xuống phía dưới trục d với khoảng cách bằng nhau.",
+      "3. Nối đỉnh mới với hai đầu mút nằm trên trục d."
+    ],
+    axisMode: "horizontal_d",
+    givenPolylines: [
+      [[-6, 0], [-2, 6], [6, 0]]
+    ],
+    givenPoints: [
+      { gx: -6, gy: 0, label: "" },
+      { gx: -2, gy: 6, label: "" },
+      { gx: 6, gy: 0, label: "" }
+    ]
+  },
+  {
+    id: 3,
+    points: 2.0,
+    badge: "CÂU 3/6 – ĐƯỜNG GẤP KHÚC QUA TÂM O",
+    statement: "Cho đường gấp khúc ABCD và tâm đối xứng O (chấm đỏ). Hãy xác định tọa độ các điểm và vẽ đường gấp khúc đối xứng qua tâm O.",
+    steps: [
+      "1. Tìm các điểm A′, B′, C′, D′ sao cho O là trung điểm của AA′, BB′, CC′, DD′.",
+      "2. Dùng công cụ Điểm / Ghi nhãn để đánh dấu A′, B′, C′, D′.",
+      "3. Nối đường gấp khúc A′B′C′D′ theo đúng thứ tự."
+    ],
+    axisMode: "center_O",
+    givenPolylines: [
+      [[-7, 6], [-2, 7], [-1, 3], [-5, 1]]
+    ],
+    givenPoints: [
+      { gx: -7, gy: 6, label: "A" },
+      { gx: -2, gy: 7, label: "B" },
+      { gx: -1, gy: 3, label: "C" },
+      { gx: -5, gy: 1, label: "D" }
+    ]
+  },
+  {
+    id: 4,
+    points: 1.5,
+    badge: "CÂU 4/6 – HOÀN THIỆN HÌNH BÌNH HÀNH",
+    statement: "Cho một phần của hình bình hành và tâm đối xứng O (giao điểm hai đường chéo). Hãy xác định đỉnh còn thiếu và hoàn thiện hình bình hành.",
+    steps: [
+      "1. Xác định đỉnh C đối xứng với đỉnh A qua tâm O (O là trung điểm của AC).",
+      "2. Dùng công cụ Đoạn thẳng nối đỉnh B với C và đỉnh D với C.",
+      "3. Kiểm tra hai đường chéo AC và BD cắt nhau tại trung điểm O."
+    ],
+    axisMode: "center_O",
+    givenPolylines: [
+      [[-3, -5], [-5, 5], [3, 5]]
+    ],
+    givenPoints: [
+      { gx: -5, gy: 5, label: "A" },
+      { gx: 3, gy: 5, label: "B" },
+      { gx: -3, gy: -5, label: "D" }
+    ]
+  },
+  {
+    id: 5,
+    points: 2.0,
+    badge: "CÂU 5/6 – BÔNG HOA HAI TRỤC ĐỐI XỨNG",
+    statement: "Cho 1/4 hình bông hoa và hai trục đối xứng vuông góc d1, d2. Hãy áp dụng phép đối xứng trục để vẽ 3 cánh hoa còn lại.",
+    steps: [
+      "1. Chọn công cụ Đường cong (hoặc Đoạn thẳng) bắt đầu từ tâm giao điểm hai trục (0, 0).",
+      "2. Dựng cánh hoa đối xứng qua trục thẳng đứng d1 sang góc phần tư bên phải.",
+      "3. Tiếp tục dựng 2 cánh hoa đối xứng qua trục ngang d2 xuống phía dưới."
+    ],
+    axisMode: "axes_d1_d2",
+    givenPetals: [
+      { tip: [-6, 6] }
+    ],
+    givenPoints: [
+      { gx: -6, gy: 6, label: "" }
+    ]
+  },
+  {
+    id: 6,
+    points: 1.5,
+    badge: "CÂU 6/6 – HOÀN THIỆN CHỮ E KHỐI",
+    statement: "Cho nửa trên của một chữ E khối và trục đối xứng ngang d. Hãy đếm số ô vuông trên lưới và vẽ phần còn lại để hoàn thành chữ.",
+    steps: [
+      "1. Đếm chiều cao và chiều rộng từng nét của nửa chữ E phía trên trục d.",
+      "2. Lấy đối xứng các đỉnh xuống phía dưới trục d (cùng cột dọc, cách trục d số ô bằng nhau).",
+      "3. Nối đầy đủ đường bao của nửa dưới chữ E khối."
+    ],
+    axisMode: "horizontal_d",
+    givenPolylines: [
+      [[-5, 0], [-5, 6], [4, 6], [4, 4], [-3, 4], [-3, 2], [1, 2], [1, 0]]
+    ],
+    givenPoints: [
+      { gx: -5, gy: 6, label: "" },
+      { gx: 4, gy: 6, label: "" },
+      { gx: 4, gy: 4, label: "" },
+      { gx: -3, gy: 4, label: "" },
+      { gx: -3, gy: 2, label: "" },
+      { gx: 1, gy: 2, label: "" }
+    ]
+  }
+];
+
+/* ==========================================================================
+   3. STATE & STORAGE ENGINE (LOCAL + SUPABASE INTEGRATION READY)
+   ========================================================================== */
+const STORAGE_KEY = "spark_math_b49_slide33_44_practice_v1";
+
+function createEmptyProgress(studentName) {
+  return {
+    studentName: studentName || "Học sinh lớp 6",
+    startedAt: Date.now(),
+    finishedAt: null,
+    assigned: true,
+    currentIndex: 0,
+    totalScore: 0,
+    questions: QUESTIONS.map(q => ({
+      id: q.id,
+      completed: false,
+      scoreEarned: 0,
+      attempts: 0,
+      fixedErrorsCount: 0,
+      errorHistory: [],
+      shapes: [] // Each shape: { id, type, points: [{gx,gy}], label, timestamp, relation }
+    }))
+  };
+}
+
+let session = null;
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length === 6) {
+        session = parsed;
+        return true;
+      }
+    }
+  } catch (e) {}
+  return false;
+}
+
+function saveSession() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  } catch (e) {}
+}
+
+/* ==========================================================================
+   4. INTERACTIVE SVG DRAWING BOARD
+   ========================================================================== */
+const Board = {
+  currentTool: "segment",
+  tempPoints: [],
+  hoverGrid: null,
+  errorMarkers: [], // [{gx, gy}] highlighted in orange when grading fails
+
+  init() {
+    const svg = document.getElementById("board-svg");
+    svg.addEventListener("pointermove", e => this.onPointerMove(e));
+    svg.addEventListener("pointerdown", e => this.onPointerDown(e));
+  },
+
+  setTool(tool) {
+    this.currentTool = tool;
+    this.tempPoints = [];
+    document.querySelectorAll(".tool-btn").forEach(b => b.classList.remove("active"));
+    const btn = document.getElementById("tool-" + tool);
+    if (btn) btn.classList.add("active");
+
+    const finishBtn = document.getElementById("btn-finish-poly");
+    finishBtn.style.display = (tool === "polyline" || tool === "polygon") ? "inline-block" : "none";
+
+    const instructions = {
+      segment: "Công cụ: Đoạn thẳng — Nhấn điểm đầu và điểm cuối trên giao điểm lưới.",
+      polyline: "Công cụ: Đường gấp khúc — Nhấn liên tiếp các đỉnh, bấm '✔ Kết thúc hình' để hoàn tất.",
+      polygon: "Công cụ: Đa giác — Nhấn các đỉnh và nhấn lại điểm đầu (hoặc '✔ Kết thúc hình') để khép kín.",
+      curve: "Công cụ: Đường cong — Nhấn điểm đầu và điểm cuối để tạo cánh cong đối xứng.",
+      point: "Công cụ: Đánh dấu điểm — Nhấn vào giao điểm lưới ô vuông để tạo điểm.",
+      label: "Công cụ: Ghi nhãn — Nhấn vào một điểm đã vẽ để đặt tên (ví dụ: A', B', C', D', C).",
+      eraser: "Công cụ: Tẩy nét vẽ — Nhấn trực tiếp vào nét vẽ hoặc điểm do em tạo để xóa."
+    };
+    document.getElementById("tool-instruction").textContent = instructions[tool] || "";
+    this.render();
+  },
+
+  getEventGridCoords(e) {
+    const svg = document.getElementById("board-svg");
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { gx: 0, gy: 0 };
+    const cursor = pt.matrixTransform(ctm.inverse());
+    return toGrid(cursor.x, cursor.y);
+  },
+
+  onPointerMove(e) {
+    const g = this.getEventGridCoords(e);
+    this.hoverGrid = g;
+    document.getElementById("coord-readout").textContent = `Tọa độ lưới: (${g.gx}; ${g.gy})`;
+    this.render();
+  },
+
+  onPointerDown(e) {
+    if (!session || !session.assigned) return;
+    const g = this.getEventGridCoords(e);
+    const qState = session.questions[session.currentIndex];
+    const qMeta = QUESTIONS[session.currentIndex];
+
+    // Clear previous error markers on active edit
+    this.errorMarkers = [];
+
+    if (this.currentTool === "eraser") {
+      this.eraseAt(g);
+      return;
+    }
+
+    if (this.currentTool === "point") {
+      this.commitShape({
+        type: "point",
+        points: [{ gx: g.gx, gy: g.gy }],
+        label: "",
+        relation: qMeta.axisMode,
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    if (this.currentTool === "label") {
+      this.labelAt(g);
+      return;
+    }
+
+    if (this.currentTool === "segment" || this.currentTool === "curve") {
+      if (this.tempPoints.length === 0) {
+        this.tempPoints.push({ gx: g.gx, gy: g.gy });
+      } else {
+        const p1 = this.tempPoints[0];
+        if (p1.gx !== g.gx || p1.gy !== g.gy) {
+          this.commitShape({
+            type: this.currentTool,
+            points: [p1, { gx: g.gx, gy: g.gy }],
+            label: "",
+            relation: qMeta.axisMode,
+            timestamp: Date.now()
+          });
+        }
+        this.tempPoints = [];
+      }
+      this.render();
+      return;
+    }
+
+    if (this.currentTool === "polyline" || this.currentTool === "polygon") {
+      // Check if clicking start point of polygon to close it
+      if (this.currentTool === "polygon" && this.tempPoints.length >= 3) {
+        const first = this.tempPoints[0];
+        if (first.gx === g.gx && first.gy === g.gy) {
+          this.finishMultiPointShape();
+          return;
+        }
+      }
+      const last = this.tempPoints[this.tempPoints.length - 1];
+      if (!last || last.gx !== g.gx || last.gy !== g.gy) {
+        this.tempPoints.push({ gx: g.gx, gy: g.gy });
+      }
+      this.render();
+    }
+  },
+
+  finishMultiPointShape() {
+    if (this.tempPoints.length < 2) {
+      this.tempPoints = [];
+      this.render();
+      return;
+    }
+    const qMeta = QUESTIONS[session.currentIndex];
+    const pts = [...this.tempPoints];
+    if (this.currentTool === "polygon" && pts.length >= 3) {
+      pts.push({ ...pts[0] });
+    }
+    this.commitShape({
+      type: this.currentTool,
+      points: pts,
+      label: "",
+      relation: qMeta.axisMode,
+      timestamp: Date.now()
+    });
+    this.tempPoints = [];
+    this.render();
+  },
+
+  commitShape(shapeObj) {
+    const qState = session.questions[session.currentIndex];
+    shapeObj.id = "sh_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+    qState.shapes.push(shapeObj);
+    saveSession();
+    this.render();
+  },
+
+  eraseAt(g) {
+    const qState = session.questions[session.currentIndex];
+    const idx = qState.shapes.findIndex(sh =>
+      sh.points.some(p => Math.abs(p.gx - g.gx) <= 0 && Math.abs(p.gy - g.gy) <= 0) ||
+      this.isPointNearShapeSegments(g, sh)
+    );
+    if (idx !== -1) {
+      qState.shapes.splice(idx, 1);
+      saveSession();
+      this.render();
+    }
+  },
+
+  isPointNearShapeSegments(g, sh) {
+    if (sh.points.length < 2) return false;
+    for (let i = 0; i < sh.points.length - 1; i++) {
+      const a = sh.points[i];
+      const b = sh.points[i + 1];
+      const minX = Math.min(a.gx, b.gx), maxX = Math.max(a.gx, b.gx);
+      const minY = Math.min(a.gy, b.gy), maxY = Math.max(a.gy, b.gy);
+      if (g.gx >= minX && g.gx <= maxX && g.gy >= minY && g.gy <= maxY) {
+        const cross = Math.abs((b.gx - a.gx) * (g.gy - a.gy) - (b.gy - a.gy) * (g.gx - a.gx));
+        const len = Math.hypot(b.gx - a.gx, b.gy - a.gy) || 1;
+        if (cross / len <= 0.6) return true;
+      }
+    }
+    return false;
+  },
+
+  labelAt(g) {
+    const qState = session.questions[session.currentIndex];
+    let targetShape = qState.shapes.find(sh =>
+      sh.points.some(p => p.gx === g.gx && p.gy === g.gy)
+    );
+    if (!targetShape) {
+      // Create a point at g if none exists yet
+      targetShape = {
+        id: "sh_" + Date.now(),
+        type: "point",
+        points: [{ gx: g.gx, gy: g.gy }],
+        label: "",
+        relation: QUESTIONS[session.currentIndex].axisMode,
+        timestamp: Date.now()
+      };
+      qState.shapes.push(targetShape);
+    }
+    const currentLbl = targetShape.label || "";
+    App.openModal(
+      `GHI NHÃN ĐIỂM TẠI TỌA ĐỘ (${g.gx}; ${g.gy})`,
+      `<p style="margin-bottom:8px;">Chọn nhanh hoặc nhập tên điểm đối xứng:</p>
+       <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+         ${["A'", "B'", "C'", "D'", "C", "M'", "N'"].map(lbl =>
+           `<button class="tool-btn" onclick="document.getElementById('lbl-input').value='${lbl}'">${lbl}</button>`
+         ).join("")}
+       </div>
+       <input type="text" id="lbl-input" value="${currentLbl}" maxlength="5" style="width:100%; padding:8px; font-size:16px; border:2px solid var(--navy); border-radius:8px; font-weight:bold;">`,
+      [
+        { text: "Hủy", cls: "btn-undo", action: () => App.closeModal() },
+        {
+          text: "Lưu nhãn",
+          cls: "btn-next",
+          action: () => {
+            const val = document.getElementById("lbl-input").value.trim();
+            targetShape.label = val;
+            saveSession();
+            App.closeModal();
+            this.render();
+          }
+        }
+      ]
+    );
+  },
+
+  undo() {
+    if (this.tempPoints.length > 0) {
+      this.tempPoints.pop();
+      this.render();
+      return;
+    }
+    const qState = session.questions[session.currentIndex];
+    if (qState.shapes.length > 0) {
+      qState.shapes.pop();
+      this.errorMarkers = [];
+      saveSession();
+      this.render();
+    }
+  },
+
+  confirmClearAll() {
+    App.openModal(
+      "XÁC NHẬN LÀM LẠI CÂU HIỆN TẠI",
+      "Xóa toàn bộ các nét vẽ do em đã thực hiện trên bảng (hình gốc đề bài vẫn được giữ nguyên)?",
+      [
+        { text: "Giữ lại", cls: "btn-undo", action: () => App.closeModal() },
+        {
+          text: "Xóa làm lại",
+          cls: "btn-reset",
+          action: () => {
+            session.questions[session.currentIndex].shapes = [];
+            this.tempPoints = [];
+            this.errorMarkers = [];
+            saveSession();
+            App.closeModal();
+            this.render();
+          }
+        }
+      ]
+    );
+  },
+
+  /* Render Grid, Fixed Original Geometry, Student Drawings, Snap Cursor & Error Markers */
+  render() {
+    const svg = document.getElementById("board-svg");
+    if (!svg || !session) return;
+    const qMeta = QUESTIONS[session.currentIndex];
+    const qState = session.questions[session.currentIndex];
+
+    let out = "";
+
+    // 1. Grid Lines
+    for (let x = -COLS_HALF; x <= COLS_HALF; x++) {
+      const px = ORIGIN_X + x * GRID_STEP;
+      out += `<line x1="${px}" y1="${ORIGIN_Y - ROWS_HALF * GRID_STEP}" x2="${px}" y2="${ORIGIN_Y + ROWS_HALF * GRID_STEP}" stroke="#d6e0ec" stroke-width="1"/>`;
+    }
+    for (let y = -ROWS_HALF; y <= ROWS_HALF; y++) {
+      const py = ORIGIN_Y - y * GRID_STEP;
+      out += `<line x1="${ORIGIN_X - COLS_HALF * GRID_STEP}" y1="${py}" x2="${ORIGIN_X + COLS_HALF * GRID_STEP}" y2="${py}" stroke="#d6e0ec" stroke-width="1"/>`;
+    }
+
+    // 2. Symmetry Axes or Center O
+    if (qMeta.axisMode === "vertical_d") {
+      out += `<line x1="${ORIGIN_X}" y1="12" x2="${ORIGIN_X}" y2="478" stroke="#e63946" stroke-width="3" stroke-dasharray="8,6"/>`;
+      out += `<text x="${ORIGIN_X + 10}" y="28" fill="#e63946" font-size="18" font-weight="bold">d</text>`;
+    } else if (qMeta.axisMode === "horizontal_d") {
+      out += `<line x1="28" y1="${ORIGIN_Y}" x2="732" y2="${ORIGIN_Y}" stroke="#e63946" stroke-width="3" stroke-dasharray="8,6"/>`;
+      out += `<text x="712" y="${ORIGIN_Y - 10}" fill="#e63946" font-size="18" font-weight="bold">d</text>`;
+    } else if (qMeta.axisMode === "axes_d1_d2") {
+      out += `<line x1="${ORIGIN_X}" y1="12" x2="${ORIGIN_X}" y2="478" stroke="#e63946" stroke-width="3" stroke-dasharray="8,6"/>`;
+      out += `<text x="${ORIGIN_X + 10}" y="28" fill="#e63946" font-size="17" font-weight="bold">d1</text>`;
+      out += `<line x1="28" y1="${ORIGIN_Y}" x2="732" y2="${ORIGIN_Y}" stroke="#e63946" stroke-width="3" stroke-dasharray="8,6"/>`;
+      out += `<text x="705" y="${ORIGIN_Y - 10}" fill="#e63946" font-size="17" font-weight="bold">d2</text>`;
+    } else if (qMeta.axisMode === "center_O") {
+      out += `<circle cx="${ORIGIN_X}" cy="${ORIGIN_Y}" r="7" fill="#e63946"/>`;
+      out += `<text x="${ORIGIN_X + 12}" y="${ORIGIN_Y + 20}" fill="#e63946" font-size="18" font-weight="bold">O</text>`;
+    }
+
+    // 3. Fixed Original Geometry (Non-editable)
+    if (qMeta.givenPolylines) {
+      qMeta.givenPolylines.forEach(poly => {
+        const ptsAttr = poly.map(([gx, gy]) => {
+          const p = toPixel(gx, gy);
+          return `${p.px},${p.py}`;
+        }).join(" ");
+        const isClosed = poly.length > 2 && poly[0][0] === poly[poly.length - 1][0] && poly[0][1] === poly[poly.length - 1][1];
+        if (isClosed || qMeta.id === 1 || qMeta.id === 2 || qMeta.id === 6) {
+          out += `<polygon points="${ptsAttr}" fill="rgba(15, 37, 71, 0.14)" stroke="#0f2547" stroke-width="3.5" stroke-linejoin="round"/>`;
+        } else {
+          out += `<polyline points="${ptsAttr}" fill="none" stroke="#0f2547" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+      });
+    }
+
+    if (qMeta.givenPetals) {
+      qMeta.givenPetals.forEach(petal => {
+        out += renderFlowerPetalSVG(0, 0, petal.tip[0], petal.tip[1], "rgba(15, 37, 71, 0.28)", "#0f2547");
+      });
+    }
+
+    if (qMeta.givenPoints) {
+      qMeta.givenPoints.forEach(pt => {
+        const p = toPixel(pt.gx, pt.gy);
+        out += `<circle cx="${p.px}" cy="${p.py}" r="4.5" fill="#0f2547"/>`;
+        if (pt.label) {
+          out += `<text x="${p.px - 16}" y="${p.py - 8}" fill="#0f2547" font-size="16" font-weight="bold">${pt.label}</text>`;
+        }
+      });
+    }
+
+    // 4. Student-Drawn Shapes (Jade Green / Blue Highlight)
+    qState.shapes.forEach(sh => {
+      if (sh.type === "point") {
+        const p = toPixel(sh.points[0].gx, sh.points[0].gy);
+        out += `<circle cx="${p.px}" cy="${p.py}" r="6" fill="#00a878" stroke="#ffffff" stroke-width="1.5"/>`;
+        if (sh.label) {
+          out += `<text x="${p.px + 10}" y="${p.py - 8}" fill="#007f5b" font-size="16" font-weight="bold">${sh.label}</text>`;
+        }
+      } else if (sh.type === "curve" && sh.points.length === 2) {
+        const [a, b] = sh.points;
+        out += renderFlowerPetalSVG(a.gx, a.gy, b.gx, b.gy, "rgba(0, 168, 120, 0.25)", "#00a878");
+        [a, b].forEach(pt => {
+          const p = toPixel(pt.gx, pt.gy);
+          out += `<circle cx="${p.px}" cy="${p.py}" r="4.5" fill="#00a878"/>`;
+        });
+      } else if (sh.points.length >= 2) {
+        const ptsAttr = sh.points.map(pt => {
+          const p = toPixel(pt.gx, pt.gy);
+          return `${p.px},${p.py}`;
+        }).join(" ");
+        if (sh.type === "polygon") {
+          out += `<polygon points="${ptsAttr}" fill="rgba(0, 168, 120, 0.2)" stroke="#00a878" stroke-width="3.5" stroke-linejoin="round"/>`;
+        } else {
+          out += `<polyline points="${ptsAttr}" fill="none" stroke="#00a878" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+        sh.points.forEach((pt, idx) => {
+          const p = toPixel(pt.gx, pt.gy);
+          out += `<circle cx="${p.px}" cy="${p.py}" r="5" fill="#00a878" stroke="#ffffff" stroke-width="1.2"/>`;
+          if (idx === 0 && sh.label) {
+            out += `<text x="${p.px + 10}" y="${p.py - 8}" fill="#007f5b" font-size="16" font-weight="bold">${sh.label}</text>`;
+          }
+        });
+      }
+    });
+
+    // 5. In-Progress Rubber-Band Preview
+    if (this.tempPoints.length > 0) {
+      const previewPts = [...this.tempPoints];
+      if (this.hoverGrid) previewPts.push(this.hoverGrid);
+      if (this.currentTool === "curve" && previewPts.length === 2) {
+        out += renderFlowerPetalSVG(previewPts[0].gx, previewPts[0].gy, previewPts[1].gx, previewPts[1].gy, "rgba(255,123,0,0.15)", "#ff7b00");
+      } else {
+        const ptsAttr = previewPts.map(pt => {
+          const p = toPixel(pt.gx, pt.gy);
+          return `${p.px},${p.py}`;
+        }).join(" ");
+        out += `<polyline points="${ptsAttr}" fill="none" stroke="#ff7b00" stroke-width="2.5" stroke-dasharray="5,4"/>`;
+      }
+      this.tempPoints.forEach(pt => {
+        const p = toPixel(pt.gx, pt.gy);
+        out += `<circle cx="${p.px}" cy="${p.py}" r="5" fill="#ff7b00"/>`;
+      });
+    }
+
+    // 6. Error Markers (Orange highlights for incorrect points/vertices)
+    this.errorMarkers.forEach(err => {
+      const p = toPixel(err.gx, err.gy);
+      out += `<circle cx="${p.px}" cy="${p.py}" r="11" fill="rgba(255, 123, 0, 0.35)" stroke="#ff7b00" stroke-width="3"/>`;
+    });
+
+    // 7. Grid Snap Indicator
+    if (this.hoverGrid) {
+      const hp = toPixel(this.hoverGrid.gx, this.hoverGrid.gy);
+      out += `<circle cx="${hp.px}" cy="${hp.py}" r="6" fill="none" stroke="#ff7b00" stroke-width="2"/>`;
+    }
+
+    svg.innerHTML = out;
+  }
+};
+
+function renderFlowerPetalSVG(gx1, gy1, gx2, gy2, fillColor, strokeColor) {
+  const p1 = toPixel(gx1, gy1);
+  const p2 = toPixel(gx2, gy2);
+  const mx = (p1.px + p2.px) / 2;
+  const my = (p1.py + p2.py) / 2;
+  const dx = p2.px - p1.px;
+  const dy = p2.py - p1.py;
+  // Normal vector for symmetrical leaf/petal control points
+  const nx = -dy * 0.36;
+  const ny = dx * 0.36;
+  const c1x = mx + nx, c1y = my + ny;
+  const c2x = mx - nx, c2y = my - ny;
+  return `<path d="M ${p1.px} ${p1.py} Q ${c1x} ${c1y} ${p2.px} ${p2.py} Q ${c2x} ${c2y} ${p1.px} ${p1.py} Z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="3"/>`;
+}
+
+/* ==========================================================================
+   5. GEOMETRIC GRADING ENGINE (COORDINATE, EDGE & SYMMETRY VERIFICATION)
+   ========================================================================== */
+const Grader = {
+  gradeCurrent() {
+    if (!session || !session.assigned) return;
+    const idx = session.currentIndex;
+    const qMeta = QUESTIONS[idx];
+    const qState = session.questions[idx];
+    const key = ANSWER_KEY[qMeta.id];
+
+    qState.attempts += 1;
+
+    // Extract all student vertices and undirected edges from shapes
+    const studentPoints = [];
+    const studentEdges = [];
+
+    qState.shapes.forEach(sh => {
+      sh.points.forEach(pt => {
+        if (!studentPoints.some(p => p.gx === pt.gx && p.gy === pt.gy)) {
+          studentPoints.push({ gx: pt.gx, gy: pt.gy, label: sh.label || "" });
+        }
+      });
+      if (sh.points.length >= 2) {
+        for (let i = 0; i < sh.points.length - 1; i++) {
+          const a = sh.points[i];
+          const b = sh.points[i + 1];
+          if (a.gx !== b.gx || a.gy !== b.gy) {
+            studentEdges.push([a, b]);
+          }
+        }
+      }
+    });
+
+    if (studentPoints.length === 0) {
+      this.failAttempt(qState, [], 1, "Em hãy kiểm tra lại các điểm đối xứng nhé!", "Em chưa vẽ hình lên bảng lưới ô vuông.");
+      return;
+    }
+
+    let result = { passed: false, badPoints: [], level: 1, title: "", hint: "" };
+
+    if (qMeta.id === 5) {
+      // Special geometric check for 4-petal flower (3 missing petals from (0,0) to (6,6), (-6,-6), (6,-6))
+      result = this.verifyFlower(qState.shapes, key);
+    } else {
+      result = this.verifyPolygonOrPolyline(qMeta.id, studentPoints, studentEdges, key);
+    }
+
+    if (result.passed) {
+      // SUCCESS! Award score once and unlock next question
+      if (!qState.completed) {
+        qState.completed = true;
+        qState.scoreEarned = qMeta.points;
+        session.totalScore = Math.round((session.totalScore + qMeta.points) * 10) / 10;
+      }
+      Board.errorMarkers = [];
+      saveSession();
+      App.refreshUI();
+      this.setFeedback(
+        "level-3",
+        `TUYỆT VỜI! EM ĐÃ DỰNG HÌNH CHÍNH XÁC! (+${String(qMeta.points).replace(".", ",")} điểm)`,
+        `CHÍNH XÁC! EM ĐÃ HOÀN THÀNH CÂU ${qMeta.id}. Nhấn "CHUYỂN CÂU TIẾP THEO" để tiếp tục.`
+      );
+    } else {
+      this.failAttempt(qState, result.badPoints, result.level, result.title, result.hint);
+    }
+  },
+
+  failAttempt(qState, badPoints, level, title, hint) {
+    qState.fixedErrorsCount += 1;
+    qState.errorHistory.push({
+      questionId: qState.id,
+      attempt: qState.attempts,
+      message: `${title} (${hint})`
+    });
+    Board.errorMarkers = badPoints;
+    saveSession();
+    Board.render();
+    this.setFeedback("level-" + level, title, hint);
+  },
+
+  verifyPolygonOrPolyline(qId, studentPoints, studentEdges, key) {
+    const badPoints = [];
+
+    // 1. Check for extraneous wrong vertices (allow points that lie ON required edges)
+    studentPoints.forEach(sp => {
+      const isReqPt = key.requiredPoints.some(rp => rp.gx === sp.gx && rp.gy === sp.gy);
+      const isEndpointOnReqEdge = key.requiredEdges.some(([e1, e2]) =>
+        (e1[0] === sp.gx && e1[1] === sp.gy) || (e2[0] === sp.gx && e2[1] === sp.gy)
+      );
+      if (!isReqPt && !isEndpointOnReqEdge) {
+        badPoints.push(sp);
+      }
+    });
+
+    if (badPoints.length > 0) {
+      let specificHint = "Khoảng cách từ điểm đến trục đối xứng chưa bằng khoảng cách của điểm tương ứng.";
+      if (qId === 1) specificHint = "Em hãy kiểm tra lại khoảng cách của các điểm đến trục d.";
+      if (qId === 2) specificHint = "Điểm đối xứng phải nằm phía bên kia trục d và cách trục một khoảng bằng điểm ban đầu.";
+      if (qId === 3 || qId === 4) specificHint = "Em cần kiểm tra lại vị trí điểm đối xứng qua tâm O.";
+      return {
+        passed: false,
+        badPoints,
+        level: 2,
+        title: "Em hãy kiểm tra lại các điểm đối xứng nhé!",
+        hint: specificHint
+      };
+    }
+
+    // 2. Check all required vertices are present
+    const missingPts = key.requiredPoints.filter(rp =>
+      !studentPoints.some(sp => sp.gx === rp.gx && sp.gy === rp.gy)
+    );
+    if (missingPts.length > 0) {
+      return {
+        passed: false,
+        badPoints: [],
+        level: 1,
+        title: "Em hãy kiểm tra lại các điểm đối xứng nhé!",
+        hint: `Còn thiếu ${missingPts.length} đỉnh đối xứng quan trọng trên lưới ô vuông.`
+      };
+    }
+
+    // 3. Check all required edges are connected properly (supporting subdivided collinear segments)
+    const missingEdges = key.requiredEdges.filter(([e1, e2]) =>
+      !this.hasCoveredSegment(e1, e2, studentEdges)
+    );
+    if (missingEdges.length > 0) {
+      return {
+        passed: false,
+        badPoints: [],
+        level: 2,
+        title: "Các đỉnh đã đúng nhưng đường nối chưa hoàn thiện!",
+        hint: "Em hãy nối đầy đủ các đoạn thẳng theo đúng thứ tự của hình."
+      };
+    }
+
+    return { passed: true };
+  },
+
+  hasCoveredSegment(e1, e2, studentEdges) {
+    // Direct undirected match
+    const direct = studentEdges.some(([a, b]) =>
+      (a.gx === e1[0] && a.gy === e1[1] && b.gx === e2[0] && b.gy === e2[1]) ||
+      (a.gx === e2[0] && a.gy === e2[1] && b.gx === e1[0] && b.gy === e1[1])
+    );
+    if (direct) return true;
+
+    // Also allow two collinear sub-segments covering [e1, e2]
+    const midX = (e1[0] + e2[0]) / 2;
+    const midY = (e1[1] + e2[1]) / 2;
+    if (Number.isInteger(midX) && Number.isInteger(midY)) {
+      const m = [midX, midY];
+      return this.hasCoveredSegment(e1, m, studentEdges) && this.hasCoveredSegment(m, e2, studentEdges);
+    }
+    return false;
+  },
+
+  verifyFlower(shapes, key) {
+    const badPoints = [];
+    const matchedPetals = new Set();
+
+    shapes.forEach(sh => {
+      if (sh.points.length >= 2) {
+        const p1 = sh.points[0];
+        const p2 = sh.points[sh.points.length - 1];
+        const idx = key.requiredPetals.findIndex(rp =>
+          (p1.gx === 0 && p1.gy === 0 && p2.gx === rp.tip[0] && p2.gy === rp.tip[1]) ||
+          (p2.gx === 0 && p2.gy === 0 && p1.gx === rp.tip[0] && p1.gy === rp.tip[1])
+        );
+        if (idx !== -1) {
+          matchedPetals.add(idx);
+        } else {
+          if (p1.gx !== 0 || p1.gy !== 0) badPoints.push(p1);
+          if (p2.gx !== 0 || p2.gy !== 0) badPoints.push(p2);
+        }
+      } else if (sh.points.length === 1) {
+        const p = sh.points[0];
+        const isTip = key.requiredPetals.some(rp => rp.tip[0] === p.gx && rp.tip[1] === p.gy);
+        if (!isTip && !(p.gx === 0 && p.gy === 0)) badPoints.push(p);
+      }
+    });
+
+    if (badPoints.length > 0) {
+      return {
+        passed: false,
+        badPoints,
+        level: 2,
+        title: "Em hãy kiểm tra lại các điểm đối xứng nhé!",
+        hint: "Khoảng cách từ đỉnh cánh hoa đến trục d1 và d2 chưa bằng cánh hoa mẫu."
+      };
+    }
+
+    if (matchedPetals.size < 3) {
+      return {
+        passed: false,
+        badPoints: [],
+        level: 1,
+        title: "Em hãy kiểm tra lại các cánh hoa đối xứng nhé!",
+        hint: `Em đã dựng đúng ${matchedPetals.size}/3 cánh hoa còn thiếu. Hãy dựng đủ 4 cánh cân đối qua d1 và d2.`
+      };
+    }
+
+    return { passed: true };
+  },
+
+  setFeedback(cls, mainText, detailText) {
+    const box = document.getElementById("feedback-box");
+    box.className = "feedback-box " + cls;
+    document.getElementById("feedback-main").textContent = mainText;
+    document.getElementById("feedback-detail").textContent = detailText;
+  }
+};
+
+/* ==========================================================================
+   6. APPLICATION FLOW & REFERENCE DIAGRAM RENDERER
+   ========================================================================== */
+const App = {
+  init() {
+    this.fitViewport();
+    window.addEventListener("resize", () => this.fitViewport());
+    Board.init();
+
+    if (loadSession()) {
+      document.getElementById("student-name-input").value = session.studentName;
+      document.getElementById("screen-login").classList.remove("active");
+      if (session.finishedAt) {
+        this.showSummaryScreen();
+      } else {
+        this.refreshUI();
+      }
+    }
+  },
+
+  fitViewport() {
+    const stage = document.getElementById("app-stage");
+    const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = `scale(${scale})`;
+  },
+
+  startPractice() {
+    const name = document.getElementById("student-name-input").value.trim();
+    if (!name) {
+      document.getElementById("student-name-input").focus();
+      return;
+    }
+    if (!session || session.studentName !== name) {
+      session = createEmptyProgress(name);
+      saveSession();
+    }
+    document.getElementById("screen-login").classList.remove("active");
+    this.refreshUI();
+  },
+
+  refreshUI() {
+    if (!session) return;
+    const idx = session.currentIndex;
+    const qMeta = QUESTIONS[idx];
+    const qState = session.questions[idx];
+
+    // Header
+    document.getElementById("hdr-student-name").textContent = session.studentName;
+    document.getElementById("hdr-progress-text").textContent = `Câu ${idx + 1}/6`;
+    document.getElementById("hdr-score-text").textContent = `${String(session.totalScore).replace(".", ",")}/10`;
+
+    const completedCount = session.questions.filter(q => q.completed).length;
+    const pct = Math.round((completedCount / 6) * 100);
+    document.getElementById("hdr-percent-label").textContent = `Hoàn thành: ${pct}%`;
+    document.getElementById("hdr-progress-fill").style.width = pct + "%";
+
+    // Left Panel
+    document.getElementById("q-badge").textContent = qMeta.badge;
+    document.getElementById("q-points-tag").textContent = `${String(qMeta.points).replace(".", ",")} điểm`;
+    document.getElementById("q-statement").textContent = qMeta.statement;
+    document.getElementById("q-steps").innerHTML = `<strong>Các bước thực hiện:</strong>${qMeta.steps.join("<br>")}`;
+    this.renderReferenceThumbnail(qMeta.id);
+
+    // Next Button Lock / Unlock State
+    const nextBtn = document.getElementById("btn-next");
+    const lockHint = document.getElementById("lock-hint-text");
+    if (qState.completed) {
+      nextBtn.disabled = false;
+      nextBtn.textContent = idx < 5 ? `🔓 CHUYỂN CÂU ${idx + 2}` : "🏆 HOÀN THÀNH BÀI TẬP";
+      lockHint.textContent = "✅ Câu hiện tại đã đạt yêu cầu! Em có thể chuyển tiếp.";
+      Grader.setFeedback(
+        "level-3",
+        `TUYỆT VỜI! EM ĐÃ DỰNG HÌNH CHÍNH XÁC! (+${String(qMeta.points).replace(".", ",")} điểm)`,
+        `CHÍNH XÁC! EM ĐÃ HOÀN THÀNH CÂU ${qMeta.id}.`
+      );
+    } else {
+      nextBtn.disabled = true;
+      nextBtn.textContent = "🔒 CHUYỂN CÂU TIẾP THEO";
+      lockHint.textContent = "🔒 Em cần hoàn thành đúng câu hiện tại trước khi chuyển sang câu tiếp theo nhé!";
+      Grader.setFeedback(
+        "",
+        "Sử dụng công cụ vẽ trên lưới ô vuông bên phải rồi nhấn \"NỘP BÀI KIỂM TRA\".",
+        "Chỉ vẽ phần còn thiếu; hình gốc đề bài được giữ cố định."
+      );
+    }
+
+    Board.render();
+  },
+
+  renderReferenceThumbnail(qId) {
+    const box = document.getElementById("ref-svg-container");
+    const thumbs = {
+      1: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <polygon points="80,25 65,12 45,12 30,25 30,45 45,62 80,84" fill="#cbd5e1" stroke="#0f2547" stroke-width="2"/>
+            <line x1="80" y1="6" x2="80" y2="88" stroke="#e63946" stroke-width="2" stroke-dasharray="4,3"/>
+            <text x="86" y="16" fill="#e63946" font-size="11" font-weight="bold">d</text>
+          </svg>`,
+      2: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <polygon points="35,52 65,16 125,52" fill="#cbd5e1" stroke="#0f2547" stroke-width="2"/>
+            <line x1="15" y1="52" x2="145" y2="52" stroke="#e63946" stroke-width="2" stroke-dasharray="4,3"/>
+            <text x="135" y="46" fill="#e63946" font-size="11" font-weight="bold">d</text>
+          </svg>`,
+      3: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <polyline points="28,22 65,15 72,38 42,48" fill="none" stroke="#0f2547" stroke-width="2.5"/>
+            <circle cx="80" cy="52" r="4" fill="#e63946"/>
+            <text x="86" y="62" fill="#e63946" font-size="11" font-weight="bold">O</text>
+          </svg>`,
+      4: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <polyline points="55,76 42,18 105,18" fill="none" stroke="#0f2547" stroke-width="2.5"/>
+            <circle cx="80" cy="48" r="4" fill="#e63946"/>
+            <text x="86" y="54" fill="#e63946" font-size="11" font-weight="bold">O</text>
+          </svg>`,
+      5: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <path d="M80,46 Q52,36 44,16 Q66,24 80,46 Z" fill="#94a3b8" stroke="#0f2547" stroke-width="2"/>
+            <line x1="80" y1="6" x2="80" y2="86" stroke="#e63946" stroke-width="1.8" stroke-dasharray="4,3"/>
+            <line x1="20" y1="46" x2="140" y2="46" stroke="#e63946" stroke-width="1.8" stroke-dasharray="4,3"/>
+          </svg>`,
+      6: `<svg width="160" height="92" viewBox="0 0 160 92">
+            <polygon points="48,52 48,14 112,14 112,26 64,26 64,38 92,38 92,52" fill="#0f2547"/>
+            <line x1="20" y1="52" x2="140" y2="52" stroke="#e63946" stroke-width="2" stroke-dasharray="4,3"/>
+            <text x="130" y="46" fill="#e63946" font-size="11" font-weight="bold">d</text>
+          </svg>`
+    };
+    box.innerHTML = thumbs[qId] || "";
+  },
+
+  nextQuestion() {
+    const qState = session.questions[session.currentIndex];
+    // Strict security check: cannot bypass uncompleted question
+    if (!qState.completed) {
+      Grader.setFeedback("level-1", "Câu hỏi chưa mở khóa!", "Em cần hoàn thành đúng câu hiện tại trước khi chuyển sang câu tiếp theo nhé!");
+      return;
+    }
+
+    if (session.currentIndex < 5) {
+      session.currentIndex += 1;
+      Board.tempPoints = [];
+      Board.errorMarkers = [];
+      saveSession();
+      this.refreshUI();
+    } else {
+      session.finishedAt = Date.now();
+      saveSession();
+      this.showSummaryScreen();
+    }
+  },
+
+  showSummaryScreen() {
+    document.getElementById("screen-summary").classList.add("active");
+    document.getElementById("sum-name").textContent = session.studentName;
+    document.getElementById("sum-score").textContent = `${String(session.totalScore).replace(".", ",")}/10`;
+
+    const totalSec = Math.max(1, Math.round(((session.finishedAt || Date.now()) - session.startedAt) / 1000));
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    document.getElementById("sum-time").textContent = `${mins} phút ${secs} giây`;
+
+    const totalAttempts = session.questions.reduce((acc, q) => acc + q.attempts, 0);
+    document.getElementById("sum-attempts").textContent = totalAttempts + " lần";
+
+    let rank = "Cần cố gắng";
+    if (session.totalScore >= 9) rank = "Xuất sắc";
+    else if (session.totalScore >= 8) rank = "Tốt";
+    else if (session.totalScore >= 6.5) rank = "Khá";
+    else if (session.totalScore >= 5) rank = "Đạt";
+    document.getElementById("sum-rank").textContent = rank;
+
+    const tbody = document.getElementById("sum-table-body");
+    tbody.innerHTML = session.questions.map((qs, idx) => {
+      const qm = QUESTIONS[idx];
+      return `<tr>
+        <td style="font-weight:bold;">Câu ${qm.id}</td>
+        <td>${qm.badge.split("–")[1].trim()}</td>
+        <td style="color:var(--jade-dark); font-weight:bold;">${String(qs.scoreEarned).replace(".", ",")}/${String(qm.points).replace(".", ",")}</td>
+        <td>${qs.attempts} lần</td>
+        <td>${qs.fixedErrorsCount} lỗi</td>
+      </tr>`;
+    }).join("");
+  },
+
+  reviewWork() {
+    document.getElementById("screen-summary").classList.remove("active");
+    session.currentIndex = 0;
+    this.refreshUI();
+  },
+
+  showFixedErrorsModal() {
+    const allErrors = session.questions.flatMap(q => q.errorHistory);
+    const body = allErrors.length === 0
+      ? "<p>Em đã hoàn thành xuất sắc tất cả các câu ngay từ lần nộp đầu tiên mà không mắc lỗi nào!</p>"
+      : `<ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+          ${allErrors.map(e => `<li><strong>Câu ${e.questionId} (Lần nộp ${e.attempt}):</strong> ${e.message}</li>`).join("")}
+         </ul>`;
+    this.openModal("LỊCH SỬ CÁC LỖI EM ĐÃ TỰ SỬA", body, [
+      { text: "Đóng", cls: "btn-undo", action: () => this.closeModal() }
+    ]);
+  },
+
+  finishSession() {
+    this.openModal(
+      "HOÀN TẤT PHIÊN LUYỆN TẬP",
+      "Kết quả làm bài của em đã được ghi nhận. Em có muốn bắt đầu lượt luyện tập mới không?",
+      [
+        { text: "Ở lại trang tổng kết", cls: "btn-undo", action: () => this.closeModal() },
+        {
+          text: "Làm lại từ đầu",
+          cls: "btn-submit",
+          action: () => {
+            localStorage.removeItem(STORAGE_KEY);
+            session = null;
+            this.closeModal();
+            document.getElementById("screen-summary").classList.remove("active");
+            document.getElementById("screen-login").classList.add("active");
+          }
+        }
+      ]
+    );
+  },
+
+  openTeacherDashboard() {
+    TeacherMode.render();
+    document.getElementById("screen-teacher").classList.add("active");
+  },
+
+  closeTeacherDashboard() {
+    document.getElementById("screen-teacher").classList.remove("active");
+  },
+
+  openModal(title, html, buttons) {
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-content").innerHTML = html;
+    const footer = document.getElementById("modal-footer");
+    footer.innerHTML = "";
+    buttons.forEach(b => {
+      const btn = document.createElement("button");
+      btn.className = "btn-ctrl " + (b.cls || "btn-undo");
+      btn.textContent = b.text;
+      btn.onclick = b.action;
+      footer.appendChild(btn);
+    });
+    document.getElementById("modal-mask").classList.add("open");
+  },
+
+  closeModal() {
+    document.getElementById("modal-mask").classList.remove("open");
+  }
+};
+
+/* ==========================================================================
+   7. TEACHER MONITORING & ASSIGNMENT CONTROL (NO FAKE STUDENTS)
+   ========================================================================== */
+const TeacherMode = {
+  toggleAssignment(isAssigned) {
+    if (!session) {
+      session = createEmptyProgress("Chưa có học sinh đăng nhập");
+    }
+    session.assigned = isAssigned;
+    saveSession();
+    this.render();
+  },
+
+  render() {
+    const statusEl = document.getElementById("teacher-assign-status");
+    const tbody = document.getElementById("teacher-students-body");
+
+    if (!session) {
+      statusEl.textContent = "Chưa có học sinh nào vào phòng luyện tập";
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--slate);">Chưa có dữ liệu học sinh thực tế. Khi học sinh đăng nhập tên và bắt đầu làm bài, tiến độ từng câu sẽ hiển thị tại đây.</td></tr>`;
+      return;
+    }
+
+    statusEl.textContent = session.assigned
+      ? "Đang phát bài tập (Học sinh được phép làm bài)"
+      : "Đã thu hồi bài tập (Khóa thao tác vẽ)";
+    statusEl.style.color = session.assigned ? "var(--jade-dark)" : "var(--red)";
+
+    const completedCount = session.questions.filter(q => q.completed).length;
+    const totalAttempts = session.questions.reduce((s, q) => s + q.attempts, 0);
+    const errorQuestions = session.questions
+      .filter(q => !q.completed && q.attempts > 0)
+      .map(q => "Câu " + q.id)
+      .join(", ") || "Không có";
+
+    const perQuestionScores = session.questions
+      .map(q => `C${q.id}: ${String(q.scoreEarned).replace(".", ",")}`)
+      .join(" | ");
+
+    tbody.innerHTML = `
+      <tr>
+        <td style="font-weight:bold; color:var(--navy);">${session.studentName}</td>
+        <td>Câu ${session.currentIndex + 1}/6</td>
+        <td>${completedCount}/6 câu</td>
+        <td style="font-size:11.5px;">${perQuestionScores}</td>
+        <td style="font-weight:bold; color:var(--jade-dark);">${String(session.totalScore).replace(".", ",")}/10</td>
+        <td>${totalAttempts}</td>
+        <td style="color:var(--red); font-weight:bold;">${errorQuestions}</td>
+        <td>
+          <button class="tool-btn" onclick="TeacherMode.inspectStudentDrawing()">Xem hình vẽ</button>
+        </td>
+      </tr>`;
+  },
+
+  inspectStudentDrawing() {
+    if (!session) return;
+    const qState = session.questions[session.currentIndex];
+    const summary = qState.shapes.length === 0
+      ? "Học sinh chưa vẽ nét nào ở câu hiện tại."
+      : qState.shapes.map((sh, i) =>
+          `<div>${i + 1}. Loại: <strong>${sh.type}</strong> — Tọa độ: ${sh.points.map(p => `(${p.gx};${p.gy})`).join(" → ")} ${sh.label ? `[Nhãn: ${sh.label}]` : ""}</div>`
+        ).join("");
+    App.openModal(
+      `DỮ LIỆU BÀI VẼ CỦA ${session.studentName.toUpperCase()} (CÂU ${session.currentIndex + 1})`,
+      summary,
+      [{ text: "Đóng", cls: "btn-undo", action: () => App.closeModal() }]
+    );
+  }
+};
+
+window.addEventListener("DOMContentLoaded", () => App.init());
+</script>
+</body>
+</html>
