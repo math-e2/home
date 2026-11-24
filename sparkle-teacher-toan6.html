@@ -14,6 +14,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client v2 CDN (Realtime, Auth, Database, Storage) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- html2canvas CDN for real-time same-origin HTML exercise screen mirroring -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -1795,7 +1797,11 @@ END $$;`;
 
           AppState.persist(false);
           UIRenderer.renderAll();
-          if (PracticeRoomManager.isOpen()) PracticeRoomManager.renderRoomView();
+          if (PracticeRoomManager.isOpen()) {
+            PracticeRoomManager.renderRoomView();
+            const monId = PracticeRoomManager.getMonitoringStudentId && PracticeRoomManager.getMonitoringStudentId();
+            if (monId) PracticeRoomManager.refreshStudentMonitor(monId);
+          }
           if (StudentRoomManager.isOpen()) StudentRoomManager.renderStudentView();
         } catch (err) {
           console.warn('Supabase sync skipped:', err.message);
@@ -1858,26 +1864,31 @@ END $$;`;
             queuedBroadcasts.push(msg);
           }
         }
-        // Persist lightweight live telemetry to screen_sessions so cross-device teachers always see latest state
+        // Persist live telemetry & latest screen frame to screen_sessions (throttled & preserving last frame)
         if (eventType === 'STUDENT_LIVE_PROGRESS' && payload && payload.roomId && payload.studentId) {
-          const safeTelemetry = {
-            exId: payload.exId || null,
-            text: payload.text || '',
-            fields: payload.fields || {},
-            activity: payload.activity || null,
-            deviceMode: payload.deviceMode || 'unknown',
-            clientAt: payload.clientAt || new Date().toISOString(),
-            photoDataUrl: payload.photoDataUrl || null,
-            canvasDataUrl: payload.canvasDataUrl || null,
-          };
-          upsertRecord('screen_sessions', {
-            id: `${payload.roomId}__${payload.studentId}__live`,
-            room_id: payload.roomId,
-            student_id: payload.studentId,
-            signaling_data: safeTelemetry,
-            status: payload.photoDataUrl ? 'mobile_photo' : 'live',
-            started_at: new Date().toISOString(),
-          }).catch(() => {});
+          const nowTs = Date.now();
+          if (!broadcast._lastDbWrite || nowTs - broadcast._lastDbWrite > 1800 || payload.forcePersist) {
+            broadcast._lastDbWrite = nowTs;
+            if (payload.canvasDataUrl) broadcast._lastCanvas = payload.canvasDataUrl;
+            const safeTelemetry = {
+              exId: payload.exId || null,
+              text: payload.text || '',
+              fields: payload.fields || {},
+              activity: payload.activity || null,
+              deviceMode: payload.deviceMode || 'unknown',
+              clientAt: payload.clientAt || new Date().toISOString(),
+              photoDataUrl: payload.photoDataUrl || null,
+              canvasDataUrl: payload.canvasDataUrl || broadcast._lastCanvas || null,
+            };
+            upsertRecord('screen_sessions', {
+              id: `${payload.roomId}__${payload.studentId}__live`,
+              room_id: payload.roomId,
+              student_id: payload.studentId,
+              signaling_data: safeTelemetry,
+              status: safeTelemetry.canvasDataUrl ? 'sharing' : (payload.photoDataUrl ? 'mobile_photo' : 'live'),
+              started_at: new Date().toISOString(),
+            }).catch(() => {});
+          }
         }
       }
 
@@ -3577,10 +3588,18 @@ END $$;`;
         if (frameImg) {
           phEl.classList.remove('hidden', 'max-w-sm');
           phEl.classList.add('w-full', 'h-full');
-          phEl.innerHTML = `
-            <div class="w-full h-full flex flex-col items-center justify-center p-2 bg-spark-navy">
-              <img src="${frameImg}" alt="Khung nhìn học sinh" class="max-h-full max-w-full rounded-xl object-contain shadow-lg" />
-            </div>`;
+          let liveImg = document.getElementById('teacher-live-mirror-img');
+          let liveTimeEl = document.getElementById('teacher-live-mirror-time');
+          if (!liveImg) {
+            phEl.innerHTML = `
+              <div class="relative w-full h-full flex flex-col items-center justify-center p-1 bg-spark-navy">
+                <img id="teacher-live-mirror-img" src="${frameImg}" alt="Màn hình thực tế của học sinh" class="max-h-full max-w-full rounded-xl object-contain shadow-lg cursor-zoom-in" onclick="this.requestFullscreen && this.requestFullscreen()" title="Bấm để phóng to toàn màn hình" />
+                <span id="teacher-live-mirror-time" class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold shadow">● LIVE • ${new Date().toLocaleTimeString('vi-VN')}</span>
+              </div>`;
+          } else {
+            liveImg.src = frameImg;
+            if (liveTimeEl) liveTimeEl.textContent = `● LIVE • ${new Date().toLocaleTimeString('vi-VN')}`;
+          }
           return;
         }
         phEl.classList.remove('hidden', 'w-full', 'h-full');
@@ -3645,9 +3664,19 @@ END $$;`;
 
 
         WebRTCManager.attachTeacherViewer(room.id, studentId);
+        if (window.__sparkleTeacherMonPoll) clearInterval(window.__sparkleTeacherMonPoll);
+        window.__sparkleTeacherMonPoll = setInterval(() => {
+          if (monitoringStudentId && SupabaseEngine.syncFromSupabase) {
+            SupabaseEngine.syncFromSupabase();
+          }
+        }, 2500);
       }
 
       function closeStudentMonitor() {
+        if (window.__sparkleTeacherMonPoll) {
+          clearInterval(window.__sparkleTeacherMonPoll);
+          window.__sparkleTeacherMonPoll = null;
+        }
         monitoringStudentId = null;
         WebRTCManager.detachTeacherViewer();
         const modal = document.getElementById('student-monitor-modal');
@@ -3829,8 +3858,74 @@ END $$;`;
         } catch { return null; }
       }
 
-      function sendObservation(activity, canvasDataUrl = null) {
+      let captureInProgress = false;
+      let liveMirrorInterval = null;
+
+      async function captureActualExerciseScreen() {
+        if (captureInProgress) return currentStudent?.latestCanvasUrl || null;
+        captureInProgress = true;
+        try {
+          const frame = document.querySelector('#preview-modal iframe') || document.querySelector('#student-room-view iframe');
+          let targetEl = null;
+          let targetWin = window;
+          if (frame) {
+            try {
+              if (frame.contentDocument && frame.contentDocument.body && frame.contentDocument.body.childElementCount > 0) {
+                targetEl = frame.contentDocument.documentElement || frame.contentDocument.body;
+                targetWin = frame.contentWindow || window;
+              }
+            } catch {}
+          }
+          if (!targetEl) {
+            targetEl = document.getElementById('student-room-view') || document.body;
+          }
+
+          if (typeof window.html2canvas === 'function' && targetEl) {
+            const w = Math.max(targetWin.innerWidth || targetEl.scrollWidth || 960, 320);
+            const h = Math.max(targetWin.innerHeight || targetEl.clientHeight || 540, 240);
+            const scale = Math.min(0.75, 860 / w);
+            const rendered = await window.html2canvas(targetEl, {
+              scale,
+              useCORS: true,
+              allowTaint: true,
+              logging: false,
+              backgroundColor: '#0f172a',
+              width: w,
+              height: Math.min(h, 900),
+              windowWidth: w,
+              windowHeight: Math.min(h, 900),
+              scrollX: targetWin.scrollX || 0,
+              scrollY: targetWin.scrollY || 0,
+            });
+            return rendered.toDataURL('image/jpeg', 0.62);
+          }
+
+          // Fallback: capture largest visible canvas inside the iframe
+          if (frame && frame.contentDocument) {
+            const canvases = Array.from(frame.contentDocument.querySelectorAll('canvas'));
+            if (canvases.length > 0) {
+              canvases.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+              return makeCanvasPreview(canvases[0]);
+            }
+          }
+          return currentStudent?.latestCanvasUrl || null;
+        } catch (err) {
+          console.warn('Live mirror capture skipped:', err?.message || err);
+          return currentStudent?.latestCanvasUrl || null;
+        } finally {
+          captureInProgress = false;
+        }
+      }
+
+      async function sendObservation(activity, canvasDataUrl = null, forceCapture = false) {
         if (!currentRoom || !currentStudent) return;
+        let frameUrl = canvasDataUrl;
+        if (!frameUrl && (forceCapture || document.querySelector('#preview-modal:not(.hidden) iframe'))) {
+          frameUrl = await captureActualExerciseScreen();
+        }
+        if (!frameUrl && currentStudent.latestCanvasUrl) {
+          frameUrl = currentStudent.latestCanvasUrl;
+        }
         const payload = {
           roomId: currentRoom.id,
           studentId: currentStudent.studentId,
@@ -3838,15 +3933,18 @@ END $$;`;
           text: activity?.exerciseId ? (document.getElementById(`stu-ans-${activity.exerciseId}`)?.value || '') : null,
           fields: collectLiveFields(),
           activity: activity ? { ...activity, time: new Date().toISOString() } : null,
-          canvasDataUrl,
+          canvasDataUrl: frameUrl,
+          forcePersist: Boolean(forceCapture),
           deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop',
           clientAt: new Date().toISOString()
         };
         currentStudent.liveFields = payload.fields;
         if (activity) currentStudent.liveActivity = [payload.activity, ...(currentStudent.liveActivity || [])].slice(0, 18);
-        if (canvasDataUrl) currentStudent.latestCanvasUrl = canvasDataUrl;
+        if (frameUrl) {
+          currentStudent.latestCanvasUrl = frameUrl;
+          currentStudent.screenStatus = 'sharing';
+        }
         currentStudent.lastSeenAt = payload.clientAt;
-        if (currentStudent.screenStatus !== 'sharing' && currentStudent.screenStatus !== 'mobile_photo') currentStudent.screenStatus = 'mobile_live';
         SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', payload);
       }
 
@@ -3854,9 +3952,18 @@ END $$;`;
         lastObservedActivity = activity || lastObservedActivity;
         if (observationTimer) clearTimeout(observationTimer);
         observationTimer = setTimeout(() => {
-          sendObservation(lastObservedActivity, canvasDataUrl);
+          sendObservation(lastObservedActivity, canvasDataUrl, true);
           lastObservedActivity = null;
-        }, 320);
+        }, 450);
+      }
+
+      function startLiveMirrorLoop() {
+        if (liveMirrorInterval) clearInterval(liveMirrorInterval);
+        liveMirrorInterval = setInterval(() => {
+          if (currentRoom && currentStudent && !removed && document.querySelector('#preview-modal:not(.hidden) iframe')) {
+            sendObservation(null, null, true);
+          }
+        }, 2000);
       }
 
       function attachObservationToDocument(doc) {
@@ -3891,14 +3998,23 @@ END $$;`;
           }
         }, true);
         doc.addEventListener('pointerup', (ev) => {
-          if (!inStudentWorkspace(ev.target) || ev.target?.tagName !== 'CANVAS') return;
-          queueObservation({ type: 'draw', label: 'Học sinh vừa vẽ / viết trên bảng làm bài' }, makeCanvasPreview(ev.target));
+          if (!inStudentWorkspace(ev.target)) return;
+          const isCanvasOrSvg = ev.target?.tagName === 'CANVAS' || Boolean(ev.target?.closest?.('svg, canvas'));
+          if (isCanvasOrSvg) {
+            queueObservation({ type: 'draw', label: 'Học sinh vừa thao tác vẽ trên bài tập' });
+          } else if (doc !== document) {
+            queueObservation({ type: 'interact', label: describeObservedTarget(ev.target) });
+          }
         }, true);
         doc.querySelectorAll('iframe').forEach(frame => {
           try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch { /* Cross-origin iframe cannot be inspected by browser security rules. */ }
-          frame.addEventListener('load', () => {
-            try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch {}
-          });
+          if (!frame._sparkleLoadBound) {
+            frame._sparkleLoadBound = true;
+            frame.addEventListener('load', () => {
+              try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch {}
+              setTimeout(() => sendObservation({ type: 'loaded', label: 'Đã tải xong giao diện bài tập HTML' }, null, true), 500);
+            });
+          }
         });
       }
 
@@ -4174,43 +4290,19 @@ END $$;`;
         if (!currentRoom || !currentStudent) return;
         const list = scopeType === 'exercise' ? AppState.state.exercises : AppState.state.materials;
         const item = (list || []).find((x) => x.id === id);
-        const snapUrl = captureStudentWorkspaceSnapshot(item?.title || '', item?.url || '');
 
         currentStudent.screenStatus = 'sharing';
         currentStudent.lastSeenAt = new Date().toISOString();
-        if (snapUrl) currentStudent.latestCanvasUrl = snapUrl;
         sessionStorage.setItem(`sparkle_stu_${currentRoom.roomCode}`, JSON.stringify(currentStudent));
-
-        SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', {
-          roomId: currentRoom.id,
-          studentId: currentStudent.studentId,
-          exId: id,
-          text: `Đang mở bài tập: ${item?.title || id}`,
-          canvasDataUrl: snapUrl,
-          activity: { type: 'open_exercise', label: `Đã mở bài tập: ${item?.title || id}`, time: new Date().toISOString() },
-          deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop',
-          clientAt: new Date().toISOString(),
-        });
-
-        await SupabaseEngine.upsertRecord('screen_sessions', {
-          id: `${currentRoom.id}__${currentStudent.studentId}__live`,
-          room_id: currentRoom.id,
-          student_id: currentStudent.studentId,
-          signaling_data: {
-            exId: id,
-            text: `Đang mở bài tập: ${item?.title || id}`,
-            canvasDataUrl: snapUrl,
-            activity: { type: 'open_exercise', label: `Đã mở bài tập: ${item?.title || id}`, time: new Date().toISOString() },
-            deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop',
-            clientAt: new Date().toISOString(),
-          },
-          status: 'sharing',
-          started_at: new Date().toISOString(),
-        });
 
         renderStudentView();
         await ModalManager.openPreviewModal(id, scopeType);
         installLiveObservation();
+        startLiveMirrorLoop();
+
+        setTimeout(() => {
+          sendObservation({ type: 'open_exercise', label: `Đang làm bài: ${item?.title || id}` }, null, true);
+        }, 700);
       }
 
       function renderStudentView() {
@@ -5508,3 +5600,4 @@ END $$;`;
 </body>
 
 </html>
+Structuring screen capture explanations in Vietnamese
