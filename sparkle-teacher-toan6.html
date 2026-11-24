@@ -1917,7 +1917,9 @@ END $$;`;
         // Persist live telemetry & latest screen frame to screen_sessions (throttled & preserving last frame)
         if (eventType === 'STUDENT_LIVE_PROGRESS' && payload && payload.roomId && payload.studentId) {
           const nowTs = Date.now();
-          if (!broadcast._lastDbWrite || nowTs - broadcast._lastDbWrite > 1800 || payload.forcePersist) {
+          const nextFrame = payload.canvasDataUrl || broadcast._lastCanvas || null;
+          const frameChanged = nextFrame && nextFrame !== broadcast._lastCanvas;
+          if (!broadcast._lastDbWrite || nowTs - broadcast._lastDbWrite > 4500 || (frameChanged && nowTs - broadcast._lastDbWrite > 1500)) {
             broadcast._lastDbWrite = nowTs;
             if (payload.canvasDataUrl) broadcast._lastCanvas = payload.canvasDataUrl;
             const safeTelemetry = {
@@ -4212,14 +4214,9 @@ END $$;`;
           }
 
           if (typeof window.html2canvas === 'function' && targetEl) {
-            // Temporarily reset scale transform on #stage-16-9 during capture so html2canvas renders native crisp pixels
-            const stageEl = frameDoc ? frameDoc.getElementById('stage-16-9') : null;
-            const prevTransform = stageEl ? stageEl.style.transform : '';
-            if (stageEl) stageEl.style.transform = 'none';
-
-            const w = Math.max(Math.min(targetEl.scrollWidth || targetEl.clientWidth || 1440, 1440), 640);
-            const h = Math.max(Math.min(targetEl.scrollHeight || targetEl.clientHeight || 810, 900), 360);
-            const scale = Math.min(1.25, 1360 / w);
+            const w = Math.max(Math.min(targetEl.scrollWidth || targetEl.clientWidth || 1280, 1280), 640);
+            const h = Math.max(Math.min(targetEl.scrollHeight || targetEl.clientHeight || 720, 810), 360);
+            const scale = 0.85;
 
             let dataUrl = null;
             try {
@@ -4228,26 +4225,21 @@ END $$;`;
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
-                backgroundColor: '#143828',
+                backgroundColor: '#FFFFFF',
                 width: w,
                 height: h,
-                windowWidth: Math.max(w, 1440),
-                windowHeight: Math.max(h, 810),
+                windowWidth: Math.max(w, 1280),
+                windowHeight: Math.max(h, 720),
                 onclone: (clonedDoc) => {
                   const clonedStage = clonedDoc.getElementById('stage-16-9');
-                  if (clonedStage) clonedStage.style.transform = 'none';
-                  // Ensure SVG elements & badges render crisply in cloned DOM
-                  clonedDoc.querySelectorAll('svg').forEach((svg) => {
-                    const b = svg.getBoundingClientRect();
-                    if (!svg.getAttribute('width') && b.width > 0) svg.setAttribute('width', Math.round(b.width));
-                    if (!svg.getAttribute('height') && b.height > 0) svg.setAttribute('height', Math.round(b.height));
-                  });
+                  if (clonedStage) {
+                    clonedStage.style.transform = 'none';
+                    clonedStage.style.boxShadow = 'none';
+                  }
                 }
               });
-              dataUrl = rendered.toDataURL('image/jpeg', 0.9);
-            } finally {
-              if (stageEl) stageEl.style.transform = prevTransform;
-            }
+              dataUrl = rendered.toDataURL('image/jpeg', 0.8);
+            } catch {}
 
             if (dataUrl && !isLowDetailCanvas(dataUrl)) {
               return dataUrl;
@@ -4295,13 +4287,15 @@ END $$;`;
         SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', payload);
       }
 
+      let lastCapturedFrameHash = '';
+
       function queueObservation(activity, canvasDataUrl = null) {
         lastObservedActivity = activity || lastObservedActivity;
         if (observationTimer) clearTimeout(observationTimer);
         observationTimer = setTimeout(() => {
-          sendObservation(lastObservedActivity, canvasDataUrl, true);
+          sendObservation(lastObservedActivity, canvasDataUrl, false);
           lastObservedActivity = null;
-        }, 450);
+        }, 900);
       }
 
       function startLiveMirrorLoop() {
@@ -4309,9 +4303,9 @@ END $$;`;
         liveMirrorInterval = setInterval(() => {
           if (currentRoom && currentStudent && !removed && document.querySelector('#preview-modal:not(.hidden) iframe')) {
             detectAndSyncIframeCompletion();
-            sendObservation(null, null, true);
+            sendObservation(null, null, false);
           }
-        }, 2000);
+        }, 5000);
       }
 
       function attachObservationToDocument(doc) {
@@ -4371,10 +4365,17 @@ END $$;`;
         if (!observationInstalled) {
           observationInstalled = true;
           attachObservationToDocument(document);
+          let mutTimer = null;
           ['student-room-view', 'preview-modal'].forEach((elId) => {
             const root = document.getElementById(elId);
             if (root && window.MutationObserver) {
-              const observer = new MutationObserver(() => attachObservationToDocument(document));
+              const observer = new MutationObserver(() => {
+                if (mutTimer) return;
+                mutTimer = setTimeout(() => {
+                  mutTimer = null;
+                  attachObservationToDocument(document);
+                }, 800);
+              });
               observer.observe(root, { childList: true, subtree: true });
             }
           });
