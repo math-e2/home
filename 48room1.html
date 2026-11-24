@@ -1,0 +1,3397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phòng Luyện Tập – Bài 48: Tâm Đối Xứng (Câu 1 – Câu 5)</title>
+  <style>
+    :root {
+      --board-bg-dark: #143828;
+      --board-bg-mid: #1b4332;
+      --wood-frame: #6f4518;
+      --wood-border: #432818;
+      --panel-bg: #dce8e5;
+      --panel-border: #a3bfb8;
+      --card-bg: #f6fbfa;
+      --question-bg: #fff3b0;
+      --question-border: #e09f3e;
+      --orange-btn: #ea580c;
+      --orange-btn-hover: #c2410c;
+      --blue-btn: #0077b6;
+      --blue-btn-hover: #025e91;
+      --green-main: #16a34a;
+      --green-bg: #dcfce7;
+      --red-accent: #dc2626;
+      --navy-point: #0f2942;
+      --text-dark: #102a26;
+      --text-muted: #3d5a55;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0b1f13;
+      font-family: Verdana, Geneva, sans-serif;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #viewport-wrapper {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #stage-16-9 {
+      width: 1440px;
+      height: 810px;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(255, 255, 255, 0.05) 0%, transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.04) 0%, transparent 40%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 2px, transparent 2px, transparent 8px),
+        linear-gradient(135deg, var(--board-bg-mid) 0%, var(--board-bg-dark) 100%);
+      border: 12px solid var(--wood-frame);
+      outline: 4px solid var(--wood-border);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), inset 0 0 40px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 22px 12px 22px;
+      transform-origin: center center;
+      position: relative;
+    }
+
+    .board-content-frame {
+      flex: 1;
+      background: var(--panel-bg);
+      border: 4px solid var(--panel-border);
+      border-radius: 22px;
+      box-shadow: inset 0 2px 8px rgba(255,255,255,0.7), 0 8px 24px rgba(0,0,0,0.35);
+      padding: 16px 24px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .slide-view {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeSlide 0.3s ease;
+    }
+
+    .slide-view.active {
+      display: flex;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       8. HOẠT ĐỘNG CÁ NHÂN – LUYỆN TẬP VỀ TÂM ĐỐI XỨNG (SLIDE 5 ĐẾN SLIDE 9)
+       ========================================================================== */
+    .hdcn-slide-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      gap: 8px;
+    }
+
+    /* Thanh tiêu đề phía trên theo chuẩn ảnh tham khảo */
+    .hdcn-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px;
+      padding: 0 4px;
+      position: relative;
+    }
+
+    .hdcn-cau-badge {
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+      color: #ffffff;
+      font-size: 19px;
+      font-weight: bold;
+      padding: 8px 24px;
+      border-radius: 11px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255,255,255,0.4);
+      border: 2px solid #fff3b0;
+      letter-spacing: 0.4px;
+      z-index: 2;
+    }
+
+    .hdcn-main-heading {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 30px;
+      font-weight: bold;
+      color: #0f2942;
+      text-shadow: 0 2px 0 #ffffff, 0 4px 10px rgba(0,0,0,0.08);
+      letter-spacing: 0.6px;
+      white-space: nowrap;
+    }
+
+    .hdcn-sub-pill {
+      background: #0f2942;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 6px 14px;
+      border-radius: 20px;
+      z-index: 2;
+    }
+
+    /* Khung kính mờ xanh xám sáng chứa bài tập */
+    .hdcn-glass-board {
+      flex: 1;
+      background: rgba(215, 228, 224, 0.78);
+      backdrop-filter: blur(8px);
+      border: 3px solid rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: inset 0 2px 12px rgba(255,255,255,0.85), 0 8px 24px rgba(0,0,0,0.12);
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Hộp câu hỏi màu vàng nhạt hoặc kem */
+    .hdcn-question-banner {
+      background: #fff3b0;
+      border: 2.5px solid #e09f3e;
+      border-radius: 14px;
+      padding: 8px 18px;
+      color: #0f2942;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.35;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hdcn-instruction-tag {
+      font-size: 13px;
+      font-weight: bold;
+      color: #9a3412;
+      background: #ffedd5;
+      border: 1.5px solid #fdba74;
+      padding: 4px 11px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Khung lớn màu vàng ở giữa cho Câu 3, Câu 4, Câu 5 */
+    .hdcn-yellow-stage {
+      flex: 1;
+      background: #fde047;
+      background: linear-gradient(180deg, #fef08a 0%, #fde047 100%);
+      border: 3px solid #eab308;
+      border-radius: 26px;
+      padding: 12px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 2px 8px rgba(255,255,255,0.7), 0 6px 18px rgba(0,0,0,0.1);
+      min-height: 0;
+      position: relative;
+    }
+
+    .hdcn-yellow-prompt {
+      font-size: 18.5px;
+      font-weight: bold;
+      color: #0f2942;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* Thẻ chọn hình tương tác */
+    .hdcn-item-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 3.5px solid #cbd5e1;
+      border-radius: 18px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      min-height: 0;
+    }
+
+    .hdcn-item-card:hover {
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(2, 132, 199, 0.14);
+    }
+
+    /* Khi học sinh nhấn chọn hình: viền xanh nổi bật */
+    .hdcn-item-card.selected-item {
+      border-color: #0284c7;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.25);
+    }
+
+    /* Khi kiểm tra hoặc hiện đáp án */
+    .hdcn-item-card.checked-sym {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22);
+    }
+
+    .hdcn-item-card.checked-nonsym {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+
+    .hdcn-item-label {
+      font-size: 14.5px;
+      font-weight: bold;
+      color: #0f2942;
+      background: #e0f2fe;
+      border: 1.5px solid #bae6fd;
+      padding: 3px 12px;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    /* Nhãn ✓ / ✗ góc trên bên phải mỗi hình */
+    .hdcn-status-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffffff;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      z-index: 5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .hdcn-status-badge.show-sym {
+      display: inline-flex;
+      background: #16a34a;
+    }
+
+    .hdcn-status-badge.show-nonsym {
+      display: inline-flex;
+      background: #dc2626;
+    }
+
+    .hdcn-select-indicator {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid #94a3b8;
+      background: #ffffff;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      z-index: 4;
+    }
+
+    .hdcn-item-card.selected-item .hdcn-select-indicator {
+      background: #0284c7;
+      border-color: #0284c7;
+    }
+
+    /* Hiệu ứng quay 180° mượt mà quanh đúng tâm O(100, 100) của viewBox 200x200 */
+    .hdcn-rot-group {
+      transition: transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1);
+      transform-box: view-box;
+      transform-origin: 100px 100px;
+    }
+
+    .hdcn-ghost-group {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .hdcn-ghost-group.visible {
+      opacity: 0.38;
+    }
+
+    .hdcn-center-o {
+      opacity: 0;
+      transform: scale(0.3);
+      transform-box: view-box;
+      transform-origin: 100px 100px;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .hdcn-center-o.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Khu vực chứa các nút chức năng tương tác căn giữa ở phía dưới */
+    .hdcn-bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 9px 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      width: 100%;
+    }
+
+    .hdcn-action-btns {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      width: 100%;
+      max-width: 1080px;
+    }
+
+    .hdcn-btn {
+      flex: 1;
+      max-width: 195px;
+      font-family: Verdana, sans-serif;
+      font-size: 15px;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 11px;
+      border: none;
+      cursor: pointer;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .hdcn-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .hdcn-btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .hdcn-btn-check { background: #0284c7; box-shadow: 0 3px 0 #0369a1; }
+    .hdcn-btn-ans   { background: #16a34a; box-shadow: 0 3px 0 #15803d; }
+    .hdcn-btn-rot   { background: #ea580c; box-shadow: 0 3px 0 #c2410c; }
+    .hdcn-btn-reset { background: #475569; box-shadow: 0 3px 0 #334155; }
+    .hdcn-btn-next  { background: #6d28d9; box-shadow: 0 3px 0 #5b21b6; }
+
+    /* Bố cục riêng từng Slide 5 -> 9 */
+    /* Slide 5 (Câu 1): Hàng trên 3 hình, Hàng dưới 4 hình */
+    .s5-row-top {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      padding: 2px 36px;
+    }
+
+    .s5-row-bottom {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      padding: 2px 6px;
+    }
+
+    /* Slide 6 (Câu 2): Lưới 3 cột x 2 hàng */
+    .s6-grid-3x2 {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px;
+      min-height: 0;
+      padding: 4px 4px;
+    }
+
+    .s6-card {
+      background: #ffffff;
+      border: 3.5px solid #93c5fd;
+      border-radius: 18px;
+      padding: 8px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      min-height: 0;
+      cursor: pointer;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    .s6-card:hover {
+      border-color: #38bdf8;
+    }
+
+    .s6-card.selected-item {
+      border-color: #0284c7;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.22);
+    }
+
+    .s6-card.checked-sym {
+      border-color: #ea580c;
+      background: #fffdf9;
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.14);
+    }
+
+    .s6-card.checked-nonsym {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+
+    .s6-card-letter {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #0f2942;
+      pointer-events: none;
+    }
+
+    .s6-card-footer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 14.5px;
+      font-weight: bold;
+      padding: 4px 6px;
+      text-align: center;
+    }
+
+    .s6-title-text {
+      color: #0f2942;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* Đường nối đối xứng qua tâm O trên các hình Câu 2 (Ẩn ban đầu, vẽ khi nhấn KIỂM TRA / HIỆN ĐÁP ÁN) */
+    .s6-sym-lines {
+      opacity: 0;
+      transition: opacity 0.38s ease;
+      pointer-events: none;
+    }
+
+    .s6-sym-lines.shown {
+      opacity: 1;
+    }
+
+    /* Điểm tâm đối xứng O màu đỏ/cam phóng to nhẹ khi xuất hiện */
+    .s6-ans-o-group {
+      opacity: 0;
+      transform: scale(0.15);
+      transform-box: view-box;
+      transform-origin: 100px 100px;
+      transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .s6-ans-o-group.shown {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .s6-ans-o-label {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .s6-ans-o-label.shown {
+      opacity: 1;
+    }
+
+    /* Thông báo riêng cho hình không có tâm đối xứng (Hình e) */
+    .s6-nonsym-notice {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.9);
+      background: rgba(220, 38, 38, 0.95);
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: bold;
+      padding: 5px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 6;
+    }
+
+    .s6-nonsym-notice.shown {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    /* Slide 7 (Câu 3): Hàng trên 4 hình, Hàng dưới 3 hình trong khung vàng */
+    .s7-row-top {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .s7-row-bottom {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      padding: 0 80px;
+    }
+
+    .s7-card {
+      background: rgba(255, 255, 255, 0.72);
+      border: 3px solid rgba(15, 41, 66, 0.2);
+      border-radius: 16px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      min-height: 0;
+    }
+
+    .s7-card:hover {
+      background: rgba(255, 255, 255, 0.94);
+      border-color: #0284c7;
+    }
+
+    .s7-card.selected-item {
+      background: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.28);
+    }
+
+    .s7-card.checked-sym {
+      background: #f0fdf4;
+      border-color: #16a34a;
+    }
+
+    .s7-card.checked-nonsym {
+      background: #fef2f2;
+      border-color: #dc2626;
+    }
+
+    /* Slide 8 (Câu 4): 4 chữ cái lớn M, O, Z, I */
+    .s8-letters-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      align-items: center;
+      padding: 12px 18px;
+      min-height: 0;
+    }
+
+    .s8-letter-card {
+      height: 100%;
+      max-height: 300px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 4px solid rgba(30, 27, 75, 0.2);
+      border-radius: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.22s ease;
+      padding: 10px;
+    }
+
+    .s8-letter-card:hover {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: #38bdf8;
+      transform: translateY(-3px);
+    }
+
+    .s8-letter-card.selected-item {
+      background: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 0 0 5px rgba(2, 132, 199, 0.3), 0 10px 24px rgba(2, 132, 199, 0.18);
+    }
+
+    .s8-letter-card.checked-sym {
+      background: #f0fdf4;
+      border-color: #16a34a;
+      box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25);
+    }
+
+    .s8-letter-card.checked-nonsym {
+      background: #fef2f2;
+      border-color: #dc2626;
+    }
+
+    /* Slide 9 (Câu 5): Lưới 4 cột x 2 hàng biển báo giao thông */
+    .s9-signs-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px 18px;
+      min-height: 0;
+      padding: 2px 12px;
+    }
+
+    .s9-sign-card {
+      background: rgba(255, 255, 255, 0.72);
+      border: 3.5px solid rgba(15, 41, 66, 0.18);
+      border-radius: 18px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      min-height: 0;
+    }
+
+    .s9-sign-card:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: #0284c7;
+      transform: translateY(-2px);
+    }
+
+    .s9-sign-card.selected-item {
+      background: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.28);
+    }
+
+    .s9-sign-card.checked-sym {
+      background: #f0fdf4;
+      border-color: #16a34a;
+    }
+
+    .s9-sign-card.checked-nonsym {
+      background: #fef2f2;
+      border-color: #dc2626;
+    }
+
+  
+    
+
+    /* Bổ sung style cho thanh điểm, phản hồi chấm điểm & khóa tiến trình */
+    .hdcn-top-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .hdcn-q-score-pill {
+      background: #fff3b0;
+      border: 2px solid #d97706;
+      color: #92400e;
+      font-size: 13.5px;
+      font-weight: bold;
+      padding: 5px 13px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .hdcn-q-score-pill.passed {
+      background: #dcfce7;
+      border-color: #16a34a;
+      color: #14532d;
+    }
+
+    .hdcn-feedback-box {
+      background: #f8fafc;
+      border: 2px solid #94a3b8;
+      border-left: 7px solid #0284c7;
+      border-radius: 12px;
+      padding: 7px 16px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #0f2942;
+      line-height: 1.38;
+      margin-top: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .hdcn-feedback-box.fb-success {
+      background: #dcfce7;
+      border-color: #16a34a;
+      border-left-color: #15803d;
+      color: #14532d;
+    }
+
+    .hdcn-feedback-box.fb-warn {
+      background: #fef2f2;
+      border-color: #ef4444;
+      border-left-color: #dc2626;
+      color: #7f1d1d;
+    }
+
+    .hdcn-btn:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      filter: grayscale(40%);
+      transform: none !important;
+    }
+
+    /* Thanh điều hướng & tổng điểm ở chân sân khấu */
+    .bottom-toolbar {
+      height: 50px;
+      margin-top: 10px;
+      background: #123524;
+      border: 1.5px solid #3c6e56;
+      border-radius: 12px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      font-family: Verdana, sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--white);
+      background: #2d5a40;
+      border: 2px solid #528768;
+      border-radius: 8px;
+      padding: 6px 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .ctrl-btn:hover:not(:disabled) {
+      background: #3b7554;
+      transform: translateY(-1px);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .slide-counter-pill {
+      background: #1b4332;
+      border: 1.5px solid #52b788;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 13.5px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      min-width: 112px;
+      text-align: center;
+    }
+
+    .q-nav-dots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .q-dot-btn {
+      font-family: Verdana, sans-serif;
+      font-size: 12.5px;
+      font-weight: bold;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .q-dot-btn.active {
+      background: #ea580c;
+      border-color: #fde047;
+      color: #ffffff;
+    }
+
+    .q-dot-btn.done {
+      background: #16a34a;
+      border-color: #86efac;
+      color: #ffffff;
+    }
+
+    .q-dot-btn.locked {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .live-score-pill {
+      background: #fff3b0;
+      border: 2px solid #ea580c;
+      color: #0f2942;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 9px;
+      white-space: nowrap;
+    }
+
+    /* ==========================================================================
+       SLIDE TỔNG KẾT PHÒNG LUYỆN TẬP (ĐỒNG BỘ TỰ ĐỘNG VỚI SPARKLE PRACTICE ROOM)
+       ========================================================================== */
+    .summary-wrapper {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #0f2942 0%, #163a5c 100%);
+      border-radius: 18px;
+      padding: 20px 28px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .summary-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .summary-brand-tag {
+      background: #ea580c;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 5px 14px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-title-block {
+      text-align: center;
+    }
+
+    .summary-title-block h1 {
+      font-size: 27px;
+      color: #fde047;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-title-block p {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .summary-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .summary-panel {
+      background: rgba(255, 255, 255, 0.96);
+      color: #0f2942;
+      border-radius: 18px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .summary-panel h3 {
+      font-size: 16px;
+      color: #0f2942;
+      border-bottom: 2.5px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .summary-meta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14.5px;
+    }
+
+    .summary-meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .summary-score-card {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 3px solid #16a34a;
+      border-radius: 14px;
+      padding: 12px 16px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .summary-score-label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #15803d;
+      text-transform: uppercase;
+    }
+
+    .summary-score-value {
+      font-size: 38px;
+      font-weight: bold;
+      color: #14532d;
+      margin: 2px 0;
+    }
+
+    .summary-rank-text {
+      font-size: 15px;
+      font-weight: bold;
+      color: #166534;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    .summary-table th {
+      background: #0f2942;
+      color: #ffffff;
+      padding: 9px 10px;
+      text-align: left;
+    }
+
+    .summary-table th:first-child { border-radius: 8px 0 0 0; }
+    .summary-table th:last-child { border-radius: 0 8px 0 0; }
+
+    .summary-table td {
+      padding: 9px 10px;
+      border-bottom: 1.5px solid #e2e8f0;
+      font-weight: 600;
+    }
+
+    .summary-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .summary-sync-badge {
+      display: inline-block;
+      background: rgba(22, 163, 74, 0.22);
+      border: 1.5px solid #4ade80;
+      color: #bbf7d0;
+      font-size: 12.5px;
+      font-weight: bold;
+      padding: 5px 14px;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewport-wrapper">
+  <div id="stage-16-9">
+
+    <main class="board-content-frame">
+      <!-- ==================== CÂU 1 (SLIDE 5 GỐC) ==================== -->
+      <section class="slide-view active" id="slide-0">
+        <div class="hdcn-slide-wrapper">
+          <div class="hdcn-top-bar">
+            <span class="hdcn-cau-badge">Câu 1:</span>
+            <h2 class="hdcn-main-heading">Hoạt Động Cá Nhân</h2>
+            <div class="hdcn-top-pills"><span class="hdcn-q-score-pill" id="q-score-pill-1">0 / 2 điểm</span><span class="hdcn-sub-pill" id="s5-angle-pill">Góc quay: 0°</span></div>
+          </div>
+
+          <div class="hdcn-glass-board">
+            <div class="hdcn-question-banner">
+              <span>Hãy chỉ ra hình có tâm đối xứng và giải thích vì sao?</span>
+              <span class="hdcn-instruction-tag">👉 Nhấn chọn các hình có tâm đối xứng rồi bấm KIỂM TRA</span>
+            </div>
+
+            <!-- Hàng trên: a, b, c -->
+            <div class="s5-row-top">
+              
+            <div class="hdcn-item-card" id="s5-card-0" onclick="toggleS5Item(0)">
+              <div class="hdcn-select-indicator" id="s5-chk-0"></div>
+              <div class="hdcn-status-badge" id="s5-badge-0"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-0">
+                  
+          <circle cx="100" cy="100" r="64" fill="#22b8cf" stroke="#ffffff" stroke-width="3.5" />
+          <circle cx="100" cy="100" r="65.5" fill="none" stroke="#0b7285" stroke-width="1.5" />
+          <circle cx="93" cy="100" r="4.5" fill="#ea580c" stroke="#ffffff" stroke-width="1.8" />
+          <text x="105" y="105" font-size="14" font-weight="bold" fill="#0f2942">O</text>
+        
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-0">
+                  
+          <circle cx="100" cy="100" r="64" fill="#22b8cf" stroke="#ffffff" stroke-width="3.5" />
+          <circle cx="100" cy="100" r="65.5" fill="none" stroke="#0b7285" stroke-width="1.5" />
+          <circle cx="93" cy="100" r="4.5" fill="#ea580c" stroke="#ffffff" stroke-width="1.8" />
+          <text x="105" y="105" font-size="14" font-weight="bold" fill="#0f2942">O</text>
+        
+                </g>
+                <g class="hdcn-center-o" id="s5-o-0">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">a) Hình tròn</div>
+            </div>
+
+            <div class="hdcn-item-card" id="s5-card-1" onclick="toggleS5Item(1)">
+              <div class="hdcn-select-indicator" id="s5-chk-1"></div>
+              <div class="hdcn-status-badge" id="s5-badge-1"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-1">
+                  <path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(120.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(240.0 100 100)" />
+<circle cx="100" cy="100" r="8" fill="#fde047" stroke="#9a3412" stroke-width="2" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-1">
+                  <path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(120.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f97316" stroke="#9a3412" stroke-width="2.4" transform="rotate(240.0 100 100)" />
+<circle cx="100" cy="100" r="8" fill="#fde047" stroke="#9a3412" stroke-width="2" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-1">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">b) Chong chóng 3 cánh</div>
+            </div>
+
+            <div class="hdcn-item-card" id="s5-card-2" onclick="toggleS5Item(2)">
+              <div class="hdcn-select-indicator" id="s5-chk-2"></div>
+              <div class="hdcn-status-badge" id="s5-badge-2"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-2">
+                  <path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(270.0 100 100)" />
+<circle cx="100" cy="100" r="8" fill="#f97316" stroke="#0369a1" stroke-width="2" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-2">
+                  <path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 66 88, 62 36, 100 34 C 138 36, 134 88, 100 100 Z" fill="#f0f9ff" stroke="#0369a1" stroke-width="2.4" transform="rotate(270.0 100 100)" />
+<circle cx="100" cy="100" r="8" fill="#f97316" stroke="#0369a1" stroke-width="2" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-2">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">c) Chong chóng 4 cánh</div>
+            </div>
+            </div>
+
+            <!-- Hàng dưới: Hình 1, 2, 3, 4 -->
+            <div class="s5-row-bottom">
+              
+            <div class="hdcn-item-card" id="s5-card-3" onclick="toggleS5Item(3)">
+              <div class="hdcn-select-indicator" id="s5-chk-3"></div>
+              <div class="hdcn-status-badge" id="s5-badge-3"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-3">
+                  <path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(270.0 100 100)" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-3">
+                  <path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 75 68.32, 81.25 41.92, 100 34 C 118.75 41.92, 125 68.32, 100 100 Z" fill="#f9a8d4" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(270.0 100 100)" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-3">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">Hình 1 (4 cánh)</div>
+            </div>
+
+            <div class="hdcn-item-card" id="s5-card-4" onclick="toggleS5Item(4)">
+              <div class="hdcn-select-indicator" id="s5-chk-4"></div>
+              <div class="hdcn-status-badge" id="s5-badge-4"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-4">
+                  <path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(72.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(144.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(216.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(288.0 100 100)" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-4">
+                  <path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(72.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(144.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(216.0 100 100)" />
+<path d="M 100 100 C 78 68.32, 83.5 41.92, 100 34 C 116.5 41.92, 122 68.32, 100 100 Z" fill="#fde047" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(288.0 100 100)" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-4">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">Hình 2 (5 cánh)</div>
+            </div>
+
+            <div class="hdcn-item-card" id="s5-card-5" onclick="toggleS5Item(5)">
+              <div class="hdcn-select-indicator" id="s5-chk-5"></div>
+              <div class="hdcn-status-badge" id="s5-badge-5"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-5">
+                  <path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(60.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(120.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(240.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(300.0 100 100)" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-5">
+                  <path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(60.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(120.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(240.0 100 100)" />
+<path d="M 100 100 C 81 68.32, 85.75 41.92, 100 34 C 114.25 41.92, 119 68.32, 100 100 Z" fill="#a3e635" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(300.0 100 100)" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-5">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">Hình 3 (6 cánh)</div>
+            </div>
+
+            <div class="hdcn-item-card" id="s5-card-6" onclick="toggleS5Item(6)">
+              <div class="hdcn-select-indicator" id="s5-chk-6"></div>
+              <div class="hdcn-status-badge" id="s5-badge-6"></div>
+              <svg width="132" height="122" viewBox="0 0 200 200">
+                <g class="hdcn-ghost-group" id="s5-ghost-6">
+                  <path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(45.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(135.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(225.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(270.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(315.0 100 100)" />
+                </g>
+                <g class="hdcn-rot-group" id="s5-rot-6">
+                  <path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(0.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(45.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(90.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(135.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(180.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(225.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(270.0 100 100)" />
+<path d="M 100 100 C 85 68.32, 88.75 41.92, 100 34 C 111.25 41.92, 115 68.32, 100 100 Z" fill="#d8b4fe" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" transform="rotate(315.0 100 100)" />
+                </g>
+                <g class="hdcn-center-o" id="s5-o-6">
+                  <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                  <rect x="109" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                  <text x="121" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                </g>
+              </svg>
+              <div class="hdcn-item-label">Hình 4 (8 cánh)</div>
+            </div>
+            </div>
+
+            <!-- Thanh điều khiển & Kết luận -->
+            <div class="hdcn-feedback-box" id="s5-feedback">Nhấp chọn những hình có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).</div>
+            <div class="hdcn-bottom-bar">
+              <div class="hdcn-action-btns">
+                <button class="hdcn-btn hdcn-btn-check" onclick="checkS5Answer()">✓ KIỂM TRA</button>
+                <button class="hdcn-btn hdcn-btn-rot" onclick="rotateS5Shapes()">↻ QUAY 180°</button>
+                <button class="hdcn-btn hdcn-btn-reset" onclick="resetS5Slide()">🔄 ĐẶT LẠI</button>
+                <button class="hdcn-btn hdcn-btn-next" id="btn-next-q1" onclick="goNextFromQuestion(1)" disabled title="Hoàn thành đúng câu này để mở khóa câu tiếp theo">🔒 CÂU TIẾP THEO ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CÂU 2 (SLIDE 6 GỐC) ==================== -->
+      <section class="slide-view" id="slide-1">
+        <div class="hdcn-slide-wrapper">
+          <div class="hdcn-top-bar">
+            <span class="hdcn-cau-badge">Câu 2:</span>
+            <h2 class="hdcn-main-heading">Hoạt Động Cá Nhân</h2>
+            <div class="hdcn-top-pills"><span class="hdcn-q-score-pill" id="q-score-pill-2">0 / 2 điểm</span><span class="hdcn-sub-pill" id="s6-angle-pill">Góc quay: 0°</span></div>
+          </div>
+
+          <div class="hdcn-glass-board">
+            <div class="hdcn-question-banner" style="background:#f8fafc; border-color:#64748b;">
+              <span id="s6-banner-text">Quan sát các hình gồm đường tròn giao nhau, chong chóng, các hình ghép và đa giác. Hãy chỉ ra tâm đối xứng nếu có, rồi kiểm tra bằng phép quay nửa vòng.</span>
+            </div>
+
+            <div class="s6-grid-3x2">
+              <!-- Hình a: Hai đường tròn bằng nhau giao nhau (Tâm O(100,100) là trung điểm đoạn nối hai tâm (72,100) và (128,100)) -->
+              <div class="s6-card" id="s6-card-0" onclick="handleS6CardClick(event, 0)">
+                <span class="s6-card-letter">a)</span>
+                <div class="hdcn-status-badge" id="s6-badge-0"></div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-0" style="cursor: pointer;" onclick="handleS6SvgClick(event, 0)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-0">
+                    <circle cx="72" cy="100" r="50" fill="rgba(186, 230, 253, 0.7)" stroke="#0f172a" stroke-width="3" />
+                    <circle cx="128" cy="100" r="50" fill="rgba(251, 207, 232, 0.65)" stroke="#0f172a" stroke-width="3" />
+                    <circle cx="72" cy="100" r="50" fill="none" stroke="#0f172a" stroke-width="3" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-0">
+                    <circle cx="72" cy="100" r="50" fill="rgba(186, 230, 253, 0.7)" stroke="#0f172a" stroke-width="3" />
+                    <circle cx="128" cy="100" r="50" fill="rgba(251, 207, 232, 0.65)" stroke="#0f172a" stroke-width="3" />
+                    <circle cx="72" cy="100" r="50" fill="none" stroke="#0f172a" stroke-width="3" />
+                  </g>
+                  <!-- Đoạn nối hai tâm đường tròn đi qua trung điểm O (Chỉ hiện khi nhấn KIỂM TRA / HIỆN ĐÁP ÁN) -->
+                  <g class="s6-sym-lines" id="s6-lines-0">
+                    <line x1="72" y1="100" x2="128" y2="100" stroke="#ea580c" stroke-width="2.4" stroke-dasharray="4,3" />
+                    <circle cx="72" cy="100" r="3.5" fill="#475569" />
+                    <circle cx="128" cy="100" r="3.5" fill="#475569" />
+                  </g>
+                  <!-- Điểm tâm đối xứng O(100,100) màu đỏ/cam chính xác tại trung điểm đoạn nối hai tâm -->
+                  <g class="s6-ans-o-group" id="s6-ans-o-0">
+                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
+                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
+                    <g class="s6-ans-o-label" id="s6-ans-lbl-0">
+                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
+                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </g>
+                  <!-- Điểm học sinh tự nhấp dự đoán trước khi kiểm tra -->
+                  <g id="s6-user-pt-0" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-0" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-0" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-0">a) Hai đường tròn</span>
+                </div>
+              </div>
+
+              <!-- Hình b: Chong chóng (Tâm O(100,100) là đỉnh chung ở chính giữa hình) -->
+              <div class="s6-card" id="s6-card-1" onclick="handleS6CardClick(event, 1)">
+                <span class="s6-card-letter">b)</span>
+                <div class="hdcn-status-badge" id="s6-badge-1"></div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-1" style="cursor: pointer;" onclick="handleS6SvgClick(event, 1)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-1">
+                    <polygon points="100,100 100,26 62,64" fill="#fde047" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 100,174 138,136" fill="#fde047" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 174,100 136,62" fill="#38bdf8" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 26,100 64,138" fill="#38bdf8" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-1">
+                    <polygon points="100,100 100,26 62,64" fill="#fde047" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 100,174 138,136" fill="#fde047" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 174,100 136,62" fill="#38bdf8" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                    <polygon points="100,100 26,100 64,138" fill="#38bdf8" stroke="#0f172a" stroke-width="3" stroke-linejoin="round" />
+                  </g>
+                  <!-- Đường nối các đỉnh đối diện qua tâm O (Chỉ hiện khi kiểm tra) -->
+                  <g class="s6-sym-lines" id="s6-lines-1">
+                    <line x1="62" y1="64" x2="138" y2="136" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                    <line x1="136" y1="62" x2="64" y2="138" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                  </g>
+                  <!-- Điểm tâm đối xứng O(100,100) tại đỉnh chung chính giữa chong chóng -->
+                  <g class="s6-ans-o-group" id="s6-ans-o-1">
+                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
+                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
+                    <g class="s6-ans-o-label" id="s6-ans-lbl-1">
+                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
+                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </g>
+                  <g id="s6-user-pt-1" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-1" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-1" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-1">b) Chong chóng</span>
+                </div>
+              </div>
+
+              <!-- Hình c: Hình 6 ô vuông (Tâm O(100,100) là tâm của cấu trúc hình ghép) -->
+              <div class="s6-card" id="s6-card-2" onclick="handleS6CardClick(event, 2)">
+                <span class="s6-card-letter">c)</span>
+                <div class="hdcn-status-badge" id="s6-badge-2"></div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-2" style="cursor: pointer;" onclick="handleS6SvgClick(event, 2)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-2">
+                    <rect x="28" y="28" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="28" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="76" width="48" height="48" fill="#86efac" stroke="#0f172a" stroke-width="3" />
+                    <rect x="124" y="76" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="124" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-2">
+                    <rect x="28" y="28" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="28" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="76" width="48" height="48" fill="#86efac" stroke="#0f172a" stroke-width="3" />
+                    <rect x="124" y="76" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="124" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                    <rect x="76" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
+                  </g>
+                  <!-- Hai đường chéo của ô vuông trung tâm giao nhau tại tâm O(100,100) của cấu trúc ghép -->
+                  <g class="s6-sym-lines" id="s6-lines-2">
+                    <line x1="28" y1="28" x2="172" y2="172" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                    <line x1="124" y1="28" x2="76" y2="172" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                  </g>
+                  <!-- Điểm tâm đối xứng O(100,100) chính giữa ô vuông trung tâm -->
+                  <g class="s6-ans-o-group" id="s6-ans-o-2">
+                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
+                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
+                    <g class="s6-ans-o-label" id="s6-ans-lbl-2">
+                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
+                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </g>
+                  <g id="s6-user-pt-2" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-2" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-2" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-2">c) Hình 6 ô vuông</span>
+                </div>
+              </div>
+
+              <!-- Hình d: Lục giác đều (Tâm O(100,100) là giao điểm 3 đường chéo chính nối các đỉnh đối diện) -->
+              <div class="s6-card" id="s6-card-3" onclick="handleS6CardClick(event, 3)">
+                <span class="s6-card-letter">d)</span>
+                <div class="hdcn-status-badge" id="s6-badge-3"></div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-3" style="cursor: pointer;" onclick="handleS6SvgClick(event, 3)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-3">
+                    <polygon points="65,39.4 135,39.4 170,100 135,160.6 65,160.6 30,100" fill="#e9d5ff" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-3">
+                    <polygon points="65,39.4 135,39.4 170,100 135,160.6 65,160.6 30,100" fill="#e9d5ff" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <!-- Ba đường nối các cặp đỉnh đối diện đi qua tâm O(100,100) -->
+                  <g class="s6-sym-lines" id="s6-lines-3">
+                    <line x1="65" y1="39.4" x2="135" y2="160.6" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                    <line x1="135" y1="39.4" x2="65" y2="160.6" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                    <line x1="30" y1="100" x2="170" y2="100" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                  </g>
+                  <!-- Điểm tâm đối xứng O(100,100) -->
+                  <g class="s6-ans-o-group" id="s6-ans-o-3">
+                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
+                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
+                    <g class="s6-ans-o-label" id="s6-ans-lbl-3">
+                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
+                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </g>
+                  <g id="s6-user-pt-3" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-3" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-3" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-3">d) Lục giác đều</span>
+                </div>
+              </div>
+
+              <!-- Hình e: Hình thang cân (Không có tâm đối xứng -> Không hiện điểm O, chỉ hiện thông báo riêng khi kiểm tra) -->
+              <div class="s6-card" id="s6-card-4" onclick="handleS6CardClick(event, 4)">
+                <span class="s6-card-letter">e)</span>
+                <div class="hdcn-status-badge" id="s6-badge-4"></div>
+                <div class="s6-nonsym-notice" id="s6-nonsym-notice-4">Hình không có tâm đối xứng</div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-4" style="cursor: pointer;" onclick="handleS6SvgClick(event, 4)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-4">
+                    <polygon points="60,55 140,55 176,145 24,145" fill="#fbcfe8" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-4">
+                    <polygon points="60,55 140,55 176,145 24,145" fill="#fbcfe8" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <g id="s6-user-pt-4" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-4" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-4" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-4">e) Hình thang cân</span>
+                </div>
+              </div>
+
+              <!-- Hình f: Ngôi sao 4 cánh (Tâm O(100,100) là tâm hình, giao điểm các đoạn nối đỉnh đối diện) -->
+              <div class="s6-card" id="s6-card-5" onclick="handleS6CardClick(event, 5)">
+                <span class="s6-card-letter">f)</span>
+                <div class="hdcn-status-badge" id="s6-badge-5"></div>
+                <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-5" style="cursor: pointer;" onclick="handleS6SvgClick(event, 5)">
+                  <g class="hdcn-ghost-group" id="s6-ghost-5">
+                    <polygon points="100,24 121,79 176,100 121,121 100,176 79,121 24,100 79,79" fill="#fef08a" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <g class="hdcn-rot-group" id="s6-rot-5">
+                    <polygon points="100,24 121,79 176,100 121,121 100,176 79,121 24,100 79,79" fill="#fef08a" stroke="#0f172a" stroke-width="3.2" stroke-linejoin="round" />
+                  </g>
+                  <!-- Hai trục đối diện nối các đỉnh cánh ngôi sao đi qua tâm O(100,100) -->
+                  <g class="s6-sym-lines" id="s6-lines-5">
+                    <line x1="100" y1="24" x2="100" y2="176" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                    <line x1="24" y1="100" x2="176" y2="100" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
+                  </g>
+                  <!-- Điểm tâm đối xứng O(100,100) -->
+                  <g class="s6-ans-o-group" id="s6-ans-o-5">
+                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
+                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
+                    <g class="s6-ans-o-label" id="s6-ans-lbl-5">
+                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
+                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </g>
+                  <g id="s6-user-pt-5" style="display: none; pointer-events: none;">
+                    <circle id="s6-user-ring-5" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
+                    <circle id="s6-user-dot-5" cx="100" cy="100" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                  </g>
+                </svg>
+                <div class="s6-card-footer">
+                  <span class="s6-title-text" id="s6-status-txt-5">f) Ngôi sao 4 cánh</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hdcn-feedback-box" id="s6-feedback">Nhấp chọn các hình có tâm đối xứng (có thể chấm vị trí tâm O) rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).</div>
+            <div class="hdcn-bottom-bar">
+              <div class="hdcn-action-btns">
+                <button class="hdcn-btn hdcn-btn-check" onclick="checkS6Answer()">✓ KIỂM TRA</button>
+                <button class="hdcn-btn hdcn-btn-rot" onclick="rotateS6Shapes()">↻ QUAY 180°</button>
+                <button class="hdcn-btn hdcn-btn-reset" onclick="resetS6Slide()">🔄 ĐẶT LẠI</button>
+                <button class="hdcn-btn hdcn-btn-next" id="btn-next-q2" onclick="goNextFromQuestion(2)" disabled title="Hoàn thành đúng câu này để mở khóa câu tiếp theo">🔒 CÂU TIẾP THEO ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CÂU 3 (SLIDE 7 GỐC) ==================== -->
+      <section class="slide-view" id="slide-2">
+        <div class="hdcn-slide-wrapper">
+          <div class="hdcn-top-bar">
+            <span class="hdcn-cau-badge">Câu 3:</span>
+            <h2 class="hdcn-main-heading">Hoạt Động Cá Nhân</h2>
+            <div class="hdcn-top-pills"><span class="hdcn-q-score-pill" id="q-score-pill-3">0 / 2 điểm</span><span class="hdcn-sub-pill" id="s7-angle-pill">Góc quay: 0°</span></div>
+          </div>
+
+          <div class="hdcn-glass-board">
+            <div class="hdcn-yellow-stage">
+              <div class="hdcn-yellow-prompt">
+                <div>
+                  Cho các hình sau: &nbsp;
+                  <span>a) Hình nào có tâm đối xứng?</span> &nbsp;&bull;&nbsp;
+                  <span>b) Xác định tâm đối xứng của mỗi hình.</span>
+                </div>
+                <span class="hdcn-instruction-tag">👉 Nhấn chọn hình để đánh dấu &amp; kiểm chứng bằng phép quay 180°</span>
+              </div>
+
+              <!-- Hàng trên: Hình a, b, c, d -->
+              <div class="s7-row-top">
+                
+              <div class="s7-card" id="s7-card-0" onclick="toggleS7Item(0)">
+                <div class="hdcn-select-indicator" id="s7-chk-0"></div>
+                <div class="hdcn-status-badge" id="s7-badge-0"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-0">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-0">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <polygon points="100,100 72,72 95,22 142,20 122,65" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+          <polyline points="82,82 103,38 136,36" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-0">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình a</div>
+              </div>
+
+              <div class="s7-card" id="s7-card-1" onclick="toggleS7Item(1)">
+                <div class="hdcn-select-indicator" id="s7-chk-1"></div>
+                <div class="hdcn-status-badge" id="s7-badge-1"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-1">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <circle cx="100" cy="100" r="56" fill="none" stroke="#111827" stroke-width="2.8" />
+      
+        <g transform="rotate(0 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+        <g transform="rotate(120 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+        <g transform="rotate(240 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+    
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-1">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <circle cx="100" cy="100" r="56" fill="none" stroke="#111827" stroke-width="2.8" />
+      
+        <g transform="rotate(0 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+        <g transform="rotate(120 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+        <g transform="rotate(240 100 100)">
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="butt" />
+          <path d="M 78 65 A 42 42 0 0 1 124 66" fill="none" stroke="#fde047" stroke-width="3.5" stroke-linecap="butt" />
+          <polygon points="134,74 128,54 114,68" fill="#ffffff" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+    
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-1">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình b</div>
+              </div>
+
+              <div class="s7-card" id="s7-card-2" onclick="toggleS7Item(2)">
+                <div class="hdcn-select-indicator" id="s7-chk-2"></div>
+                <div class="hdcn-status-badge" id="s7-badge-2"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-2">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <path d="M 94 100 L 50 56 A 58 58 0 0 0 50 144 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 106 100 L 150 56 A 58 58 0 0 1 150 144 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 100 94 L 56 50 A 58 58 0 0 1 144 50 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 100 106 L 56 150 A 58 58 0 0 0 144 150 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+    
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-2">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <path d="M 94 100 L 50 56 A 58 58 0 0 0 50 144 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 106 100 L 150 56 A 58 58 0 0 1 150 144 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 100 94 L 56 50 A 58 58 0 0 1 144 50 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+      <path d="M 100 106 L 56 150 A 58 58 0 0 0 144 150 Z" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+    
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-2">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình c</div>
+              </div>
+
+              <div class="s7-card" id="s7-card-3" onclick="toggleS7Item(3)">
+                <div class="hdcn-select-indicator" id="s7-chk-3"></div>
+                <div class="hdcn-status-badge" id="s7-badge-3"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-3">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <circle cx="100" cy="100" r="57" fill="none" stroke="#111827" stroke-width="2.6" />
+      <polygon points="100,32 159,134 41,134" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+      <polygon points="100,45 147,127 53,127" fill="none" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
+    
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-3">
+                    
+      <circle cx="100" cy="100" r="68" fill="none" stroke="#111827" stroke-width="3.2" />
+      <circle cx="100" cy="100" r="57" fill="none" stroke="#111827" stroke-width="2.6" />
+      <polygon points="100,32 159,134 41,134" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+      <polygon points="100,45 147,127 53,127" fill="none" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
+    
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-3">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình d</div>
+              </div>
+              </div>
+
+              <!-- Hàng dưới: Hình e, f, g -->
+              <div class="s7-row-bottom">
+                
+              <div class="s7-card" id="s7-card-4" onclick="toggleS7Item(4)">
+                <div class="hdcn-select-indicator" id="s7-chk-4"></div>
+                <div class="hdcn-status-badge" id="s7-badge-4"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-4">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(90 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(180 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(270 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-4">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(90 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(180 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(270 100 100)">
+          <polygon points="100,100 78,62 100,24 122,62" fill="none" stroke="#111827" stroke-width="2.8" stroke-linejoin="round" />
+          <path d="M 100,100 C 86,74 86,46 100,24 C 114,46 114,74 100,100" fill="none" stroke="#111827" stroke-width="2.2" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-4">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình e</div>
+              </div>
+
+              <div class="s7-card" id="s7-card-5" onclick="toggleS7Item(5)">
+                <div class="hdcn-select-indicator" id="s7-chk-5"></div>
+                <div class="hdcn-status-badge" id="s7-badge-5"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-5">
+                    
+      <path d="M 28 126 A 72 72 0 0 1 172 126 Z" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+      <path d="M 36 126 A 64 64 0 0 1 164 126" fill="none" stroke="#111827" stroke-width="2.4" />
+      <circle cx="100" cy="126" r="4" fill="#111827" />
+      <path d="M 80 126 A 20 20 0 0 0 120 126" fill="none" stroke="#111827" stroke-width="2.6" />
+      <path d="M 86 126 A 14 14 0 0 0 114 126" fill="none" stroke="#111827" stroke-width="2.2" />
+    
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-5">
+                    
+      <path d="M 28 126 A 72 72 0 0 1 172 126 Z" fill="none" stroke="#111827" stroke-width="3" stroke-linejoin="round" />
+      <path d="M 36 126 A 64 64 0 0 1 164 126" fill="none" stroke="#111827" stroke-width="2.4" />
+      <circle cx="100" cy="126" r="4" fill="#111827" />
+      <path d="M 80 126 A 20 20 0 0 0 120 126" fill="none" stroke="#111827" stroke-width="2.6" />
+      <path d="M 86 126 A 14 14 0 0 0 114 126" fill="none" stroke="#111827" stroke-width="2.2" />
+    
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-5">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình f</div>
+              </div>
+
+              <div class="s7-card" id="s7-card-6" onclick="toggleS7Item(6)">
+                <div class="hdcn-select-indicator" id="s7-chk-6"></div>
+                <div class="hdcn-status-badge" id="s7-badge-6"></div>
+                <svg width="126" height="114" viewBox="0 0 200 200">
+                  <g class="hdcn-ghost-group" id="s7-ghost-6">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(60 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(180 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(300 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+                  </g>
+                  <g class="hdcn-rot-group" id="s7-rot-6">
+                    
+        <g transform="rotate(0 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(60 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(180 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+
+        <g transform="rotate(300 100 100)">
+          <polygon points="100,100 84,66 100,24 116,66" fill="none" stroke="#111827" stroke-width="2.6" stroke-linejoin="round" />
+          <line x1="100" y1="100" x2="100" y2="24" stroke="#111827" stroke-width="2" />
+        </g>
+                  </g>
+                  <g class="hdcn-center-o" id="s7-o-6">
+                    <circle cx="100" cy="100" r="7.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                    <rect x="108" y="82" width="24" height="20" rx="5" fill="#16a34a" />
+                    <text x="120" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                  </g>
+                </svg>
+                <div class="hdcn-item-label" style="background:#ffffff; border-color:#cbd5e1;">Hình g</div>
+              </div>
+              </div>
+            </div>
+
+            <div class="hdcn-feedback-box" id="s7-feedback">Nhấp chọn các hình có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).</div>
+            <div class="hdcn-bottom-bar" style="margin-top: 8px;">
+              <div class="hdcn-action-btns">
+                <button class="hdcn-btn hdcn-btn-check" onclick="checkS7Answer()">✓ KIỂM TRA</button>
+                <button class="hdcn-btn hdcn-btn-rot" onclick="rotateS7Shapes()">↻ QUAY 180°</button>
+                <button class="hdcn-btn hdcn-btn-reset" onclick="resetS7Slide()">🔄 ĐẶT LẠI</button>
+                <button class="hdcn-btn hdcn-btn-next" id="btn-next-q3" onclick="goNextFromQuestion(3)" disabled title="Hoàn thành đúng câu này để mở khóa câu tiếp theo">🔒 CÂU TIẾP THEO ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CÂU 4 (SLIDE 8 GỐC) ==================== -->
+      <section class="slide-view" id="slide-3">
+        <div class="hdcn-slide-wrapper">
+          <div class="hdcn-top-bar">
+            <span class="hdcn-cau-badge">Câu 4:</span>
+            <h2 class="hdcn-main-heading">Hoạt Động Cá Nhân</h2>
+            <div class="hdcn-top-pills"><span class="hdcn-q-score-pill" id="q-score-pill-4">0 / 2 điểm</span><span class="hdcn-sub-pill" id="s8-angle-pill">Góc quay: 0°</span></div>
+          </div>
+
+          <div class="hdcn-glass-board">
+            <div class="hdcn-yellow-stage">
+              <div class="hdcn-yellow-prompt" style="font-size: 21px; padding: 4px 10px;">
+                <span>Các chữ cái M, O, Z, I. Kể tên các chữ cái có tâm đối xứng?</span>
+                <span class="hdcn-instruction-tag">👉 Nhấn chọn các chữ cái có tâm đối xứng rồi bấm KIỂM TRA</span>
+              </div>
+
+              <div class="s8-letters-grid">
+                
+                <div class="s8-letter-card" id="s8-card-0" onclick="toggleS8Item(0)">
+                  <div class="hdcn-select-indicator" id="s8-chk-0"></div>
+                  <div class="hdcn-status-badge" id="s8-badge-0"></div>
+                  <svg width="175" height="175" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s8-ghost-0">
+                      
+          <polygon points="36,162 36,38 64,38 100,114 136,38 164,38 164,162 138,162 138,84 108,144 92,144 62,84 62,162" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s8-rot-0">
+                      
+          <polygon points="36,162 36,38 64,38 100,114 136,38 164,38 164,162 138,162 138,84 108,144 92,144 62,84 62,162" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s8-o-0">
+                      <circle cx="100" cy="100" r="8.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="110" y="80" width="26" height="22" rx="6" fill="#16a34a" />
+                      <text x="123" y="96" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="font-size:16px; padding:4px 18px; background:#ffffff;">Chữ M</div>
+                </div>
+
+                <div class="s8-letter-card" id="s8-card-1" onclick="toggleS8Item(1)">
+                  <div class="hdcn-select-indicator" id="s8-chk-1"></div>
+                  <div class="hdcn-status-badge" id="s8-badge-1"></div>
+                  <svg width="175" height="175" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s8-ghost-1">
+                      
+          <path d="M 100 34 C 145 34, 166 62, 166 100 C 166 138, 145 166, 100 166 C 55 166, 34 138, 34 100 C 34 62, 55 34, 100 34 Z M 100 60 C 72 60, 62 77, 62 100 C 62 123, 72 140, 100 140 C 128 140, 138 123, 138 100 C 138 77, 128 60, 100 60 Z" fill="#1e1b4b" fill-rule="evenodd" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s8-rot-1">
+                      
+          <path d="M 100 34 C 145 34, 166 62, 166 100 C 166 138, 145 166, 100 166 C 55 166, 34 138, 34 100 C 34 62, 55 34, 100 34 Z M 100 60 C 72 60, 62 77, 62 100 C 62 123, 72 140, 100 140 C 128 140, 138 123, 138 100 C 138 77, 128 60, 100 60 Z" fill="#1e1b4b" fill-rule="evenodd" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s8-o-1">
+                      <circle cx="100" cy="100" r="8.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="110" y="80" width="26" height="22" rx="6" fill="#16a34a" />
+                      <text x="123" y="96" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="font-size:16px; padding:4px 18px; background:#ffffff;">Chữ O</div>
+                </div>
+
+                <div class="s8-letter-card" id="s8-card-2" onclick="toggleS8Item(2)">
+                  <div class="hdcn-select-indicator" id="s8-chk-2"></div>
+                  <div class="hdcn-status-badge" id="s8-badge-2"></div>
+                  <svg width="175" height="175" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s8-ghost-2">
+                      
+          <polygon points="44,38 156,38 156,62 80,138 156,138 156,162 44,162 44,138 120,62 44,62" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s8-rot-2">
+                      
+          <polygon points="44,38 156,38 156,62 80,138 156,138 156,162 44,162 44,138 120,62 44,62" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s8-o-2">
+                      <circle cx="100" cy="100" r="8.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="110" y="80" width="26" height="22" rx="6" fill="#16a34a" />
+                      <text x="123" y="96" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="font-size:16px; padding:4px 18px; background:#ffffff;">Chữ Z</div>
+                </div>
+
+                <div class="s8-letter-card" id="s8-card-3" onclick="toggleS8Item(3)">
+                  <div class="hdcn-select-indicator" id="s8-chk-3"></div>
+                  <div class="hdcn-status-badge" id="s8-badge-3"></div>
+                  <svg width="175" height="175" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s8-ghost-3">
+                      
+          <polygon points="64,38 136,38 136,62 114,62 114,138 136,138 136,162 64,162 64,138 86,138 86,62 64,62" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s8-rot-3">
+                      
+          <polygon points="64,38 136,38 136,62 114,62 114,138 136,138 136,162 64,162 64,138 86,138 86,62 64,62" fill="#1e1b4b" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s8-o-3">
+                      <circle cx="100" cy="100" r="8.5" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="110" y="80" width="26" height="22" rx="6" fill="#16a34a" />
+                      <text x="123" y="96" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="font-size:16px; padding:4px 18px; background:#ffffff;">Chữ I</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hdcn-feedback-box" id="s8-feedback">Nhấp chọn các chữ cái có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).</div>
+            <div class="hdcn-bottom-bar" style="margin-top: 8px;">
+              <div class="hdcn-action-btns">
+                <button class="hdcn-btn hdcn-btn-check" onclick="checkS8Answer()">✓ KIỂM TRA</button>
+                <button class="hdcn-btn hdcn-btn-rot" onclick="rotateS8Shapes()">↻ QUAY 180°</button>
+                <button class="hdcn-btn hdcn-btn-reset" onclick="resetS8Slide()">🔄 ĐẶT LẠI</button>
+                <button class="hdcn-btn hdcn-btn-next" id="btn-next-q4" onclick="goNextFromQuestion(4)" disabled title="Hoàn thành đúng câu này để mở khóa câu tiếp theo">🔒 CÂU TIẾP THEO ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CÂU 5 (SLIDE 9 GỐC) ==================== -->
+      <section class="slide-view" id="slide-4">
+        <div class="hdcn-slide-wrapper">
+          <div class="hdcn-top-bar">
+            <span class="hdcn-cau-badge">Câu 5:</span>
+            <h2 class="hdcn-main-heading">Hoạt Động Cá Nhân</h2>
+            <div class="hdcn-top-pills"><span class="hdcn-q-score-pill" id="q-score-pill-5">0 / 2 điểm</span><span class="hdcn-sub-pill" id="s9-angle-pill">Góc quay: 0°</span></div>
+          </div>
+
+          <div class="hdcn-glass-board">
+            <div class="hdcn-yellow-stage">
+              <div class="hdcn-yellow-prompt">
+                <span>Trong các biển báo sau, biển báo nào có tâm đối xứng?</span>
+                <span class="hdcn-instruction-tag">👉 Chọn biển báo có tâm đối xứng rồi bấm KIỂM TRA hoặc QUAY 180°</span>
+              </div>
+
+              <div class="s9-signs-grid">
+                
+                <div class="s9-sign-card" id="s9-card-0" onclick="toggleS9Item(0)">
+                  <div class="hdcn-select-indicator" id="s9-chk-0"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-0"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-0">
+                      
+          <circle cx="100" cy="100" r="68" fill="#ffffff" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-0">
+                      
+          <circle cx="100" cy="100" r="68" fill="#ffffff" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-0">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">a)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-1" onclick="toggleS9Item(1)">
+                  <div class="hdcn-select-indicator" id="s9-chk-1"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-1"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-1">
+                      
+          <circle cx="100" cy="100" r="68" fill="#ffffff" stroke="#ef4444" stroke-width="18" />
+          <!-- Biểu tượng ô tô màu đen chính giữa -->
+          <path d="M 68 96 L 77 75 L 123 75 L 132 96 Z" fill="#111827" />
+          <path d="M 80 79 L 120 79 L 126 94 L 74 94 Z" fill="#ffffff" />
+          <rect x="62" y="94" width="76" height="22" rx="6" fill="#111827" />
+          <circle cx="74" cy="105" r="5" fill="#ffffff" />
+          <circle cx="126" cy="105" r="5" fill="#ffffff" />
+          <rect x="86" y="103" width="28" height="5" rx="2" fill="#ffffff" />
+          <rect x="66" y="114" width="12" height="12" rx="3" fill="#111827" />
+          <rect x="122" y="114" width="12" height="12" rx="3" fill="#111827" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-1">
+                      
+          <circle cx="100" cy="100" r="68" fill="#ffffff" stroke="#ef4444" stroke-width="18" />
+          <!-- Biểu tượng ô tô màu đen chính giữa -->
+          <path d="M 68 96 L 77 75 L 123 75 L 132 96 Z" fill="#111827" />
+          <path d="M 80 79 L 120 79 L 126 94 L 74 94 Z" fill="#ffffff" />
+          <rect x="62" y="94" width="76" height="22" rx="6" fill="#111827" />
+          <circle cx="74" cy="105" r="5" fill="#ffffff" />
+          <circle cx="126" cy="105" r="5" fill="#ffffff" />
+          <rect x="86" y="103" width="28" height="5" rx="2" fill="#ffffff" />
+          <rect x="66" y="114" width="12" height="12" rx="3" fill="#111827" />
+          <rect x="122" y="114" width="12" height="12" rx="3" fill="#111827" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-1">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">b)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-2" onclick="toggleS9Item(2)">
+                  <div class="hdcn-select-indicator" id="s9-chk-2"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-2"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-2">
+                      
+          <circle cx="100" cy="100" r="68" fill="#0284c7" />
+          <line x1="52" y1="52" x2="148" y2="148" stroke="#ef4444" stroke-width="16" stroke-linecap="butt" />
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-2">
+                      
+          <circle cx="100" cy="100" r="68" fill="#0284c7" />
+          <line x1="52" y1="52" x2="148" y2="148" stroke="#ef4444" stroke-width="16" stroke-linecap="butt" />
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-2">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">c)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-3" onclick="toggleS9Item(3)">
+                  <div class="hdcn-select-indicator" id="s9-chk-3"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-3"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-3">
+                      
+          <circle cx="100" cy="100" r="68" fill="#0284c7" />
+          <line x1="52" y1="52" x2="148" y2="148" stroke="#ef4444" stroke-width="15" stroke-linecap="butt" />
+          <line x1="148" y1="52" x2="52" y2="148" stroke="#ef4444" stroke-width="15" stroke-linecap="butt" />
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-3">
+                      
+          <circle cx="100" cy="100" r="68" fill="#0284c7" />
+          <line x1="52" y1="52" x2="148" y2="148" stroke="#ef4444" stroke-width="15" stroke-linecap="butt" />
+          <line x1="148" y1="52" x2="52" y2="148" stroke="#ef4444" stroke-width="15" stroke-linecap="butt" />
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#ef4444" stroke-width="18" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-3">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">d)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-4" onclick="toggleS9Item(4)">
+                  <div class="hdcn-select-indicator" id="s9-chk-4"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-4"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-4">
+                      
+          <circle cx="100" cy="100" r="76" fill="#0284c7" />
+          <rect x="90" y="78" width="20" height="72" fill="#ffffff" />
+          <polygon points="100,40 68,84 132,84" fill="#ffffff" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-4">
+                      
+          <circle cx="100" cy="100" r="76" fill="#0284c7" />
+          <rect x="90" y="78" width="20" height="72" fill="#ffffff" />
+          <polygon points="100,40 68,84 132,84" fill="#ffffff" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-4">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">e)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-5" onclick="toggleS9Item(5)">
+                  <div class="hdcn-select-indicator" id="s9-chk-5"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-5"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-5">
+                      
+          <polygon points="100,26 174,158 26,158" fill="#ffffff" stroke="#ef4444" stroke-width="14" stroke-linejoin="round" />
+          <line x1="80" y1="98" x2="120" y2="138" stroke="#111827" stroke-width="11" stroke-linecap="butt" />
+          <line x1="120" y1="98" x2="80" y2="138" stroke="#111827" stroke-width="11" stroke-linecap="butt" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-5">
+                      
+          <polygon points="100,26 174,158 26,158" fill="#ffffff" stroke="#ef4444" stroke-width="14" stroke-linejoin="round" />
+          <line x1="80" y1="98" x2="120" y2="138" stroke="#111827" stroke-width="11" stroke-linecap="butt" />
+          <line x1="120" y1="98" x2="80" y2="138" stroke="#111827" stroke-width="11" stroke-linecap="butt" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-5">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">f)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-6" onclick="toggleS9Item(6)">
+                  <div class="hdcn-select-indicator" id="s9-chk-6"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-6"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-6">
+                      
+          <circle cx="100" cy="100" r="76" fill="#0284c7" />
+          
+        <g transform="rotate(0 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-6">
+                      
+          <circle cx="100" cy="100" r="76" fill="#0284c7" />
+          
+        <g transform="rotate(0 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+
+        <g transform="rotate(120 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+
+        <g transform="rotate(240 100 100)">
+          <path d="M 74 62 A 45 45 0 0 1 124 62" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="butt" />
+          <polygon points="136,74 130,48 112,68" fill="#ffffff" />
+        </g>
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-6">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">g)</div>
+                </div>
+
+                <div class="s9-sign-card" id="s9-card-7" onclick="toggleS9Item(7)">
+                  <div class="hdcn-select-indicator" id="s9-chk-7"></div>
+                  <div class="hdcn-status-badge" id="s9-badge-7"></div>
+                  <svg width="128" height="118" viewBox="0 0 200 200">
+                    <g class="hdcn-ghost-group" id="s9-ghost-7">
+                      
+          <polygon points="100,26 174,158 26,158" fill="#ffffff" stroke="#ef4444" stroke-width="14" stroke-linejoin="round" />
+          <!-- Biểu tượng hàng rào đen bên trong -->
+          <rect x="70" y="114" width="60" height="6" fill="#111827" />
+          <rect x="70" y="132" width="60" height="6" fill="#111827" />
+          <polygon points="75,100 79,105 79,144 71,144 71,105" fill="#111827" />
+          <polygon points="87.5,100 91.5,105 91.5,144 83.5,144 83.5,105" fill="#111827" />
+          <polygon points="100,100 104,105 104,144 96,144 96,105" fill="#111827" />
+          <polygon points="112.5,100 116.5,105 116.5,144 108.5,144 108.5,105" fill="#111827" />
+          <polygon points="125,100 129,105 129,144 121,144 121,105" fill="#111827" />
+        
+                    </g>
+                    <g class="hdcn-rot-group" id="s9-rot-7">
+                      
+          <polygon points="100,26 174,158 26,158" fill="#ffffff" stroke="#ef4444" stroke-width="14" stroke-linejoin="round" />
+          <!-- Biểu tượng hàng rào đen bên trong -->
+          <rect x="70" y="114" width="60" height="6" fill="#111827" />
+          <rect x="70" y="132" width="60" height="6" fill="#111827" />
+          <polygon points="75,100 79,105 79,144 71,144 71,105" fill="#111827" />
+          <polygon points="87.5,100 91.5,105 91.5,144 83.5,144 83.5,105" fill="#111827" />
+          <polygon points="100,100 104,105 104,144 96,144 96,105" fill="#111827" />
+          <polygon points="112.5,100 116.5,105 116.5,144 108.5,144 108.5,105" fill="#111827" />
+          <polygon points="125,100 129,105 129,144 121,144 121,105" fill="#111827" />
+        
+                    </g>
+                    <g class="hdcn-center-o" id="s9-o-7">
+                      <circle cx="100" cy="100" r="8" fill="#16a34a" stroke="#ffffff" stroke-width="2.5" />
+                      <rect x="109" y="80" width="24" height="20" rx="5" fill="#16a34a" />
+                      <text x="121" y="95" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">O</text>
+                    </g>
+                  </svg>
+                  <div class="hdcn-item-label" style="background:#ffffff; font-size:15px;">h)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hdcn-feedback-box" id="s9-feedback">Nhấp chọn các biển báo giao thông có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).</div>
+            <div class="hdcn-bottom-bar" style="margin-top: 8px;">
+              <div class="hdcn-action-btns">
+                <button class="hdcn-btn hdcn-btn-check" onclick="checkS9Answer()">✓ KIỂM TRA</button>
+                <button class="hdcn-btn hdcn-btn-rot" onclick="rotateS9Shapes()">↻ QUAY 180°</button>
+                <button class="hdcn-btn hdcn-btn-reset" onclick="resetS9Slide()">🔄 ĐẶT LẠI</button>
+                <button class="hdcn-btn hdcn-btn-next" id="btn-next-q5" onclick="goNextFromQuestion(5)" disabled title="Hoàn thành đúng Câu 5 để xem tổng kết điểm">🔒 HOÀN THÀNH ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TỔNG KẾT PHÒNG LUYỆN TẬP ==================== -->
+      <section class="slide-view" id="slide-5">
+        <div class="summary-wrapper">
+          <div class="summary-top-row">
+            <span class="summary-brand-tag">SPARK MATH • TỔNG KẾT PHÒNG LUYỆN TẬP – BÀI 48</span>
+            <span class="summary-sync-badge" id="sum-sync-status">✓ Kết quả đã sẵn sàng đồng bộ lên bảng điểm giáo viên</span>
+          </div>
+
+          <div class="summary-title-block">
+            <h1>CHÚC MỪNG EM ĐÃ HOÀN THÀNH BÀI LUYỆN TẬP!</h1>
+            <p>HOÀN TẤT PHIÊN LUYỆN TẬP – Kết quả được ghi nhận tự động vào bảng điểm phòng.</p>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-panel">
+              <div>
+                <h3>PHIẾU KẾT QUẢ CÁ NHÂN</h3>
+                <div class="summary-meta-list">
+                  <div class="summary-meta-row"><span>Số câu hoàn thành:</span><strong id="sum-completed-count">5/5</strong></div>
+                  <div class="summary-meta-row"><span>Thời gian làm bài:</span><strong id="sum-time-spent">00:00</strong></div>
+                  <div class="summary-meta-row"><span>Tổng số lần nộp:</span><strong id="sum-total-attempts">0 lần</strong></div>
+                  <div class="summary-meta-row"><span>Tổng số lỗi đã sửa:</span><strong id="sum-total-errors">0 lỗi</strong></div>
+                  <div class="summary-meta-row"><span>Trạng thái:</span><strong style="color:#16a34a;">Đạt yêu cầu</strong></div>
+                </div>
+              </div>
+
+              <div class="summary-score-card">
+                <div class="summary-score-label">TỔNG ĐIỂM THANG 10</div>
+                <div class="summary-score-value" id="sum-final-score">10/10</div>
+                <div class="summary-rank-text" id="sum-rank-label">Xếp loại: Xuất sắc</div>
+              </div>
+            </div>
+
+            <div class="summary-panel">
+              <div>
+                <h3>CHI TIẾT ĐIỂM TỪNG CÂU (CÂU 1 – CÂU 5)</h3>
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Câu</th>
+                      <th>Nội dung bài tập</th>
+                      <th>Điểm đạt</th>
+                      <th>Số lần nộp</th>
+                      <th>Số lỗi đã sửa</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum-detail-tbody"></tbody>
+                </table>
+              </div>
+              <div style="font-size:12.5px; color:#475569; background:#f1f5f9; padding:8px 12px; border-radius:8px; margin-top:8px;">
+                <b>Quy tắc chấm điểm:</b> Mỗi câu tối đa <b>2,0 điểm</b> (5 câu = 10 điểm). Trả lời đúng ngay lần đầu đạt trọn 2,0 điểm; mỗi lần sửa lỗi trừ 0,25 điểm (tối thiểu 1,0 điểm/câu khi hoàn thành đúng).
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-actions">
+            <button class="hdcn-btn hdcn-btn-check" style="max-width:210px;" onclick="goToSlide(0)">👁 XEM LẠI BÀI LÀM</button>
+            <button class="hdcn-btn hdcn-btn-rot" style="max-width:210px;" onclick="restartEntirePractice()">🔄 LÀM LẠI TỪ ĐẦU</button>
+            <button class="hdcn-btn hdcn-btn-ans" style="max-width:210px;" onclick="confirmFinishAndSync()">✓ HOÀN THÀNH</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ==================== THANH ĐIỀU HƯỚNG & BẢNG ĐIỂM TRỰC TIẾP ==================== -->
+    <footer class="bottom-toolbar">
+      <div class="toolbar-group">
+        <button class="ctrl-btn" id="btn-prev-slide" onclick="changeSlide(-1)">◀ Câu trước</button>
+        <span class="slide-counter-pill" id="slide-indicator">Câu 1 / 5</span>
+        <button class="ctrl-btn" id="btn-next-slide" onclick="changeSlide(1)">Câu tiếp ▶</button>
+      </div>
+
+      <div class="q-nav-dots" id="q-nav-dots">
+        <button class="q-dot-btn active" id="dot-q-0" onclick="tryJumpToSlide(0)">Câu 1</button>
+        <button class="q-dot-btn locked" id="dot-q-1" onclick="tryJumpToSlide(1)">Câu 2</button>
+        <button class="q-dot-btn locked" id="dot-q-2" onclick="tryJumpToSlide(2)">Câu 3</button>
+        <button class="q-dot-btn locked" id="dot-q-3" onclick="tryJumpToSlide(3)">Câu 4</button>
+        <button class="q-dot-btn locked" id="dot-q-4" onclick="tryJumpToSlide(4)">Câu 5</button>
+        <button class="q-dot-btn locked" id="dot-q-5" onclick="tryJumpToSlide(5)">Tổng kết</button>
+      </div>
+
+      <div class="toolbar-group">
+        <div class="live-score-pill" id="score-display">Điểm: 0 / 10</div>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  'use strict';
+
+  /* ==========================================================================
+     1. TỰ ĐỘNG CO GIÃN KHUNG 16:9 VỪA KHÍT MỌI MÀN HÌNH / IFRAME
+     ========================================================================== */
+  function fitStageToScreen() {
+    const stage = document.getElementById('stage-16-9');
+    if (!stage) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scale = Math.min((vw - 12) / 1440, (vh - 12) / 810);
+    stage.style.transform = `scale(${Math.max(0.2, scale)})`;
+  }
+  window.addEventListener('resize', fitStageToScreen);
+  window.addEventListener('load', () => {
+    fitStageToScreen();
+    renderAll();
+  });
+
+  /* ==========================================================================
+     2. ÂM THANH PHẢN HỒI TỨC THÌ (WEB AUDIO API – KHÔNG CẦN FILE NGOÀI)
+     ========================================================================== */
+  const SoundFX = (() => {
+    let ctx = null;
+    function getCtx() {
+      if (!ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) ctx = new AudioCtx();
+      }
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    }
+    function beep(freq, duration, type = 'sine', gainVal = 0.16, delay = 0) {
+      const c = getCtx();
+      if (!c) return;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, c.currentTime + delay);
+      gain.gain.setValueAtTime(gainVal, c.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + duration);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(c.currentTime + delay);
+      osc.stop(c.currentTime + delay + duration);
+    }
+    return {
+      correct() {
+        beep(587.33, 0.14, 'triangle', 0.18, 0);
+        beep(880.0, 0.24, 'triangle', 0.2, 0.11);
+      },
+      wrong() {
+        beep(220, 0.18, 'sawtooth', 0.12, 0);
+        beep(175, 0.22, 'sawtooth', 0.12, 0.14);
+      },
+      finish() {
+        beep(523.25, 0.14, 'triangle', 0.18, 0);
+        beep(659.25, 0.14, 'triangle', 0.18, 0.12);
+        beep(783.99, 0.16, 'triangle', 0.18, 0.24);
+        beep(1046.5, 0.36, 'triangle', 0.22, 0.36);
+      }
+    };
+  })();
+
+  /* ==========================================================================
+     3. HỆ THỐNG CHẤM ĐIỂM THANG 10 (5 CÂU × 2 ĐIỂM) & KHÓA TIẾN TRÌNH
+     ========================================================================== */
+  const TOTAL_QUESTIONS = 5;
+  const TOTAL_SLIDES = 6; // 0..4 là Câu 1..5, 5 là Tổng kết
+  const POINTS_PER_Q = 2;
+  const PENALTY_PER_ERROR = 0.25;
+  const MIN_POINTS_WHEN_PASSED = 1.0;
+
+  const Q_META = [
+    { num: 1, title: 'Nhận biết hình có tâm đối xứng (7 hình)' },
+    { num: 2, title: 'Tìm tâm đối xứng trong hình ghép & đa giác (6 hình)' },
+    { num: 3, title: 'Nhận biết tâm đối xứng của hình phức hợp (7 hình)' },
+    { num: 4, title: 'Tâm đối xứng của các chữ cái M, O, Z, I' },
+    { num: 5, title: 'Tâm đối xứng trong biển báo giao thông (8 biển báo)' },
+  ];
+
+  let currentSlide = 0;
+  let startTimeMs = Date.now();
+  let practiceFinished = false;
+
+  let qStats = [
+    { passed: false, attempts: 0, errors: 0, score: 0 },
+    { passed: false, attempts: 0, errors: 0, score: 0 },
+    { passed: false, attempts: 0, errors: 0, score: 0 },
+    { passed: false, attempts: 0, errors: 0, score: 0 },
+    { passed: false, attempts: 0, errors: 0, score: 0 },
+  ];
+
+  function getTotalScore() {
+    const sum = qStats.reduce((acc, q) => acc + q.score, 0);
+    return Math.round(sum * 100) / 100;
+  }
+
+  function getHighestUnlockedSlide() {
+    let maxUnlocked = 0;
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      if (qStats[i].passed) maxUnlocked = i + 1;
+      else break;
+    }
+    return maxUnlocked;
+  }
+
+  function recordQuestionResult(qIdx, isCorrect) {
+    const st = qStats[qIdx];
+    if (st.passed) return;
+    st.attempts += 1;
+    if (isCorrect) {
+      st.passed = true;
+      st.score = Math.max(MIN_POINTS_WHEN_PASSED, POINTS_PER_Q - st.errors * PENALTY_PER_ERROR);
+      SoundFX.correct();
+    } else {
+      st.errors += 1;
+      SoundFX.wrong();
+    }
+    updateScoreUI();
+  }
+
+  function formatScoreVN(val) {
+    return Number.isInteger(val) ? String(val) : String(val).replace('.', ',');
+  }
+
+  function updateScoreUI() {
+    const total = getTotalScore();
+    const scoreEl = document.getElementById('score-display');
+    if (scoreEl) scoreEl.textContent = `Điểm: ${formatScoreVN(total)} / 10`;
+
+    const maxUnlocked = getHighestUnlockedSlide();
+
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      const st = qStats[i];
+      const pill = document.getElementById(`q-score-pill-${i + 1}`);
+      if (pill) {
+        pill.textContent = st.passed ? `✓ ${formatScoreVN(st.score)} / 2 điểm` : `0 / 2 điểm`;
+        pill.classList.toggle('passed', st.passed);
+      }
+      const nextBtn = document.getElementById(`btn-next-q${i + 1}`);
+      if (nextBtn) {
+        nextBtn.disabled = !st.passed;
+        if (i < 4) {
+          nextBtn.textContent = st.passed ? 'CÂU TIẾP THEO ▶' : '🔒 CÂU TIẾP THEO ▶';
+        } else {
+          nextBtn.textContent = st.passed ? '🏁 XEM TỔNG KẾT ▶' : '🔒 HOÀN THÀNH ▶';
+        }
+      }
+    }
+
+    for (let s = 0; s < TOTAL_SLIDES; s++) {
+      const dot = document.getElementById(`dot-q-${s}`);
+      if (!dot) continue;
+      dot.classList.remove('active', 'done', 'locked');
+      if (s === currentSlide) dot.classList.add('active');
+      else if (s < TOTAL_QUESTIONS && qStats[s].passed) dot.classList.add('done');
+      else if (s === 5 && practiceFinished) dot.classList.add('done');
+
+      if (s > maxUnlocked) dot.classList.add('locked');
+    }
+
+    const prevBtn = document.getElementById('btn-prev-slide');
+    const nextBtn = document.getElementById('btn-next-slide');
+    const ind = document.getElementById('slide-indicator');
+    if (prevBtn) prevBtn.disabled = (currentSlide === 0);
+    if (nextBtn) nextBtn.disabled = (currentSlide >= TOTAL_SLIDES - 1) || (currentSlide >= maxUnlocked);
+    if (ind) ind.textContent = currentSlide < 5 ? `Câu ${currentSlide + 1} / 5` : 'Tổng kết';
+  }
+
+  function goToSlide(idx) {
+    if (idx < 0 || idx >= TOTAL_SLIDES) return;
+    currentSlide = idx;
+    for (let i = 0; i < TOTAL_SLIDES; i++) {
+      const el = document.getElementById(`slide-${i}`);
+      if (el) el.classList.toggle('active', i === currentSlide);
+    }
+    if (currentSlide === 5) {
+      renderSummarySlide();
+      if (!practiceFinished) {
+        practiceFinished = true;
+        SoundFX.finish();
+        notifyParentScore();
+      }
+    }
+    updateScoreUI();
+  }
+
+  function tryJumpToSlide(idx) {
+    if (idx <= getHighestUnlockedSlide()) {
+      goToSlide(idx);
+    }
+  }
+
+  function changeSlide(delta) {
+    const target = currentSlide + delta;
+    if (target < 0 || target >= TOTAL_SLIDES) return;
+    if (delta > 0 && target > getHighestUnlockedSlide()) return;
+    goToSlide(target);
+  }
+
+  function goNextFromQuestion(qNum) {
+    if (!qStats[qNum - 1].passed) return;
+    goToSlide(qNum); // qNum=1..4 -> slide 1..4; qNum=5 -> slide 5 (Tổng kết)
+  }
+
+  function notifyParentScore() {
+    const total = getTotalScore();
+    const totalAttempts = qStats.reduce((a, q) => a + q.attempts, 0);
+    const totalErrors = qStats.reduce((a, q) => a + q.errors, 0);
+    const summary = `Hoàn thành 5/5 câu Bài 48: Tâm đối xứng • Tổng điểm: ${total}/10 (Nộp: ${totalAttempts} lần, Lỗi đã sửa: ${totalErrors})`;
+    try {
+      window.parent.postMessage({ type: 'SPARKLE_COMPLETE', score: total, maxScore: 10, summary }, '*');
+    } catch {}
+  }
+
+  function confirmFinishAndSync() {
+    notifyParentScore();
+    const badge = document.getElementById('sum-sync-status');
+    if (badge) {
+      badge.textContent = '✓ ĐÃ GỬI ĐIỂM THÀNH CÔNG LÊN BẢNG ĐIỂM GIÁO VIÊN!';
+      badge.style.background = 'rgba(22, 163, 74, 0.45)';
+    }
+    SoundFX.correct();
+  }
+
+  function renderSummarySlide() {
+    const total = getTotalScore();
+    const totalAttempts = qStats.reduce((a, q) => a + q.attempts, 0);
+    const totalErrors = qStats.reduce((a, q) => a + q.errors, 0);
+    const sec = Math.max(1, Math.floor((Date.now() - startTimeMs) / 1000));
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+    const ss = String(sec % 60).padStart(2, '0');
+
+    let rank = 'Đạt';
+    if (total >= 9) rank = 'Xuất sắc';
+    else if (total >= 8) rank = 'Giỏi';
+    else if (total >= 6.5) rank = 'Khá';
+
+    document.getElementById('sum-completed-count').textContent = `${qStats.filter(q => q.passed).length}/5`;
+    document.getElementById('sum-time-spent').textContent = `${mm}:${ss}`;
+    document.getElementById('sum-total-attempts').textContent = `${totalAttempts} lần`;
+    document.getElementById('sum-total-errors').textContent = `${totalErrors} lỗi`;
+    document.getElementById('sum-final-score').textContent = `${total}/10`;
+    document.getElementById('sum-rank-label').textContent = `Xếp loại: ${rank}`;
+
+    const tbody = document.getElementById('sum-detail-tbody');
+    if (tbody) {
+      tbody.innerHTML = Q_META.map((m, i) => {
+        const st = qStats[i];
+        return `
+          <tr>
+            <td><b>Câu ${m.num}</b></td>
+            <td>${m.title}</td>
+            <td style="color:#15803d;">${formatScoreVN(st.score)} / 2</td>
+            <td>${st.attempts} lần</td>
+            <td style="color:${st.errors > 0 ? '#dc2626' : '#16a34a'};">${st.errors} lỗi</td>
+          </tr>`;
+      }).join('');
+    }
+  }
+
+  function restartEntirePractice() {
+    startTimeMs = Date.now();
+    practiceFinished = false;
+    qStats = qStats.map(() => ({ passed: false, attempts: 0, errors: 0, score: 0 }));
+    resetS5Slide(true);
+    resetS6Slide(true);
+    resetS7Slide(true);
+    resetS8Slide(true);
+    resetS9Slide(true);
+    goToSlide(0);
+  }
+
+  /* ==========================================================================
+     4. CÂU 1 (SLIDE 5 GỐC): 7 HÌNH – NHẬN BIẾT HÌNH CÓ TÂM ĐỐI XỨNG
+     ========================================================================== */
+  const S5_IS_SYM = [true, false, true, true, false, true, true];
+  let s5Selected = [false, false, false, false, false, false, false];
+  let s5Checked  = false;
+  let s5Rotated  = false;
+
+  function toggleS5Item(idx) {
+    if (qStats[0].passed) return;
+    s5Selected[idx] = !s5Selected[idx];
+    s5Checked = false;
+    renderSlide5();
+  }
+
+  function rotateS5Shapes() {
+    s5Rotated = !s5Rotated;
+    renderSlide5();
+    const fb = document.getElementById('s5-feedback');
+    if (fb && !qStats[0].passed) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = s5Rotated
+        ? '↻ <b>Đang quan sát góc quay 180°:</b> Hãy xem hình nào trùng khít với bóng mờ ban đầu rồi chọn và bấm <b>✓ KIỂM TRA</b>!'
+        : 'Đã đưa các hình về góc quay ban đầu (0°).';
+    }
+  }
+
+  function checkS5Answer() {
+    if (qStats[0].passed) return;
+    const anyPicked = s5Selected.some(Boolean);
+    const fb = document.getElementById('s5-feedback');
+    if (!anyPicked) {
+      SoundFX.wrong();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '⚠️ Em hãy nhấp chọn ít nhất một hình có tâm đối xứng trước khi bấm <b>✓ KIỂM TRA</b>!';
+      }
+      return;
+    }
+    const allMatch = s5Selected.every((val, i) => val === S5_IS_SYM[i]);
+    recordQuestionResult(0, allMatch);
+    if (allMatch) {
+      s5Checked = true;
+      renderSlide5();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-success';
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[0].score)} điểm)!</b> Hình có tâm đối xứng là <b>a) Hình tròn, c) Chong chóng 4 cánh, Hình 1 (4 cánh), Hình 3 (6 cánh), Hình 4 (8 cánh)</b>. Bấm <b>CÂU TIẾP THEO ▶</b> để tiếp tục!`;
+      }
+    } else {
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '❌ <b>Chưa chính xác!</b> Em hãy kiểm tra lại số cánh chẵn/lẻ hoặc bấm <b>↻ QUAY 180°</b> để quan sát hình nào trùng khít, sau đó chọn lại và bấm <b>✓ KIỂM TRA</b>.';
+      }
+    }
+  }
+
+  function resetS5Slide(force = false) {
+    if (qStats[0].passed && !force) return;
+    s5Selected = [false, false, false, false, false, false, false];
+    s5Checked = false;
+    s5Rotated = false;
+    for (let i = 0; i < 7; i++) {
+      const rotEl = document.getElementById(`s5-rot-${i}`);
+      if (rotEl) {
+        rotEl.style.transition = 'none';
+        rotEl.style.transform = 'rotate(0deg)';
+        setTimeout(() => { rotEl.style.transition = 'transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1)'; }, 40);
+      }
+    }
+    renderSlide5();
+    const fb = document.getElementById('s5-feedback');
+    if (fb) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = 'Nhấp chọn những hình có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).';
+    }
+  }
+
+  function renderSlide5() {
+    const pill = document.getElementById('s5-angle-pill');
+    if (pill) pill.textContent = s5Rotated ? 'Góc quay: 180°' : 'Góc quay: 0°';
+    for (let i = 0; i < 7; i++) {
+      const card = document.getElementById(`s5-card-${i}`);
+      const chk = document.getElementById(`s5-chk-${i}`);
+      const badge = document.getElementById(`s5-badge-${i}`);
+      const rotEl = document.getElementById(`s5-rot-${i}`);
+      const ghostEl = document.getElementById(`s5-ghost-${i}`);
+      const oEl = document.getElementById(`s5-o-${i}`);
+      if (!card) continue;
+      card.classList.remove('selected-item', 'checked-sym', 'checked-nonsym');
+      if (s5Selected[i]) card.classList.add('selected-item');
+      if (chk) chk.textContent = s5Selected[i] ? '✓' : '';
+      if (rotEl) rotEl.style.transform = s5Rotated ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (ghostEl) ghostEl.classList.toggle('visible', s5Rotated);
+      if (s5Checked) {
+        if (S5_IS_SYM[i]) {
+          card.classList.add('checked-sym');
+          if (badge) { badge.className = 'hdcn-status-badge show-sym'; badge.textContent = '✓ Có tâm O'; }
+          if (oEl) oEl.classList.add('visible');
+        } else {
+          card.classList.add('checked-nonsym');
+          if (badge) { badge.className = 'hdcn-status-badge show-nonsym'; badge.textContent = '✗ Không có'; }
+          if (oEl) oEl.classList.remove('visible');
+        }
+      } else {
+        if (badge) { badge.className = 'hdcn-status-badge'; badge.textContent = ''; }
+        if (oEl) oEl.classList.remove('visible');
+      }
+    }
+  }
+
+  /* ==========================================================================
+     5. CÂU 2 (SLIDE 6 GỐC): 6 HÌNH GHÉP & ĐA GIÁC
+     ========================================================================== */
+  const S6_IS_SYM = [true, true, true, true, false, true];
+  const S6_TITLES = [
+    'a) Hai đường tròn',
+    'b) Chong chóng',
+    'c) Hình 6 ô vuông',
+    'd) Lục giác đều',
+    'e) Hình thang cân',
+    'f) Ngôi sao 4 cánh'
+  ];
+  let s6State = Array.from({ length: 6 }, () => ({ selected: false, hasPoint: false, x: 100, y: 100 }));
+  let s6Checked = false;
+  let s6Rotated = false;
+  let s6IndRotated = [false, false, false, false, false, false];
+  let s6RevealedPoint = [false, false, false, false, false, false];
+  let s6RevealedLabel = [false, false, false, false, false, false];
+  let s6RevealedLines = [false, false, false, false, false, false];
+  let s6RevealedNoSym = false;
+  let s6RevealTimers = [];
+
+  function clearS6Timers() {
+    s6RevealTimers.forEach(t => clearTimeout(t));
+    s6RevealTimers = [];
+  }
+
+  function handleS6CardClick(evt, idx) {
+    if (s6Checked) {
+      if (S6_IS_SYM[idx]) {
+        s6IndRotated[idx] = !s6IndRotated[idx];
+        renderSlide6();
+      }
+      return;
+    }
+    s6State[idx].selected = !s6State[idx].selected;
+    if (!s6State[idx].selected) s6State[idx].hasPoint = false;
+    renderSlide6();
+  }
+
+  function handleS6SvgClick(evt, idx) {
+    evt.stopPropagation();
+    if (s6Checked) {
+      if (S6_IS_SYM[idx]) {
+        s6IndRotated[idx] = !s6IndRotated[idx];
+        renderSlide6();
+      }
+      return;
+    }
+    const svgEl = document.getElementById(`s6-svg-${idx}`);
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const x = Math.round(((evt.clientX - rect.left) / rect.width) * 200);
+    const y = Math.round(((evt.clientY - rect.top) / rect.height) * 200);
+    if (s6State[idx].selected && s6State[idx].hasPoint && Math.hypot(x - s6State[idx].x, y - s6State[idx].y) < 16) {
+      s6State[idx].selected = false;
+      s6State[idx].hasPoint = false;
+    } else {
+      s6State[idx].selected = true;
+      s6State[idx].hasPoint = true;
+      s6State[idx].x = Math.max(20, Math.min(180, x));
+      s6State[idx].y = Math.max(20, Math.min(180, y));
+    }
+    renderSlide6();
+  }
+
+  function rotateS6Shapes() {
+    s6Rotated = !s6Rotated;
+    for (let i = 0; i < 6; i++) s6IndRotated[i] = S6_IS_SYM[i] ? s6Rotated : false;
+    renderSlide6();
+  }
+
+  function checkS6Answer() {
+    if (qStats[1].passed) return;
+    const fb = document.getElementById('s6-feedback');
+    const anyPicked = s6State.some(s => s.selected);
+    if (!anyPicked) {
+      SoundFX.wrong();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '⚠️ Em hãy nhấp chọn các hình có tâm đối xứng (và chấm vị trí tâm O) trước khi bấm <b>✓ KIỂM TRA</b>!';
+      }
+      return;
+    }
+
+    // Kiểm tra: chọn đúng các hình có tâm đối xứng (a, b, c, d, f) và không chọn hình e
+    const selectionMatch = s6State.every((s, i) => s.selected === S6_IS_SYM[i]);
+    // Nếu có đặt điểm dự đoán trên hình có tâm đối xứng, kiểm tra điểm đó nằm gần tâm (100,100) trong bán kính 36px
+    let offCenterNames = [];
+    if (selectionMatch) {
+      for (let i = 0; i < 6; i++) {
+        if (S6_IS_SYM[i] && s6State[i].hasPoint) {
+          if (Math.hypot(s6State[i].x - 100, s6State[i].y - 100) > 38) {
+            offCenterNames.push(S6_TITLES[i]);
+          }
+        }
+      }
+    }
+
+    const isCorrect = selectionMatch && offCenterNames.length === 0;
+    recordQuestionResult(1, isCorrect);
+
+    if (isCorrect) {
+      clearS6Timers();
+      s6Checked = true;
+      renderSlide6();
+      const symIndices = [0, 1, 2, 3, 5];
+      symIndices.forEach((shapeIdx, order) => {
+        const baseDelay = order * 180;
+        s6RevealTimers.push(setTimeout(() => {
+          s6RevealedPoint[shapeIdx] = true;
+          s6RevealedLines[shapeIdx] = true;
+          renderSlide6();
+        }, baseDelay + 40));
+        s6RevealTimers.push(setTimeout(() => {
+          s6RevealedLabel[shapeIdx] = true;
+          renderSlide6();
+        }, baseDelay + 140));
+      });
+      s6RevealTimers.push(setTimeout(() => {
+        s6RevealedNoSym = true;
+        renderSlide6();
+      }, symIndices.length * 180 + 80));
+
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-success';
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[1].score)} điểm)!</b> Các hình <b>a, b, c, d, f</b> có tâm đối xứng <b>O</b>; hình <b>e) Hình thang cân</b> không có tâm đối xứng. Bấm <b>CÂU TIẾP THEO ▶</b>!`;
+      }
+    } else {
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        if (!selectionMatch) {
+          fb.innerHTML = '❌ <b>Chưa chính xác!</b> Hãy kiểm tra kỹ lại xem hình nào quay 180° quanh tâm sẽ trùng khít (lưu ý hình thang cân có hai đáy không bằng nhau).';
+        } else {
+          fb.innerHTML = `❌ <b>Vị trí tâm O chưa chính xác ở:</b> ${offCenterNames.join(', ')}. Hãy chấm lại điểm O vào chính giữa hình rồi bấm <b>✓ KIỂM TRA</b>!`;
+        }
+      }
+    }
+  }
+
+  function resetS6Slide(force = false) {
+    if (qStats[1].passed && !force) return;
+    clearS6Timers();
+    for (let i = 0; i < 6; i++) {
+      s6State[i] = { selected: false, hasPoint: false, x: 100, y: 100 };
+      s6IndRotated[i] = false;
+      s6RevealedPoint[i] = false;
+      s6RevealedLabel[i] = false;
+      s6RevealedLines[i] = false;
+      const rotEl = document.getElementById(`s6-rot-${i}`);
+      if (rotEl) {
+        rotEl.style.transition = 'none';
+        rotEl.style.transform = 'rotate(0deg)';
+        setTimeout(() => { rotEl.style.transition = 'transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1)'; }, 40);
+      }
+    }
+    s6RevealedNoSym = false;
+    s6Checked = false;
+    s6Rotated = false;
+    renderSlide6();
+    const fb = document.getElementById('s6-feedback');
+    if (fb) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = 'Nhấp chọn các hình có tâm đối xứng (có thể chấm vị trí tâm O) rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).';
+    }
+  }
+
+  function renderSlide6() {
+    const anyRotated = s6IndRotated.some(Boolean);
+    const pill = document.getElementById('s6-angle-pill');
+    if (pill) pill.textContent = anyRotated ? 'Góc quay: 180°' : 'Góc quay: 0°';
+
+    for (let i = 0; i < 6; i++) {
+      const st = s6State[i];
+      const card = document.getElementById(`s6-card-${i}`);
+      const badge = document.getElementById(`s6-badge-${i}`);
+      const rotEl = document.getElementById(`s6-rot-${i}`);
+      const ghostEl = document.getElementById(`s6-ghost-${i}`);
+      const ansO = document.getElementById(`s6-ans-o-${i}`);
+      const ansLbl = document.getElementById(`s6-ans-lbl-${i}`);
+      const symLines = document.getElementById(`s6-lines-${i}`);
+      const userPt = document.getElementById(`s6-user-pt-${i}`);
+      const userRing = document.getElementById(`s6-user-ring-${i}`);
+      const userDot = document.getElementById(`s6-user-dot-${i}`);
+      const noSymNotice = document.getElementById(`s6-nonsym-notice-${i}`);
+
+      if (!card) continue;
+      card.classList.remove('selected-item', 'checked-sym', 'checked-nonsym');
+      if (rotEl) rotEl.style.transform = s6IndRotated[i] ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (ghostEl) ghostEl.classList.toggle('visible', s6IndRotated[i]);
+
+      if (!s6Checked) {
+        if (st.selected) card.classList.add('selected-item');
+        if (badge) { badge.className = 'hdcn-status-badge'; badge.textContent = ''; }
+        if (userPt) {
+          userPt.style.display = st.hasPoint ? 'block' : 'none';
+          if (userRing) { userRing.setAttribute('cx', st.x); userRing.setAttribute('cy', st.y); }
+          if (userDot) { userDot.setAttribute('cx', st.x); userDot.setAttribute('cy', st.y); }
+        }
+        if (ansO) ansO.classList.remove('shown');
+        if (ansLbl) ansLbl.classList.remove('shown');
+        if (symLines) symLines.classList.remove('shown');
+        if (noSymNotice) noSymNotice.classList.remove('shown');
+      } else {
+        if (userPt) userPt.style.display = 'none';
+        if (S6_IS_SYM[i]) {
+          if (s6RevealedPoint[i]) card.classList.add('checked-sym');
+          if (ansO) ansO.classList.toggle('shown', s6RevealedPoint[i]);
+          if (ansLbl) ansLbl.classList.toggle('shown', s6RevealedLabel[i]);
+          if (symLines) symLines.classList.toggle('shown', s6RevealedLines[i]);
+          if (badge) {
+            if (s6RevealedLabel[i]) {
+              badge.className = 'hdcn-status-badge show-sym';
+              badge.textContent = '✓ Có tâm O';
+            } else {
+              badge.className = 'hdcn-status-badge';
+              badge.textContent = '';
+            }
+          }
+        } else {
+          if (s6RevealedNoSym) card.classList.add('checked-nonsym');
+          if (noSymNotice) noSymNotice.classList.toggle('shown', s6RevealedNoSym);
+          if (badge) {
+            if (s6RevealedNoSym) {
+              badge.className = 'hdcn-status-badge show-nonsym';
+              badge.textContent = '✗ Không có tâm O';
+            } else {
+              badge.className = 'hdcn-status-badge';
+              badge.textContent = '';
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* ==========================================================================
+     6. CÂU 3 (SLIDE 7 GỐC): 7 HÌNH PHỨC HỢP
+     ========================================================================== */
+  const S7_IS_SYM_GEOM = [false, false, true, false, true, false, true];
+  let s7Selected = [false, false, false, false, false, false, false];
+  let s7Checked  = false;
+  let s7Rotated  = false;
+
+  function toggleS7Item(idx) {
+    if (qStats[2].passed) return;
+    s7Selected[idx] = !s7Selected[idx];
+    s7Checked = false;
+    renderSlide7();
+  }
+
+  function rotateS7Shapes() {
+    s7Rotated = !s7Rotated;
+    renderSlide7();
+  }
+
+  function checkS7Answer() {
+    if (qStats[2].passed) return;
+    const anyPicked = s7Selected.some(Boolean);
+    const fb = document.getElementById('s7-feedback');
+    if (!anyPicked) {
+      SoundFX.wrong();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '⚠️ Em hãy nhấp chọn các hình có tâm đối xứng trước khi bấm <b>✓ KIỂM TRA</b>!';
+      }
+      return;
+    }
+    const matchExactGeom = s7Selected.every((val, i) => val === S7_IS_SYM_GEOM[i]);
+    const matchWithD = s7Selected.every((val, i) => val === ([false, false, true, true, true, false, true][i]));
+    const isCorrect = matchExactGeom || matchWithD;
+
+    recordQuestionResult(2, isCorrect);
+    if (isCorrect) {
+      s7Checked = true;
+      renderSlide7();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-success';
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[2].score)} điểm)!</b> <b>Hình c, Hình e, Hình g</b> có tâm đối xứng <b>O</b> tại chính giữa hình (khi quay 180° trùng khít hoàn toàn). Bấm <b>CÂU TIẾP THEO ▶</b>!`;
+      }
+    } else {
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '❌ <b>Chưa chính xác!</b> Em hãy bấm <b>↻ QUAY 180°</b> để quan sát hình nào trùng khít với bóng mờ ban đầu rồi chọn lại nhé!';
+      }
+    }
+  }
+
+  function resetS7Slide(force = false) {
+    if (qStats[2].passed && !force) return;
+    s7Selected = [false, false, false, false, false, false, false];
+    s7Checked = false;
+    s7Rotated = false;
+    for (let i = 0; i < 7; i++) {
+      const rotEl = document.getElementById(`s7-rot-${i}`);
+      if (rotEl) {
+        rotEl.style.transition = 'none';
+        rotEl.style.transform = 'rotate(0deg)';
+        setTimeout(() => { rotEl.style.transition = 'transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1)'; }, 40);
+      }
+    }
+    renderSlide7();
+    const fb = document.getElementById('s7-feedback');
+    if (fb) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = 'Nhấp chọn các hình có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).';
+    }
+  }
+
+  function renderSlide7() {
+    const pill = document.getElementById('s7-angle-pill');
+    if (pill) pill.textContent = s7Rotated ? 'Góc quay: 180°' : 'Góc quay: 0°';
+    for (let i = 0; i < 7; i++) {
+      const card = document.getElementById(`s7-card-${i}`);
+      const chk = document.getElementById(`s7-chk-${i}`);
+      const badge = document.getElementById(`s7-badge-${i}`);
+      const rotEl = document.getElementById(`s7-rot-${i}`);
+      const ghostEl = document.getElementById(`s7-ghost-${i}`);
+      const oEl = document.getElementById(`s7-o-${i}`);
+      if (!card) continue;
+      card.classList.remove('selected-item', 'checked-sym', 'checked-nonsym');
+      if (s7Selected[i]) card.classList.add('selected-item');
+      if (chk) chk.textContent = s7Selected[i] ? '✓' : '';
+      if (rotEl) rotEl.style.transform = s7Rotated ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (ghostEl) ghostEl.classList.toggle('visible', s7Rotated);
+      if (s7Checked) {
+        if (S7_IS_SYM_GEOM[i]) {
+          card.classList.add('checked-sym');
+          if (badge) { badge.className = 'hdcn-status-badge show-sym'; badge.textContent = '✓ Có tâm O'; }
+          if (oEl) oEl.classList.add('visible');
+        } else {
+          card.classList.add('checked-nonsym');
+          if (badge) { badge.className = 'hdcn-status-badge show-nonsym'; badge.textContent = '✗ Không có'; }
+          if (oEl) oEl.classList.remove('visible');
+        }
+      } else {
+        if (badge) { badge.className = 'hdcn-status-badge'; badge.textContent = ''; }
+        if (oEl) oEl.classList.remove('visible');
+      }
+    }
+  }
+
+  /* ==========================================================================
+     7. CÂU 4 (SLIDE 8 GỐC): CHỮ CÁI M, O, Z, I
+     ========================================================================== */
+  const S8_IS_SYM = [false, true, true, true];
+  let s8Selected = [false, false, false, false];
+  let s8Checked  = false;
+  let s8Rotated  = false;
+
+  function toggleS8Item(idx) {
+    if (qStats[3].passed) return;
+    s8Selected[idx] = !s8Selected[idx];
+    s8Checked = false;
+    renderSlide8();
+  }
+
+  function rotateS8Shapes() {
+    s8Rotated = !s8Rotated;
+    renderSlide8();
+  }
+
+  function checkS8Answer() {
+    if (qStats[3].passed) return;
+    const anyPicked = s8Selected.some(Boolean);
+    const fb = document.getElementById('s8-feedback');
+    if (!anyPicked) {
+      SoundFX.wrong();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '⚠️ Em hãy nhấp chọn các chữ cái có tâm đối xứng trước khi bấm <b>✓ KIỂM TRA</b>!';
+      }
+      return;
+    }
+    const allMatch = s8Selected.every((val, i) => val === S8_IS_SYM[i]);
+    recordQuestionResult(3, allMatch);
+    if (allMatch) {
+      s8Checked = true;
+      renderSlide8();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-success';
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[3].score)} điểm)!</b> Các chữ cái <b>O, Z, I</b> có tâm đối xứng (quay 180° trùng khít). Chữ <b>M</b> không có tâm đối xứng. Bấm <b>CÂU TIẾP THEO ▶</b>!`;
+      }
+    } else {
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '❌ <b>Chưa chính xác!</b> Hãy bấm <b>↻ QUAY 180°</b> để quan sát chữ nào quay ngược lại vẫn giữ nguyên hình dạng ban đầu nhé!';
+      }
+    }
+  }
+
+  function resetS8Slide(force = false) {
+    if (qStats[3].passed && !force) return;
+    s8Selected = [false, false, false, false];
+    s8Checked = false;
+    s8Rotated = false;
+    for (let i = 0; i < 4; i++) {
+      const rotEl = document.getElementById(`s8-rot-${i}`);
+      if (rotEl) {
+        rotEl.style.transition = 'none';
+        rotEl.style.transform = 'rotate(0deg)';
+        setTimeout(() => { rotEl.style.transition = 'transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1)'; }, 40);
+      }
+    }
+    renderSlide8();
+    const fb = document.getElementById('s8-feedback');
+    if (fb) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = 'Nhấp chọn các chữ cái có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).';
+    }
+  }
+
+  function renderSlide8() {
+    const pill = document.getElementById('s8-angle-pill');
+    if (pill) pill.textContent = s8Rotated ? 'Góc quay: 180°' : 'Góc quay: 0°';
+    for (let i = 0; i < 4; i++) {
+      const card = document.getElementById(`s8-card-${i}`);
+      const chk = document.getElementById(`s8-chk-${i}`);
+      const badge = document.getElementById(`s8-badge-${i}`);
+      const rotEl = document.getElementById(`s8-rot-${i}`);
+      const ghostEl = document.getElementById(`s8-ghost-${i}`);
+      const oEl = document.getElementById(`s8-o-${i}`);
+      if (!card) continue;
+      card.classList.remove('selected-item', 'checked-sym', 'checked-nonsym');
+      if (s8Selected[i]) card.classList.add('selected-item');
+      if (chk) chk.textContent = s8Selected[i] ? '✓' : '';
+      if (rotEl) rotEl.style.transform = s8Rotated ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (ghostEl) ghostEl.classList.toggle('visible', s8Rotated);
+      if (s8Checked) {
+        if (S8_IS_SYM[i]) {
+          card.classList.add('checked-sym');
+          if (badge) { badge.className = 'hdcn-status-badge show-sym'; badge.textContent = '✓ Có tâm O'; }
+          if (oEl) oEl.classList.add('visible');
+        } else {
+          card.classList.add('checked-nonsym');
+          if (badge) { badge.className = 'hdcn-status-badge show-nonsym'; badge.textContent = '✗ Không có'; }
+          if (oEl) oEl.classList.remove('visible');
+        }
+      } else {
+        if (badge) { badge.className = 'hdcn-status-badge'; badge.textContent = ''; }
+        if (oEl) oEl.classList.remove('visible');
+      }
+    }
+  }
+
+  /* ==========================================================================
+     8. CÂU 5 (SLIDE 9 GỐC): 8 BIỂN BÁO GIAO THÔNG
+     ========================================================================== */
+  const S9_IS_SYM = [true, false, true, true, false, false, false, false];
+  let s9Selected = [false, false, false, false, false, false, false, false];
+  let s9Checked  = false;
+  let s9Rotated  = false;
+
+  function toggleS9Item(idx) {
+    if (qStats[4].passed) return;
+    s9Selected[idx] = !s9Selected[idx];
+    s9Checked = false;
+    renderSlide9();
+  }
+
+  function rotateS9Shapes() {
+    s9Rotated = !s9Rotated;
+    renderSlide9();
+  }
+
+  function checkS9Answer() {
+    if (qStats[4].passed) return;
+    const anyPicked = s9Selected.some(Boolean);
+    const fb = document.getElementById('s9-feedback');
+    if (!anyPicked) {
+      SoundFX.wrong();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '⚠️ Em hãy nhấp chọn các biển báo có tâm đối xứng trước khi bấm <b>✓ KIỂM TRA</b>!';
+      }
+      return;
+    }
+    const allMatch = s9Selected.every((val, i) => val === S9_IS_SYM[i]);
+    recordQuestionResult(4, allMatch);
+    if (allMatch) {
+      s9Checked = true;
+      renderSlide9();
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-success';
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[4].score)} điểm)!</b> Các biển báo có tâm đối xứng là <b>a), c), d)</b>. Bấm <b>🏁 XEM TỔNG KẾT ▶</b> để xem kết quả và gửi điểm cho giáo viên!`;
+      }
+    } else {
+      if (fb) {
+        fb.className = 'hdcn-feedback-box fb-warn';
+        fb.innerHTML = '❌ <b>Chưa chính xác!</b> Lưu ý xét cả hình dạng viền ngoài (tròn/tam giác) lẫn biểu tượng bên trong. Bấm <b>↻ QUAY 180°</b> để kiểm chứng rồi chọn lại nhé!';
+      }
+    }
+  }
+
+  function resetS9Slide(force = false) {
+    if (qStats[4].passed && !force) return;
+    s9Selected = [false, false, false, false, false, false, false, false];
+    s9Checked = false;
+    s9Rotated = false;
+    for (let i = 0; i < 8; i++) {
+      const rotEl = document.getElementById(`s9-rot-${i}`);
+      if (rotEl) {
+        rotEl.style.transition = 'none';
+        rotEl.style.transform = 'rotate(0deg)';
+        setTimeout(() => { rotEl.style.transition = 'transform 1.25s cubic-bezier(0.34, 1.08, 0.64, 1)'; }, 40);
+      }
+    }
+    renderSlide9();
+    const fb = document.getElementById('s9-feedback');
+    if (fb) {
+      fb.className = 'hdcn-feedback-box';
+      fb.innerHTML = 'Nhấp chọn các biển báo giao thông có tâm đối xứng rồi bấm <b>✓ KIỂM TRA</b> (2,0 điểm).';
+    }
+  }
+
+  function renderSlide9() {
+    const pill = document.getElementById('s9-angle-pill');
+    if (pill) pill.textContent = s9Rotated ? 'Góc quay: 180°' : 'Góc quay: 0°';
+    for (let i = 0; i < 8; i++) {
+      const card = document.getElementById(`s9-card-${i}`);
+      const chk = document.getElementById(`s9-chk-${i}`);
+      const badge = document.getElementById(`s9-badge-${i}`);
+      const rotEl = document.getElementById(`s9-rot-${i}`);
+      const ghostEl = document.getElementById(`s9-ghost-${i}`);
+      const oEl = document.getElementById(`s9-o-${i}`);
+      if (!card) continue;
+      card.classList.remove('selected-item', 'checked-sym', 'checked-nonsym');
+      if (s9Selected[i]) card.classList.add('selected-item');
+      if (chk) chk.textContent = s9Selected[i] ? '✓' : '';
+      if (rotEl) rotEl.style.transform = s9Rotated ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (ghostEl) ghostEl.classList.toggle('visible', s9Rotated);
+      if (s9Checked) {
+        if (S9_IS_SYM[i]) {
+          card.classList.add('checked-sym');
+          if (badge) { badge.className = 'hdcn-status-badge show-sym'; badge.textContent = '✓ Có tâm O'; }
+          if (oEl) oEl.classList.add('visible');
+        } else {
+          card.classList.add('checked-nonsym');
+          if (badge) { badge.className = 'hdcn-status-badge show-nonsym'; badge.textContent = '✗ Không có'; }
+          if (oEl) oEl.classList.remove('visible');
+        }
+      } else {
+        if (badge) { badge.className = 'hdcn-status-badge'; badge.textContent = ''; }
+        if (oEl) oEl.classList.remove('visible');
+      }
+    }
+  }
+
+  function renderAll() {
+    renderSlide5();
+    renderSlide6();
+    renderSlide7();
+    renderSlide8();
+    renderSlide9();
+    updateScoreUI();
+  }
+</script>
+</body>
+</html>
