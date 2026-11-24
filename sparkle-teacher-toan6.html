@@ -1656,6 +1656,8 @@
       let realtimeChannel = null;
       let bc = null;
       let isConnected = false;
+      let isSubscribed = false;
+      const queuedBroadcasts = [];
 
       const MIGRATION_SQL = `-- SPARKLE ADMIN & TEACHER RBAC MIGRATION (Non-destructive)
 CREATE TABLE IF NOT EXISTS public.lessons (
@@ -1801,6 +1803,7 @@ END $$;`;
 
           if (realtimeChannel) client.removeChannel(realtimeChannel);
 
+          isSubscribed = false;
           realtimeChannel = client
             .channel('sparkle-global-sync', { config: { broadcast: { self: false } } })
             .on('broadcast', { event: 'sparkle_event' }, ({ payload }) => handleIncomingEvent(payload))
@@ -1809,7 +1812,15 @@ END $$;`;
             .on('postgres_changes', { event: '*', schema: 'public', table: 'student_submissions' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'exercises' }, () => syncFromSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'screen_sessions' }, () => syncFromSupabase())
             .subscribe((status) => {
+              isSubscribed = (status === 'SUBSCRIBED');
+              if (isSubscribed && queuedBroadcasts.length > 0) {
+                while (queuedBroadcasts.length > 0) {
+                  const qMsg = queuedBroadcasts.shift();
+                  realtimeChannel.send({ type: 'broadcast', event: 'sparkle_event', payload: qMsg }).catch(() => {});
+                }
+              }
               const ind = document.getElementById('room-realtime-indicator');
               if (ind) {
                 ind.innerHTML = status === 'SUBSCRIBED'
@@ -1856,14 +1867,41 @@ END $$;`;
           if (!partsRes.error && Array.isArray(partsRes.data)) {
             partsRes.data.forEach((p) => {
               const idx = AppState.state.participants.findIndex((x) => x.id === p.id);
+              const prev = idx >= 0 ? AppState.state.participants[idx] : {};
               const mapped = {
+                ...prev,
                 id: p.id, roomId: p.room_id, studentId: p.student_id, studentName: p.student_name || p.student_id,
                 sessionTokenHash: p.session_token_hash, status: p.status, joinedAt: p.joined_at, lastSeenAt: p.last_seen_at, removedAt: p.removed_at,
               };
-              if (idx >= 0) AppState.state.participants[idx] = { ...AppState.state.participants[idx], ...mapped };
+              if (idx >= 0) AppState.state.participants[idx] = mapped;
               else AppState.state.participants.push(mapped);
             });
           }
+          try {
+            const { data: sessData, error: sessErr } = await client.from('screen_sessions').select('*');
+            if (!sessErr && Array.isArray(sessData)) {
+              sessData.forEach((s) => {
+                const p = AppState.state.participants.find((x) => x.roomId === s.room_id && x.studentId === s.student_id && x.status !== 'removed');
+                const sig = s.signaling_data || {};
+                if (p && sig) {
+                  if (sig.fields && Object.keys(sig.fields).length > 0) p.liveFields = sig.fields;
+                  if (sig.exId && typeof sig.text === 'string') {
+                    p.liveDrafts = p.liveDrafts || {};
+                    p.liveDrafts[sig.exId] = { text: sig.text, updatedAt: sig.clientAt || s.started_at };
+                  }
+                  if (sig.activity) {
+                    const exists = (p.liveActivity || []).some((a) => a.time === sig.activity.time && a.label === sig.activity.label);
+                    if (!exists) p.liveActivity = [sig.activity, ...(p.liveActivity || [])].slice(0, 18);
+                  }
+                  if (sig.photoDataUrl) p.latestPhotoUrl = sig.photoDataUrl;
+                  if (sig.canvasDataUrl) p.latestCanvasUrl = sig.canvasDataUrl;
+                  if (sig.deviceMode) p.deviceMode = sig.deviceMode;
+                  if (s.status && p.screenStatus !== 'sharing') p.screenStatus = s.status;
+                  if (sig.clientAt) p.lastSeenAt = sig.clientAt;
+                }
+              });
+            }
+          } catch {}
           if (!subsRes.error && Array.isArray(subsRes.data)) {
             subsRes.data.forEach((s) => {
               const idx = AppState.state.submissions.findIndex((x) => x.id === s.id);
@@ -1966,7 +2004,32 @@ END $$;`;
         const msg = { eventType, payload, ts: Date.now() };
         if (bc) { try { bc.postMessage(msg); } catch {} }
         if (realtimeChannel && isConnected) {
-          realtimeChannel.send({ type: 'broadcast', event: 'sparkle_event', payload: msg }).catch(() => {});
+          if (isSubscribed) {
+            realtimeChannel.send({ type: 'broadcast', event: 'sparkle_event', payload: msg }).catch(() => {});
+          } else {
+            queuedBroadcasts.push(msg);
+          }
+        }
+        // Persist lightweight live telemetry to screen_sessions so cross-device teachers always see latest state
+        if (eventType === 'STUDENT_LIVE_PROGRESS' && payload && payload.roomId && payload.studentId) {
+          const safeTelemetry = {
+            exId: payload.exId || null,
+            text: payload.text || '',
+            fields: payload.fields || {},
+            activity: payload.activity || null,
+            deviceMode: payload.deviceMode || 'unknown',
+            clientAt: payload.clientAt || new Date().toISOString(),
+            photoDataUrl: payload.photoDataUrl || null,
+            canvasDataUrl: payload.canvasDataUrl || null,
+          };
+          upsertRecord('screen_sessions', {
+            id: `${payload.roomId}__${payload.studentId}__live`,
+            room_id: payload.roomId,
+            student_id: payload.studentId,
+            signaling_data: safeTelemetry,
+            status: payload.photoDataUrl ? 'mobile_photo' : 'live',
+            started_at: new Date().toISOString(),
+          }).catch(() => {});
         }
       }
 
@@ -3974,6 +4037,16 @@ END $$;`;
         const saved = sessionStorage.getItem(`sparkle_stu_${cleanCode}`);
         if (saved) { try { currentStudent = JSON.parse(saved); } catch {} }
         renderStudentView();
+        if (currentStudent && currentRoom.id && currentRoom.status === 'open') {
+          installLiveObservation();
+          sendObservation({ type: 'rejoin', label: `Đang làm bài (${isMobileOrTablet() ? 'ĐT/Tablet' : 'Máy tính'})` });
+          if (window.__sparkleStuHeartbeat) clearInterval(window.__sparkleStuHeartbeat);
+          window.__sparkleStuHeartbeat = setInterval(() => {
+            if (currentRoom && currentStudent && !removed) {
+              sendObservation(null, null);
+            }
+          }, 5000);
+        }
       }
 
       async function joinRoom(e) {
@@ -4003,6 +4076,13 @@ END $$;`;
         SupabaseEngine.broadcast('STUDENT_JOINED', { roomId: currentRoom.id, studentId, studentName: name });
         renderStudentView();
         installLiveObservation();
+        sendObservation({ type: 'join', label: `Đã vào phòng ${currentRoom.roomCode} (${isMobileOrTablet() ? 'ĐT/Tablet' : 'Máy tính'})` });
+        if (window.__sparkleStuHeartbeat) clearInterval(window.__sparkleStuHeartbeat);
+        window.__sparkleStuHeartbeat = setInterval(() => {
+          if (currentRoom && currentStudent && !removed) {
+            sendObservation(null, null);
+          }
+        }, 5000);
 
         // Sau khi tham gia phòng, tự mở bài tập đầu tiên ngay trong trang.
         // Ưu tiên bài tập gắn trực tiếp với Practice Room; nếu phòng chưa có
