@@ -1696,9 +1696,9 @@ END $$;`;
 
           if (!roomsRes.error && Array.isArray(roomsRes.data)) {
             roomsRes.data.forEach((r) => {
-              const key = `${r.lesson_id}__r${r.room_number}`;
+              const key = r.id || `${r.lesson_id}__r${r.room_number}__${r.teacher_id || 'shared'}`;
               AppState.state.practiceRooms[key] = {
-                id: r.id, lessonId: r.lesson_id, roomNumber: r.room_number, teacherId: r.teacher_id,
+                id: key, lessonId: r.lesson_id, roomNumber: r.room_number, teacherId: r.teacher_id,
                 roomCode: r.room_code, status: r.status, allowRejoin: r.allow_rejoin !== false,
                 createdAt: r.created_at, openedAt: r.opened_at, closedAt: r.closed_at,
               };
@@ -1968,9 +1968,9 @@ END $$;`;
           }
           if (Array.isArray(data) && data.length > 0) {
             const r = data[0];
-            const key = `${r.lesson_id}__r${r.room_number}`;
+            const key = r.id || `${r.lesson_id}__r${r.room_number}__${r.teacher_id || 'shared'}`;
             const mapped = {
-              id: r.id, lessonId: r.lesson_id, roomNumber: r.room_number, teacherId: r.teacher_id,
+              id: key, lessonId: r.lesson_id, roomNumber: r.room_number, teacherId: r.teacher_id,
               roomCode: r.room_code, status: r.status, allowRejoin: r.allow_rejoin !== false,
               createdAt: r.created_at, openedAt: r.opened_at, closedAt: r.closed_at,
             };
@@ -1993,9 +1993,11 @@ END $$;`;
           return [];
         }
         try {
+          const baseKey = AppState.extractBaseRoomKey ? AppState.extractBaseRoomKey(roomId) : roomId;
+          const roomKeys = Array.from(new Set([roomId, baseKey].filter(Boolean)));
           const { data, error } = await activeClient.from('exercises')
             .select('id, room_id, exercise_title, exercise_url, exercise_type, answer_key, max_score, created_at')
-            .eq('room_id', roomId)
+            .in('room_id', roomKeys)
             .order('created_at', { ascending: true });
           if (error) {
             lastSyncError = error.message || 'Không đọc được danh sách bài tập trong phòng.';
@@ -2008,8 +2010,8 @@ END $$;`;
             answerKey: ex.answer_key || '', maxScore: Number(ex.max_score || 10),
             sourceType: 'link', updatedAt: ex.created_at,
           }));
-          // Replace this room's cached list with the authoritative server list.
-          AppState.state.exercises = AppState.state.exercises.filter((ex) => ex.roomId !== roomId).concat(fetched);
+          // Replace cached exercises for these room keys with the authoritative server list.
+          AppState.state.exercises = AppState.state.exercises.filter((ex) => !roomKeys.includes(ex.roomId)).concat(fetched);
           AppState.persist(false);
           lastSyncError = '';
           return fetched;
@@ -2471,15 +2473,33 @@ END $$;`;
         persist();
       }
 
-      function getRoomKey(lessonId, roomNumber) { return `${lessonId}__r${roomNumber}`; }
+      function getBaseRoomKey(lessonId, roomNumber) { return `${lessonId}__r${roomNumber}`; }
 
-      function getOrInitRoom(lessonId, roomNumber) {
-        const key = getRoomKey(lessonId, roomNumber);
+      function extractBaseRoomKey(roomId) {
+        if (!roomId) return '';
+        const parts = String(roomId).split('__');
+        return parts.length >= 2 ? `${parts[0]}__${parts[1]}` : String(roomId);
+      }
+
+      function getRoomKey(lessonId, roomNumber, teacherId = null) {
+        const tid = teacherId || getCurrentAccount()?.id || 'admin_sparkle';
+        return `${lessonId}__r${roomNumber}__${tid}`;
+      }
+
+      function getAllRoomsForSlot(lessonId, roomNumber) {
+        return Object.values(state.practiceRooms).filter(
+          (r) => r && r.lessonId === lessonId && Number(r.roomNumber) === Number(roomNumber)
+        );
+      }
+
+      function getOrInitRoom(lessonId, roomNumber, teacherId = null) {
+        const tid = teacherId || getCurrentAccount()?.id || 'admin_sparkle';
+        const key = getRoomKey(lessonId, roomNumber, tid);
         if (!state.practiceRooms[key]) {
           const lesson = CurriculumData.getLessonById(lessonId);
           state.practiceRooms[key] = {
             id: key, lessonId, roomNumber,
-            teacherId: CurriculumData.DEFAULT_ROOM_TEACHERS[roomNumber] || 'teacher_trang',
+            teacherId: tid,
             roomCode: '', status: 'draft', allowRejoin: true,
             createdAt: null, openedAt: null, closedAt: null,
             lessonNum: lesson ? lesson.num : 0,
@@ -2495,7 +2515,8 @@ END $$;`;
       }
 
       async function saveRoom(room) {
-        const key = getRoomKey(room.lessonId, room.roomNumber);
+        const key = room.id || getRoomKey(room.lessonId, room.roomNumber, room.teacherId);
+        room.id = key;
         state.practiceRooms[key] = room;
         persist();
         const fullPayload = {
@@ -2525,7 +2546,16 @@ END $$;`;
         return res;
       }
 
-      function getRoomExercises(roomId) { return state.exercises.filter((e) => e.roomId === roomId); }
+      function getRoomExercises(roomId) {
+        const baseKey = extractBaseRoomKey(roomId);
+        const seen = new Set();
+        return state.exercises.filter((e) => {
+          if (e.roomId !== roomId && e.roomId !== baseKey) return false;
+          if (seen.has(e.id)) return false;
+          seen.add(e.id);
+          return true;
+        });
+      }
 
       async function addOrReplaceExercise(exercise, replaceId = null) {
         if (!requireAdmin('thêm hoặc chỉnh sửa bài luyện tập mẫu')) return { error: { message: 'Không đủ quyền.' } };
@@ -2629,13 +2659,14 @@ END $$;`;
         if (homeworks.length > 0) filledSections++;
 
         [1, 2, 3, 4].forEach((rNum) => {
-          const rKey = getRoomKey(lessonId, rNum);
-          const r = state.practiceRooms[rKey];
-          if (r && (r.status === 'open' || r.roomCode)) activeRooms++;
-          const exCount = getRoomExercises(rKey).length;
+          const baseKey = getBaseRoomKey(lessonId, rNum);
+          const slotRooms = getAllRoomsForSlot(lessonId, rNum);
+          const openInSlot = slotRooms.filter((r) => r.status === 'open' || r.roomCode);
+          if (openInSlot.length > 0) activeRooms++;
+          const exCount = getRoomExercises(baseKey).length;
           roomExercisesCount += exCount;
-          activeStudents += getRoomParticipants(rKey).length;
-          if ((r && r.roomCode) || exCount > 0) filledSections++;
+          slotRooms.forEach((r) => { activeStudents += getRoomParticipants(r.id).length; });
+          if (openInSlot.length > 0 || exCount > 0) filledSections++;
         });
 
         const totalMaterials = lectures.length + homeworks.length + roomExercisesCount;
@@ -2664,7 +2695,7 @@ END $$;`;
         state, getAccountById, getAssignableTeachers, getCurrentAccount, isAdmin, requireAdmin,
         verifyAccountPin, setAccountPin, createTeacherAccount, toggleAccountLock,
         reloadFromLocal, persist, getMaterialsForLesson, addOrReplaceMaterial, removeMaterial,
-        getHomeworkMeta, setHomeworkMeta, getRoomKey, getOrInitRoom, findRoomByCode, saveRoom,
+        getHomeworkMeta, setHomeworkMeta, getBaseRoomKey, extractBaseRoomKey, getAllRoomsForSlot, getRoomKey, getOrInitRoom, findRoomByCode, saveRoom,
         getRoomExercises, addOrReplaceExercise, removeExercise, getRoomParticipants, getRoomSubmissions,
         upsertParticipant, updateParticipantScreenStatus, addSubmission, updateSubmissionGrade,
         getLessonStats, getTopicStats,
@@ -3089,12 +3120,14 @@ END $$;`;
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 ${[1, 2, 3, 4].map((rNum) => {
-                  const room = AppState.getOrInitRoom(lessonId, rNum);
+                  const currentAcc = AppState.getCurrentAccount();
+                  const room = AppState.getOrInitRoom(lessonId, rNum, currentAcc?.id);
                   const participants = AppState.getRoomParticipants(room.id);
                   const exercises = AppState.getRoomExercises(room.id);
+                  const parallelOpen = AppState.getAllRoomsForSlot(lessonId, rNum).filter((r) => r.status === 'open').length;
                   const statusBadge =
                     room.status === 'open'
-                      ? `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Đang mở</span>`
+                      ? `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Phòng của bạn đang mở</span>`
                       : room.status === 'closed'
                       ? `<span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-600 text-[11px] font-bold">Đã đóng</span>`
                       : `<span class="px-2.5 py-1 rounded-full bg-gray-100 text-spark-text text-[11px] font-bold">Chưa tạo phòng</span>`;
@@ -3107,7 +3140,7 @@ END $$;`;
                             <div class="w-11 h-11 rounded-2xl bg-spark-gradient text-white font-extrabold text-sm flex items-center justify-center shadow-sm shrink-0">0${rNum + 1}</div>
                             <div>
                               <h3 class="text-base font-extrabold text-spark-navy">PRACTICE ROOM ${rNum}</h3>
-                              <div class="text-xs text-spark-text">Bài ${lesson.num} • Độc lập hoàn toàn</div>
+                              <div class="text-xs text-spark-text">Bài ${lesson.num} • Tách riêng theo từng GV${parallelOpen > 0 ? ` (${parallelOpen} phòng đang mở)` : ''}</div>
                             </div>
                           </div>
                           ${statusBadge}
@@ -3115,24 +3148,22 @@ END $$;`;
 
                         <div class="bg-spark-bg rounded-2xl p-3.5 space-y-2.5 text-xs">
                           <div class="flex items-center justify-between gap-2">
-                            <span class="text-spark-text font-medium">Giáo viên phụ trách:</span>
-                            <select onchange="PracticeRoomManager.changeRoomTeacher('${lessonId}', ${rNum}, this.value)" class="px-2.5 py-1 rounded-lg bg-white border border-gray-200 font-bold text-spark-navy focus:border-spark-pink outline-none cursor-pointer">
-                              ${assignableTeachers.map((t) => `<option value="${t.id}" ${t.id === room.teacherId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
-                            </select>
+                            <span class="text-spark-text font-medium">Giáo viên mở phòng:</span>
+                            <span class="font-bold text-spark-navy">${escapeHtml(currentAcc?.name || '')}</span>
                           </div>
                           <div class="flex items-center justify-between">
-                            <span class="text-spark-text font-medium">Mã phòng:</span>
+                            <span class="text-spark-text font-medium">Mã phòng riêng:</span>
                             <span class="font-mono font-bold ${room.roomCode ? 'text-spark-pink' : 'text-gray-400'}">${room.roomCode || 'Chưa khởi tạo'}</span>
                           </div>
                           <div class="flex items-center justify-between">
-                            <span class="text-spark-text font-medium">Bài luyện tập / Học sinh:</span>
+                            <span class="text-spark-text font-medium">Bài luyện tập chung / HS của bạn:</span>
                             <span class="font-bold text-spark-navy">${exercises.length} bài tập • ${participants.length} học sinh</span>
                           </div>
                         </div>
                       </div>
 
                       <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
-                        <button type="button" onclick="PracticeRoomManager.openRoomView('${lessonId}', ${rNum})" class="flex-1 btn-gradient py-2.5 px-4 rounded-xl text-white text-xs font-bold text-center">MỞ QUẢN LÝ PRACTICE ROOM ${rNum}</button>
+                        <button type="button" onclick="PracticeRoomManager.openRoomView('${lessonId}', ${rNum})" class="flex-1 btn-gradient py-2.5 px-4 rounded-xl text-white text-xs font-bold text-center">MỞ PRACTICE ROOM ${rNum} RIÊNG</button>
                         ${room.roomCode ? `<button type="button" onclick="PracticeRoomManager.copyRoomLink('${lessonId}', ${rNum})" class="px-3.5 py-2.5 rounded-xl bg-spark-orangePastel text-spark-orangeDark hover:bg-spark-orange hover:text-white text-xs font-bold transition-colors" title="Sao chép link học sinh">Link</button>` : ''}
                       </div>
                     </div>`;
@@ -3205,6 +3236,7 @@ END $$;`;
     const PracticeRoomManager = (() => {
       let currentLessonId = null;
       let currentRoomNumber = null;
+      let currentRoomTeacherId = null;
       let activeTab = 'dashboard';
       let selectedStudentIds = new Set();
       let monitoringStudentId = null;
@@ -3213,12 +3245,17 @@ END $$;`;
       let scoreSortDesc = true;
 
       function isOpen() { return Boolean(currentLessonId && currentRoomNumber); }
-      function getActiveRoom() { return currentLessonId && currentRoomNumber ? AppState.getOrInitRoom(currentLessonId, currentRoomNumber) : null; }
+      function getActiveRoom() {
+        if (!currentLessonId || !currentRoomNumber) return null;
+        const tid = currentRoomTeacherId || AppState.getCurrentAccount()?.id;
+        return AppState.getOrInitRoom(currentLessonId, currentRoomNumber, tid);
+      }
       function getStudentRoomUrl(roomCode) { return `${window.location.href.split('?')[0].split('#')[0]}?student_room=1&code=${encodeURIComponent(roomCode)}`; }
 
-      function openRoomView(lessonId, roomNumber) {
+      function openRoomView(lessonId, roomNumber, teacherId = null) {
         currentLessonId = lessonId;
         currentRoomNumber = roomNumber;
+        currentRoomTeacherId = teacherId || AppState.getCurrentAccount()?.id || 'admin_sparkle';
         activeTab = 'dashboard';
         selectedStudentIds.clear();
         document.getElementById('home-view').classList.add('hidden');
@@ -3260,11 +3297,14 @@ END $$;`;
       }
 
       function changeRoomTeacher(lessonId, roomNumber, teacherId) {
-        const room = AppState.getOrInitRoom(lessonId, roomNumber);
-        room.teacherId = teacherId;
-        AppState.saveRoom(room);
+        if (!AppState.isAdmin() && teacherId !== AppState.getCurrentAccount()?.id) {
+          Toast.show('Mỗi giáo viên chỉ mở và quản lý phòng riêng của tài khoản mình.', 'info');
+          renderRoomView();
+          return;
+        }
+        currentRoomTeacherId = teacherId;
         const teacher = AppState.getAccountById(teacherId);
-        Toast.show(`Đã phân công ${teacher.name} phụ trách Practice Room ${roomNumber}.`, 'success');
+        Toast.show(`Đang xem Practice Room ${roomNumber} riêng của ${teacher ? teacher.name : teacherId}.`, 'info');
         if (isOpen()) renderRoomView();
         else UIRenderer.renderLessonDetail();
       }
@@ -3329,7 +3369,8 @@ END $$;`;
       }
 
       function copyRoomLink(lessonId, roomNumber) {
-        const room = AppState.getOrInitRoom(lessonId, roomNumber);
+        const tid = isOpen() ? currentRoomTeacherId : AppState.getCurrentAccount()?.id;
+        const room = AppState.getOrInitRoom(lessonId, roomNumber, tid);
         if (!room.roomCode) { Toast.show('Vui lòng tạo phòng trước khi sao chép link.', 'info'); return; }
         copyTextSafe(getStudentRoomUrl(room.roomCode));
         Toast.show(`Đã sao chép link Practice Room ${roomNumber} (${room.roomCode})!`, 'success');
@@ -3364,12 +3405,16 @@ END $$;`;
                 </div>
                 <h1 class="text-xl sm:text-2xl font-extrabold text-spark-navy">PRACTICE ROOM ${room.roomNumber} – BÀI ${lesson.num}: ${escapeHtml(lesson.title)}</h1>
                 <div class="flex flex-wrap items-center gap-4 text-xs text-spark-text pt-1">
-                  <label class="flex items-center gap-2">
-                    <span>Giáo viên phụ trách:</span>
-                    <select onchange="PracticeRoomManager.changeRoomTeacher('${room.lessonId}', ${room.roomNumber}, this.value)" class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white font-bold text-spark-navy outline-none">
-                      ${assignableTeachers.map((t) => `<option value="${t.id}" ${t.id === room.teacherId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
-                    </select>
-                  </label>
+                  ${
+                    AppState.isAdmin()
+                      ? `<label class="flex items-center gap-2">
+                          <span>Phòng của GV:</span>
+                          <select onchange="PracticeRoomManager.changeRoomTeacher('${room.lessonId}', ${room.roomNumber}, this.value)" class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white font-bold text-spark-navy outline-none">
+                            ${assignableTeachers.map((t) => `<option value="${t.id}" ${t.id === room.teacherId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
+                          </select>
+                        </label>`
+                      : `<span>Phòng riêng của: <strong class="text-spark-navy">${escapeHtml(AppState.getAccountById(room.teacherId)?.name || '')}</strong></span>`
+                  }
                   <span>Mã phòng: <strong class="font-mono text-spark-pink text-sm">${room.roomCode || '—'}</strong></span>
                 </div>
               </div>
@@ -3488,8 +3533,8 @@ END $$;`;
                 ${
                   isAdmin
                     ? `<div class="flex gap-2">
-                        <button type="button" onclick="ModalManager.openUploadModal({ scope: 'exercise', roomId: '${room.id}', lessonId: '${room.lessonId}', roomNumber: ${room.roomNumber}, defaultTab: 'file' })" class="btn-gradient px-4 py-2 rounded-xl text-white text-xs font-bold">+ TẢI FILE BÀI TẬP</button>
-                        <button type="button" onclick="ModalManager.openUploadModal({ scope: 'exercise', roomId: '${room.id}', lessonId: '${room.lessonId}', roomNumber: ${room.roomNumber}, defaultTab: 'link' })" class="px-4 py-2 rounded-xl bg-white border border-spark-pink/40 text-spark-pink text-xs font-bold">+ DÁN LINK BÀI TẬP</button>
+                        <button type="button" onclick="ModalManager.openUploadModal({ scope: 'exercise', roomId: '${AppState.getBaseRoomKey(room.lessonId, room.roomNumber)}', lessonId: '${room.lessonId}', roomNumber: ${room.roomNumber}, defaultTab: 'file' })" class="btn-gradient px-4 py-2 rounded-xl text-white text-xs font-bold">+ TẢI FILE BÀI TẬP</button>
+                        <button type="button" onclick="ModalManager.openUploadModal({ scope: 'exercise', roomId: '${AppState.getBaseRoomKey(room.lessonId, room.roomNumber)}', lessonId: '${room.lessonId}', roomNumber: ${room.roomNumber}, defaultTab: 'link' })" class="px-4 py-2 rounded-xl bg-white border border-spark-pink/40 text-spark-pink text-xs font-bold">+ DÁN LINK BÀI TẬP</button>
                       </div>`
                     : ''
                 }
@@ -5712,4 +5757,3 @@ END $$;`;
 </body>
 
 </html>
-Fixing duplicate submissions and updating scoreboard data automatically
