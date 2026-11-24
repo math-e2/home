@@ -2589,7 +2589,9 @@ END $$;`;
       }
 
       function addSubmission(sub) {
-        state.submissions.unshift(sub);
+        const idx = state.submissions.findIndex((x) => x.id === sub.id);
+        if (idx >= 0) state.submissions[idx] = { ...state.submissions[idx], ...sub };
+        else state.submissions.unshift(sub);
         persist();
         SupabaseEngine.upsertRecord('student_submissions', {
           id: sub.id, room_id: sub.roomId, student_id: sub.studentId, exercise_id: sub.exerciseId,
@@ -3225,7 +3227,7 @@ END $$;`;
         renderRoomView();
         if (window.__sparkleRoomDashPoll) clearInterval(window.__sparkleRoomDashPoll);
         window.__sparkleRoomDashPoll = setInterval(() => {
-          if (isOpen() && activeTab === 'dashboard' && !monitoringStudentId && SupabaseEngine.syncFromSupabase) {
+          if (isOpen() && (activeTab === 'dashboard' || activeTab === 'scoreboard') && !monitoringStudentId && SupabaseEngine.syncFromSupabase) {
             SupabaseEngine.syncFromSupabase();
           }
         }, 3000);
@@ -3876,6 +3878,96 @@ END $$;`;
 
       let captureInProgress = false;
       let liveMirrorInterval = null;
+      let activeExerciseId = null;
+      let lastSyncedCompletionKey = '';
+
+      function extractScoreFromText(text) {
+        if (!text) return null;
+        const patterns = [
+          /TỔNG ĐIỂM(?: THANG \d+)?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/i,
+          /Điểm(?:\s+hiện tại|\s+tổng|\s+đạt)?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/i,
+          /(\d+(?:[.,]\d+)?)\s*\/\s*10 /
+        ];
+        for (const re of patterns) {
+          const m = text.match(re);
+          if (m) {
+            const val = parseFloat(String(m[1]).replace(',', '.'));
+            if (!isNaN(val)) return val;
+          }
+        }
+        return null;
+      }
+
+      function syncAutoCompletionFromHtml(scoreVal, summaryText = '') {
+        if (!currentRoom || !currentStudent) return;
+        const roomExercises = AppState.getRoomExercises(currentRoom.id) || [];
+        const exId = activeExerciseId || (roomExercises[0] && roomExercises[0].id);
+        if (!exId) return;
+
+        const cleanScore = (typeof scoreVal === 'number' && !isNaN(scoreVal)) ? scoreVal : 0;
+        const syncKey = `${currentRoom.id}__${currentStudent.studentId}__${exId}__${cleanScore}`;
+        if (lastSyncedCompletionKey === syncKey) return;
+        lastSyncedCompletionKey = syncKey;
+
+        const subId = `sub_${currentRoom.id}__${currentStudent.studentId}__${exId}`;
+        AppState.addSubmission({
+          id: subId,
+          roomId: currentRoom.id,
+          studentId: currentStudent.studentId,
+          exerciseId: exId,
+          answerData: {
+            text: summaryText || `Hoàn thành bài tập HTML (Điểm tự động: ${cleanScore}/10)`,
+            source: 'html_auto_sync',
+          },
+          autoScore: cleanScore,
+          teacherScore: null,
+          teacherFeedback: '',
+          submittedAt: new Date().toISOString(),
+          gradedAt: null,
+          gradedBy: null,
+          status: 'submitted',
+        });
+
+        currentStudent.status = 'submitted';
+        currentStudent.lastSeenAt = new Date().toISOString();
+        sessionStorage.setItem(`sparkle_stu_${currentRoom.roomCode}`, JSON.stringify(currentStudent));
+        AppState.upsertParticipant(currentStudent);
+        SupabaseEngine.broadcast('STUDENT_SUBMITTED', {
+          roomId: currentRoom.id,
+          studentId: currentStudent.studentId,
+          studentName: currentStudent.studentName,
+          score: cleanScore,
+        });
+        Toast.show(`Đã tự động ghi nhận điểm (${cleanScore} điểm) lên bảng điểm giáo viên!`, 'success');
+      }
+
+      function detectAndSyncIframeCompletion() {
+        if (!currentRoom || !currentStudent) return;
+        const frame = document.querySelector('#preview-modal iframe') || document.querySelector('#student-room-view iframe');
+        if (!frame) return;
+        try {
+          const doc = frame.contentDocument;
+          if (!doc || !doc.body) return;
+          const rawText = (doc.body.innerText || '').replace(/\s+/g, ' ').trim();
+          if (!rawText) return;
+          const isCompleted = /HOÀN TẤT PHIÊN LUYỆN TẬP|CHÚC MỪNG EM ĐÃ HOÀN THÀNH|TỔNG KẾT PHÒNG LUYỆN TẬP|PHIẾU KẾT QUẢ CÁ NHÂN|ĐÃ HOÀN THÀNH BÀI LUYỆN TẬP/i.test(rawText);
+          if (isCompleted) {
+            const parsedScore = extractScoreFromText(rawText);
+            if (parsedScore !== null) {
+              syncAutoCompletionFromHtml(parsedScore, `Hoàn thành bài luyện tập HTML • Điểm đạt: ${parsedScore}/10`);
+            }
+          }
+        } catch {}
+      }
+
+      window.addEventListener('message', (ev) => {
+        const d = ev.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'SPARKLE_SCORE' || d.type === 'SPARKLE_COMPLETE') {
+          const sc = parseFloat(d.score);
+          if (!isNaN(sc)) syncAutoCompletionFromHtml(sc, d.summary || '');
+        }
+      });
 
       async function captureActualExerciseScreen() {
         if (captureInProgress) return currentStudent?.latestCanvasUrl || null;
@@ -3977,6 +4069,7 @@ END $$;`;
         if (liveMirrorInterval) clearInterval(liveMirrorInterval);
         liveMirrorInterval = setInterval(() => {
           if (currentRoom && currentStudent && !removed && document.querySelector('#preview-modal:not(.hidden) iframe')) {
+            detectAndSyncIframeCompletion();
             sendObservation(null, null, true);
           }
         }, 2000);
@@ -4011,6 +4104,7 @@ END $$;`;
           const label = describeObservedTarget(ev.target);
           if (/^(button|a|BUTTON|A)$/.test(ev.target.tagName) || ev.target.closest('button,a,[role="button"]')) {
             queueObservation({ type: 'click', label: `Đã nhấn: ${label}` });
+            setTimeout(() => detectAndSyncIframeCompletion(), 350);
           }
         }, true);
         doc.addEventListener('pointerup', (ev) => {
@@ -4304,6 +4398,8 @@ END $$;`;
 
       async function startAndOpenExercise(id, scopeType) {
         if (!currentRoom || !currentStudent) return;
+        activeExerciseId = id;
+        lastSyncedCompletionKey = '';
         const list = scopeType === 'exercise' ? AppState.state.exercises : AppState.state.materials;
         const item = (list || []).find((x) => x.id === id);
 
@@ -5616,4 +5712,4 @@ END $$;`;
 </body>
 
 </html>
-Redesigning educational web interface navigation headers
+Fixing duplicate submissions and updating scoreboard data automatically
