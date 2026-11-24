@@ -1749,7 +1749,18 @@ CREATE TABLE IF NOT EXISTS public.screen_sessions (
   ended_at TIMESTAMPTZ
 );
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room_participants, public.student_submissions, public.screen_sessions;`;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room_participants, public.student_submissions, public.screen_sessions;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'exercises'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.exercises;
+  END IF;
+END $$;`;
 
       function init() {
         if ('BroadcastChannel' in window && !bc) {
@@ -1797,6 +1808,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'student_submissions' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, () => syncFromSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'exercises' }, () => syncFromSupabase())
             .subscribe((status) => {
               const ind = document.getElementById('room-realtime-indicator');
               if (ind) {
@@ -2060,10 +2072,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         return null;
       }
 
+      async function fetchExercisesForRoom(roomId) {
+        if (!roomId) return [];
+        const activeClient = (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.getClient)
+          ? window.SparkleSupabaseRBAC.getClient() : client;
+        if (!activeClient) {
+          lastSyncError = 'Thiết bị học sinh chưa kết nối Supabase.';
+          return [];
+        }
+        try {
+          const { data, error } = await activeClient.from('exercises')
+            .select('id, room_id, exercise_title, exercise_url, exercise_type, answer_key, max_score, created_at')
+            .eq('room_id', roomId)
+            .order('created_at', { ascending: true });
+          if (error) {
+            lastSyncError = error.message || 'Không đọc được danh sách bài tập trong phòng.';
+            console.error('Supabase fetch exercises error:', error);
+            return [];
+          }
+          const fetched = (data || []).map((ex) => ({
+            id: ex.id, roomId: ex.room_id, title: ex.exercise_title,
+            url: ex.exercise_url || '', format: ex.exercise_type || 'html',
+            answerKey: ex.answer_key || '', maxScore: Number(ex.max_score || 10),
+            sourceType: 'link', updatedAt: ex.created_at,
+          }));
+          // Replace this room's cached list with the authoritative server list.
+          AppState.state.exercises = AppState.state.exercises.filter((ex) => ex.roomId !== roomId).concat(fetched);
+          AppState.persist(false);
+          lastSyncError = '';
+          return fetched;
+        } catch (err) {
+          lastSyncError = err?.message || 'Lỗi khi tải bài tập của phòng.';
+          console.error('fetchExercisesForRoom exception:', err);
+          return [];
+        }
+      }
+
       function getLastError() { return lastSyncError; }
 
       return {
-        MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, fetchRoomDirectly, getLastError,
+        MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, fetchRoomDirectly, fetchExercisesForRoom, getLastError,
         upsertRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
@@ -2559,8 +2607,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 
       function getRoomExercises(roomId) { return state.exercises.filter((e) => e.roomId === roomId); }
 
-      function addOrReplaceExercise(exercise, replaceId = null) {
-        if (!requireAdmin('thêm hoặc chỉnh sửa bài luyện tập mẫu')) return;
+      async function addOrReplaceExercise(exercise, replaceId = null) {
+        if (!requireAdmin('thêm hoặc chỉnh sửa bài luyện tập mẫu')) return { error: { message: 'Không đủ quyền.' } };
         if (replaceId) {
           const idx = state.exercises.findIndex((e) => e.id === replaceId);
           if (idx !== -1) {
@@ -2570,11 +2618,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           } else state.exercises.push(exercise);
         } else state.exercises.push(exercise);
         persist();
-        SupabaseEngine.upsertRecord('exercises', {
+        const result = await SupabaseEngine.upsertRecord('exercises', {
           id: exercise.id, room_id: exercise.roomId, exercise_title: exercise.title,
-          exercise_url: exercise.url || null, exercise_type: exercise.format,
+          exercise_url: exercise.url || null, exercise_type: exercise.format || 'html',
           answer_key: exercise.answerKey || null, max_score: exercise.maxScore || 10,
         });
+        if (result?.error) {
+          console.error('Không lưu được bài tập lên Supabase:', result.error);
+          return result;
+        }
+        SupabaseEngine.broadcast('DATA_SYNC', { table: 'exercises', roomId: exercise.roomId, ts: Date.now() });
+        return result || { data: exercise };
       }
 
       async function removeExercise(exerciseId) {
@@ -3913,6 +3967,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           room = await SupabaseEngine.fetchRoomDirectly(cleanCode);
         }
         currentRoom = room || { id: '', roomCode: cleanCode, status: 'not_found' };
+        // Luôn đọc trực tiếp bài tập theo room_id từ Supabase để không phụ thuộc cache/localStorage.
+        if (currentRoom.id && currentRoom.status === 'open' && SupabaseEngine.fetchExercisesForRoom) {
+          await SupabaseEngine.fetchExercisesForRoom(currentRoom.id);
+        }
         const saved = sessionStorage.getItem(`sparkle_stu_${cleanCode}`);
         if (saved) { try { currentStudent = JSON.parse(saved); } catch {} }
         renderStudentView();
@@ -3921,6 +3979,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       async function joinRoom(e) {
         e.preventDefault();
         if (!currentRoom || currentRoom.status !== 'open') return;
+        if (SupabaseEngine.fetchExercisesForRoom) await SupabaseEngine.fetchExercisesForRoom(currentRoom.id);
         const nameInput = document.getElementById('stu-join-name');
         const name = (nameInput?.value || '').trim();
         if (!name) return;
@@ -4262,6 +4321,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           const blobKey = `blob_${id}`;
           await StorageAdapter.saveFileBlob(blobKey, selectedFile);
           const remoteUrl = await SupabaseEngine.uploadToSupabaseStorage(selectedFile, `${uploadCtx.lessonId}/${id}_${selectedFile.name}`);
+          if (!remoteUrl) {
+            errEl.textContent = 'Tệp chưa tải được lên Supabase Storage nên học sinh trên thiết bị khác sẽ không mở được. Hãy kiểm tra bucket/quyền Storage hoặc dán link HTML công khai ở tab Dán link.';
+            errEl.classList.remove('hidden');
+            return;
+          }
           const customTitle = document.getElementById('file-custom-title').value.trim();
           item = {
             id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
@@ -4286,7 +4350,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (uploadCtx.scope === 'exercise') {
           item.answerKey = document.getElementById('exercise-answer-key').value.trim();
           item.maxScore = Number(document.getElementById('exercise-max-score').value || 10);
-          AppState.addOrReplaceExercise(item, uploadCtx.replaceId);
+          const saveResult = await AppState.addOrReplaceExercise(item, uploadCtx.replaceId);
+          if (saveResult?.error) {
+            errEl.textContent = `Không lưu được bài tập vào phòng trên Supabase: ${saveResult.error.message || 'Lỗi quyền hoặc kết nối'}. Bài tập chưa được xác nhận lưu cho học sinh.`;
+            errEl.classList.remove('hidden');
+            return;
+          }
         } else {
           AppState.addOrReplaceMaterial(item, uploadCtx.replaceId);
         }
