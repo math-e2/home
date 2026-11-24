@@ -4482,6 +4482,11 @@ END $$;`;
         }
 
         if (!currentStudent) {
+          // Không vẽ lại form nhập tên khi ô nhập đã hiển thị (tránh mất chữ do Realtime từ phòng khác đồng bộ nền)
+          const existingJoinInput = document.getElementById('stu-join-name');
+          if (existingJoinInput && container.contains(existingJoinInput)) {
+            return;
+          }
           container.innerHTML = `
             <div class="bg-white rounded-3xl p-8 shadow-soft border border-gray-100 max-w-md mx-auto space-y-5">
               <div class="text-center">
@@ -5757,3 +5762,4 @@ END $$;`;
 </body>
 
 </html>
+Patching student view rendering logic
