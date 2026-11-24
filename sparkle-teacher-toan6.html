@@ -26,21 +26,21 @@
           },
           colors: {
             spark: {
-              orange: '#FF7900',
-              orangeDark: '#FF5A1F',
-              red: '#F03E23',
-              pink: '#F04491',
-              pinkPastel: '#FFE4EF',
-              orangePastel: '#FFF0E4',
-              bg: '#F8F8FA',
-              text: '#667085',
-              navy: '#20283A',
+              orange: '#F26419',
+              orangeDark: '#D94E0F',
+              red: '#E04819',
+              pink: '#F26419',
+              pinkPastel: '#FFF1E8',
+              orangePastel: '#FFE7D9',
+              bg: '#FFF9F5',
+              text: '#7A6B63',
+              navy: '#2B211B',
             }
           },
           boxShadow: {
-            'soft': '0 10px 30px -10px rgba(32, 40, 58, 0.08)',
-            'soft-lg': '0 20px 45px -12px rgba(240, 68, 145, 0.16), 0 12px 24px -10px rgba(255, 121, 0, 0.12)',
-            'glow': '0 8px 24px -4px rgba(240, 68, 145, 0.35)',
+            'soft': '0 10px 30px -10px rgba(242, 100, 25, 0.10)',
+            'soft-lg': '0 20px 45px -12px rgba(242, 100, 25, 0.18), 0 12px 24px -10px rgba(217, 78, 15, 0.12)',
+            'glow': '0 8px 24px -4px rgba(242, 100, 25, 0.35)',
           }
         }
       }
@@ -49,15 +49,15 @@
 
   <style>
     :root {
-      --spark-orange: #FF7900;
-      --spark-orange-dark: #FF5A1F;
-      --spark-pink: #F04491;
-      --spark-pink-pastel: #FFE4EF;
-      --spark-orange-pastel: #FFF0E4;
-      --spark-navy: #20283A;
-      --spark-gray: #667085;
-      --spark-bg: #F8F8FA;
-      --spark-gradient: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      --spark-orange: #F26419;
+      --spark-orange-dark: #D94E0F;
+      --spark-pink: #F26419;
+      --spark-pink-pastel: #FFF1E8;
+      --spark-orange-pastel: #FFE7D9;
+      --spark-navy: #2B211B;
+      --spark-gray: #7A6B63;
+      --spark-bg: #FFF9F5;
+      --spark-gradient: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
     }
 
     body {
@@ -69,10 +69,10 @@
 
     /* Brand Gradients */
     .bg-spark-gradient {
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
     }
     .text-spark-gradient {
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -81,7 +81,7 @@
     /* Header Navigation Hover Effect */
     .nav-link {
       position: relative;
-      color: #20283A;
+      color: #2B211B;
       font-weight: 500;
       transition: color 0.25s ease;
     }
@@ -93,12 +93,12 @@
       width: 0%;
       height: 2.5px;
       border-radius: 999px;
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       transition: width 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .nav-link:hover,
     .nav-link.active {
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -126,7 +126,7 @@
       inset: -1.5px;
       border-radius: 1.5rem;
       padding: 2px;
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -136,7 +136,7 @@
     }
     .topic-card:hover {
       transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 22px 44px -14px rgba(240, 68, 145, 0.18), 0 10px 24px -10px rgba(255, 121, 0, 0.14);
+      box-shadow: 0 22px 44px -14px rgba(242, 100, 25, 0.18), 0 10px 24px -10px rgba(255, 133, 51, 0.14);
       border-color: transparent;
       z-index: 5;
     }
@@ -173,9 +173,9 @@
     }
     .lesson-card:hover {
       transform: translateY(-4px);
-      background-color: #FFF7FA;
-      border-color: #FBD0E4;
-      box-shadow: 0 14px 30px -12px rgba(240, 68, 145, 0.14);
+      background-color: #FFF4ED;
+      border-color: #F7D2BC;
+      box-shadow: 0 14px 30px -12px rgba(242, 100, 25, 0.14);
     }
     .lesson-card .lesson-badge {
       background: #FFF0E4;
@@ -183,16 +183,16 @@
       transition: all 0.25s ease;
     }
     .lesson-card:hover .lesson-badge {
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(240, 68, 145, 0.28);
+      box-shadow: 0 4px 12px rgba(242, 100, 25, 0.28);
     }
 
     /* Hero Schedule Class Pill Hover Effects */
     .schedule-class-pill {
       position: relative;
       background: #FFFFFF;
-      border: 1.5px solid #FBD8E8;
+      border: 1.5px solid #F7D7C4;
       transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
       isolation: isolate;
     }
@@ -202,7 +202,7 @@
       inset: -1.5px;
       border-radius: 0.875rem;
       padding: 1.5px;
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -213,8 +213,8 @@
     .schedule-class-pill:hover {
       transform: translateY(-2px);
       border-color: transparent;
-      background-color: #FFF9FB;
-      box-shadow: 0 10px 22px -10px rgba(240, 68, 145, 0.28), 0 6px 14px -8px rgba(255, 121, 0, 0.2);
+      background-color: #FFF5EE;
+      box-shadow: 0 10px 22px -10px rgba(242, 100, 25, 0.28), 0 6px 14px -8px rgba(255, 133, 51, 0.2);
     }
     .schedule-class-pill:hover::before {
       opacity: 1;
@@ -238,7 +238,7 @@
 
     /* Button Gradient Animation */
     .btn-gradient {
-      background: linear-gradient(110deg, #F04491 0%, #FF7900 100%);
+      background: linear-gradient(110deg, #F26419 0%, #FF8533 100%);
       background-size: 160% 100%;
       background-position: 0% 50%;
       transition: background-position 0.35s ease, transform 0.2s ease, box-shadow 0.25s ease;
@@ -246,7 +246,7 @@
     .btn-gradient:hover {
       background-position: 100% 50%;
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px -6px rgba(240, 68, 145, 0.45);
+      box-shadow: 0 10px 24px -6px rgba(242, 100, 25, 0.45);
     }
     .btn-gradient:active {
       transform: translateY(0);
@@ -319,12 +319,12 @@
     }
     .hero-mascot-bounce { animation: heroJoyBounce 0.6s cubic-bezier(0.22, 1, 0.36, 1) !important; }
     .hero-floor-shadow {
-      background: radial-gradient(ellipse at center, rgba(240, 68, 145, 0.24) 0%, rgba(255, 121, 0, 0.16) 45%, rgba(255, 255, 255, 0) 74%);
+      background: radial-gradient(ellipse at center, rgba(242, 100, 25, 0.24) 0%, rgba(255, 133, 51, 0.16) 45%, rgba(255, 255, 255, 0) 74%);
       animation: heroFloorShadow 4.8s ease-in-out 0.75s infinite;
       pointer-events: none;
     }
     .hero-mascot-halo {
-      background: radial-gradient(ellipse at center, rgba(240, 68, 145, 0.12) 0%, rgba(255, 121, 0, 0.10) 45%, rgba(255, 255, 255, 0) 74%);
+      background: radial-gradient(ellipse at center, rgba(242, 100, 25, 0.12) 0%, rgba(255, 133, 51, 0.10) 45%, rgba(255, 255, 255, 0) 74%);
       filter: blur(26px);
       pointer-events: none;
     }
@@ -354,9 +354,9 @@
 
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #F8F8FA; }
+    ::-webkit-scrollbar-track { background: #FFF9F5; }
     ::-webkit-scrollbar-thumb { background: #D8DCE6; border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #F04491; }
+    ::-webkit-scrollbar-thumb:hover { background: #F26419; }
   </style>
 </head>
 <body class="antialiased selection:bg-spark-pinkPastel selection:text-spark-pink">
@@ -4282,7 +4282,7 @@ END $$;`;
           ctx.lineWidth = 2;
           ctx.strokeRect(28, 92, canvas.width - 56, 390);
 
-          ctx.fillStyle = '#F04491';
+          ctx.fillStyle = '#F26419';
           ctx.font = 'bold 14px "Be Vietnam Pro", sans-serif';
           ctx.fillText(`HỌC SINH: ${(currentStudent?.studentName || '').toUpperCase()}`, 52, 134);
 
@@ -5546,7 +5546,7 @@ END $$;`;
 
     bar.innerHTML = `
       <span>📱 ĐT/Tablet:</span>
-      <label style="background:linear-gradient(110deg,#F04491 0%,#FF7900 100%);color:#fff;padding:6px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+      <label style="background:linear-gradient(110deg,#F26419 0%,#FF7900 100%);color:#fff;padding:6px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
         <span>🖼️ Chụp ảnh màn hình gửi GV</span>
         <input id="sparkle-floating-photo-input" type="file" accept="image/*" style="display:none;" />
       </label>
@@ -5626,4 +5626,4 @@ END $$;`;
 </body>
 
 </html>
-Monitoring student progress continuously
+Analyzing application color schemes
