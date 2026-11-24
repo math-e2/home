@@ -1793,6 +1793,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           realtimeChannel = client
             .channel('sparkle-global-sync', { config: { broadcast: { self: false } } })
             .on('broadcast', { event: 'sparkle_event' }, ({ payload }) => handleIncomingEvent(payload))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_materials' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'student_submissions' }, () => syncFromSupabase())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, () => syncFromSupabase())
@@ -1822,11 +1823,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       async function syncFromSupabase() {
         if (!client) return;
         try {
-          const [roomsRes, partsRes, subsRes, exRes] = await Promise.all([
+          const [roomsRes, partsRes, subsRes, exRes, matsRes] = await Promise.all([
             client.from('practice_rooms').select('*'),
             client.from('room_participants').select('*'),
             client.from('student_submissions').select('*'),
             client.from('exercises').select('*'),
+            client.from('lesson_materials').select('*'),
           ]);
 
           if (!roomsRes.error && Array.isArray(roomsRes.data)) {
@@ -1874,6 +1876,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
               else AppState.state.exercises.push(mapped);
             });
           }
+          if (!matsRes.error && Array.isArray(matsRes.data)) {
+            matsRes.data.forEach((m) => {
+              const idx = AppState.state.materials.findIndex((x) => x.id === m.id);
+              const mapped = {
+                id: m.id,
+                lessonId: m.lesson_id,
+                materialType: m.material_type,
+                title: m.file_name,
+                format: m.file_type || detectFormatFromNameOrUrl(m.file_url || m.file_name),
+                sourceType: m.file_url ? 'link' : 'file',
+                blobKey: m.storage_path || null,
+                url: m.file_url || '',
+                updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
+              };
+              if (idx >= 0) AppState.state.materials[idx] = { ...AppState.state.materials[idx], ...mapped };
+              else AppState.state.materials.unshift(mapped);
+            });
+          }
 
           AppState.persist(false);
           UIRenderer.renderAll();
@@ -1893,7 +1913,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           const res = await activeClient.from(table).upsert(record, { onConflict: 'id' });
           if (res && res.error) {
             console.error(`Supabase upsert [${table}] error:`, res.error);
-            if (table === 'practice_rooms' || table === 'exercises') {
+            if (table === 'practice_rooms' || table === 'exercises' || table === 'lesson_materials') {
               Toast.show(`Lỗi đồng bộ Supabase (${table}): ${res.error.message}`, 'error');
             }
           }
@@ -1901,6 +1921,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         } catch (err) {
           console.error(`Supabase upsert [${table}] exception:`, err);
           return { error: err };
+        }
+      }
+
+      async function deleteRecord(table, id) {
+        const activeClient = (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.getClient)
+          ? window.SparkleSupabaseRBAC.getClient()
+          : client;
+        if (!activeClient) return;
+        try {
+          await activeClient.from(table).delete().eq('id', id);
+        } catch (err) {
+          console.error(`Supabase delete [${table}] error:`, err);
         }
       }
 
@@ -1955,6 +1987,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         } else if (eventType === 'STUDENT_REMOVED') {
           AppState.reloadFromLocal();
           if (StudentRoomManager.isOpen()) StudentRoomManager.handleRemovedSignal(payload.studentId, payload.roomId);
+        } else if (eventType === 'STUDENT_LIVE_PROGRESS') {
+          const p = AppState.state.participants.find((x) => x.roomId === payload.roomId && x.studentId === payload.studentId && x.status !== 'removed');
+          if (p) {
+            if (!p.liveDrafts) p.liveDrafts = {};
+            p.liveDrafts[payload.exId] = { text: payload.text, updatedAt: new Date().toISOString() };
+            if (payload.photoDataUrl) {
+              if (!p.livePhotos) p.livePhotos = {};
+              p.livePhotos[payload.exId] = payload.photoDataUrl;
+              p.latestPhotoUrl = payload.photoDataUrl;
+              p.screenStatus = 'mobile_photo';
+            } else {
+              p.screenStatus = 'mobile_live';
+            }
+            p.lastSeenAt = new Date().toISOString();
+          }
+          if (PracticeRoomManager.isOpen()) {
+            PracticeRoomManager.renderRoomView();
+            if (PracticeRoomManager.getMonitoringStudentId && PracticeRoomManager.getMonitoringStudentId() === payload.studentId) {
+              PracticeRoomManager.openStudentMonitor(payload.studentId);
+            }
+          }
         } else if (eventType.startsWith('WEBRTC_')) {
           WebRTCManager.handleSignal(eventType, payload);
         }
@@ -2003,7 +2056,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 
       return {
         MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, fetchRoomDirectly, getLastError,
-        upsertRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
+        upsertRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
 
@@ -2410,6 +2463,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (mat.sourceType === 'file' && mat.blobKey) await StorageAdapter.deleteFileBlob(mat.blobKey).catch(() => {});
         state.materials.splice(idx, 1);
         persist();
+        await SupabaseEngine.deleteRecord('lesson_materials', materialId);
         return true;
       }
 
@@ -2505,6 +2559,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (ex.sourceType === 'file' && ex.blobKey) await StorageAdapter.deleteFileBlob(ex.blobKey).catch(() => {});
         state.exercises.splice(idx, 1);
         persist();
+        await SupabaseEngine.deleteRecord('exercises', exerciseId);
         return true;
       }
 
@@ -3363,6 +3418,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                           : `<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">Đang làm</span>`;
                         const screenPill = p.screenStatus === 'sharing'
                           ? `<span class="px-2 py-0.5 rounded-full bg-spark-pinkPastel text-spark-pink text-[10px] font-bold">Đang chia sẻ MH</span>`
+                          : p.screenStatus === 'mobile_photo'
+                          ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">📱 Đã gửi ảnh bài</span>`
+                          : p.screenStatus === 'mobile_live'
+                          ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">📱 ĐT/Tablet đang làm</span>`
                           : `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-spark-text text-[10px] font-medium">Chưa chia sẻ MH</span>`;
 
                         return `
@@ -3482,7 +3541,25 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         document.getElementById('monitor-student-name').textContent = p.studentName || p.studentId;
         document.getElementById('monitor-student-meta').textContent = `Mã phòng: ${room.roomCode} • Tham gia lúc: ${formatDateVN(p.joinedAt)}`;
         document.getElementById('monitor-student-status').textContent = p.status === 'graded' ? 'Đã chấm' : p.status === 'submitted' ? 'Đã nộp bài' : 'Đang làm';
-        document.getElementById('monitor-screen-badge').textContent = p.screenStatus === 'sharing' ? 'Màn hình: Đang chia sẻ' : 'Màn hình: Chưa chia sẻ';
+        const isMobileLive = p.screenStatus === 'mobile_photo' || p.screenStatus === 'mobile_live';
+        document.getElementById('monitor-screen-badge').textContent =
+          p.screenStatus === 'sharing' ? 'Màn hình: Đang chia sẻ (PC)' :
+          p.screenStatus === 'mobile_photo' ? '📱 ĐT/Tablet: Đã gửi ảnh bài làm' :
+          p.screenStatus === 'mobile_live' ? '📱 ĐT/Tablet: Đang gõ bài trực tiếp' :
+          'Màn hình: Chưa chia sẻ';
+
+        const phEl = document.getElementById('teacher-remote-placeholder');
+        const stText = document.getElementById('teacher-remote-status-text');
+        if (phEl && stText) {
+          if (p.latestPhotoUrl) {
+            phEl.classList.remove('hidden');
+            phEl.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center p-2"><img src="${p.latestPhotoUrl}" alt="Ảnh bài làm học sinh" class="max-h-[240px] rounded-xl border border-white/20 shadow-lg object-contain" /><span class="text-[11px] text-emerald-300 font-bold mt-1.5">📱 Ảnh chụp bài làm trực tiếp từ ĐT/Tablet</span></div>`;
+          } else if (isMobileLive) {
+            const draftsList = Object.values(p.liveDrafts || {}).map(d => d.text).filter(Boolean).join(' | ');
+            phEl.classList.remove('hidden');
+            stText.textContent = draftsList ? `📱 Học sinh đang nhập trên ĐT/Tablet: "${draftsList}"` : '📱 Học sinh đang làm bài trên Điện thoại/Tablet';
+          }
+        }
 
         const subs = AppState.getRoomSubmissions(room.id, studentId);
         const exercises = AppState.getRoomExercises(room.id);
@@ -3498,7 +3575,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                     return `
                       <div class="p-3.5 rounded-2xl bg-spark-bg border border-gray-200 space-y-2 text-xs">
                         <div class="font-bold text-spark-navy">${ex ? escapeHtml(ex.title) : 'Bài tập'}</div>
-                        <div class="bg-white p-2.5 rounded-xl border border-gray-100 whitespace-pre-wrap">${escapeHtml(s.answerData?.text || JSON.stringify(s.answerData))}</div>
+                        <div class="bg-white p-2.5 rounded-xl border border-gray-100 whitespace-pre-wrap">${escapeHtml(s.answerData?.text || '')}${s.answerData?.photoDataUrl ? `<img src="${s.answerData.photoDataUrl}" alt="Ảnh bài nộp" class="mt-2 max-h-44 rounded-lg border border-gray-200" />` : ''}</div>
                         <div class="grid grid-cols-3 gap-2 pt-1">
                           <input id="grade-score-${s.id}" type="number" step="0.25" min="0" max="100" value="${s.teacherScore ?? s.autoScore ?? ''}" placeholder="Điểm" class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white outline-none font-bold" />
                           <input id="grade-fb-${s.id}" type="text" value="${escapeHtml(s.teacherFeedback || '')}" placeholder="Nhận xét..." class="col-span-2 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white outline-none" />
@@ -3590,8 +3667,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         Toast.show('Đã xuất bảng điểm CSV!', 'success');
       }
 
+      function getMonitoringStudentId() { return monitoringStudentId; }
       return {
-        isOpen, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
+        isOpen, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
         createOrResetRoom, setRoomStatus, toggleAllowRejoin, publishAndCopyLink,
         copyRoomLink, previewStudentInterface, renderRoomView, openStudentMonitor,
         closeStudentMonitor, requestStudentScreen, saveGrade, removeStudent,
@@ -3606,6 +3684,39 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       let currentRoom = null;
       let currentStudent = null;
       let removed = false;
+      let liveSyncTimer = null;
+
+      function isMobileOrTablet() {
+        const ua = navigator.userAgent || '';
+        const isTouchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+        return /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua) || isTouchMac || !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+      }
+
+      function compressImageToDataUrl(file, maxDim = 1024, quality = 0.72) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              let w = img.width, h = img.height;
+              if (w > maxDim || h > maxDim) {
+                if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                else { w = Math.round((w * maxDim) / h); h = maxDim; }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = ev.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
       function isOpen() { return Boolean(currentRoom); }
       function isMatchingStudent(roomId, studentId) { return Boolean(currentRoom && currentStudent && currentRoom.id === roomId && currentStudent.studentId === studentId); }
@@ -3664,13 +3775,67 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         renderStudentView();
       }
 
+      function handleLiveDraftInput(exId, val) {
+        if (!currentRoom || !currentStudent) return;
+        if (!currentStudent.liveDrafts) currentStudent.liveDrafts = {};
+        currentStudent.liveDrafts[exId] = {
+          text: val,
+          updatedAt: new Date().toISOString()
+        };
+        currentStudent.lastSeenAt = new Date().toISOString();
+        if (isMobileOrTablet() && currentStudent.screenStatus !== 'mobile_photo') {
+          currentStudent.screenStatus = 'mobile_live';
+        }
+        if (liveSyncTimer) clearTimeout(liveSyncTimer);
+        liveSyncTimer = setTimeout(() => {
+          AppState.upsertParticipant(currentStudent);
+          SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', {
+            roomId: currentRoom.id,
+            studentId: currentStudent.studentId,
+            exId,
+            text: val,
+            photoDataUrl: currentStudent.latestPhotoUrl || null,
+            deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop'
+          });
+        }, 500);
+      }
+
+      async function handlePhotoUpload(exId, files) {
+        if (!currentRoom || !currentStudent || !files || !files[0]) return;
+        Toast.show('Đang xử lý & gửi ảnh bài làm lên giáo viên...', 'info');
+        try {
+          const dataUrl = await compressImageToDataUrl(files[0], 1024, 0.74);
+          if (!currentStudent.livePhotos) currentStudent.livePhotos = {};
+          currentStudent.livePhotos[exId] = dataUrl;
+          currentStudent.latestPhotoUrl = dataUrl;
+          currentStudent.screenStatus = 'mobile_photo';
+          currentStudent.lastSeenAt = new Date().toISOString();
+          AppState.upsertParticipant(currentStudent);
+
+          SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', {
+            roomId: currentRoom.id,
+            studentId: currentStudent.studentId,
+            exId,
+            text: document.getElementById(`stu-ans-${exId}`)?.value || '',
+            photoDataUrl: dataUrl,
+            deviceMode: 'mobile_tablet'
+          });
+
+          Toast.show('Đã gửi ảnh bài làm trực tiếp cho giáo viên!', 'success');
+          renderStudentView();
+        } catch (err) {
+          Toast.show('Không thể xử lý ảnh. Em hãy thử chụp lại nhé.', 'error');
+        }
+      }
+
       function submitExercise(exId) {
         if (!currentRoom || !currentStudent) return;
         const ans = (document.getElementById(`stu-ans-${exId}`)?.value || '').trim();
-        if (!ans) { Toast.show('Vui lòng nhập câu trả lời trước khi nộp.', 'error'); return; }
+        const photoUrl = (currentStudent.livePhotos && currentStudent.livePhotos[exId]) || '';
+        if (!ans && !photoUrl) { Toast.show('Vui lòng nhập đáp án hoặc chụp ảnh bài làm trước khi nộp.', 'error'); return; }
         const ex = AppState.getRoomExercises(currentRoom.id).find((x) => x.id === exId);
         let autoScore = null;
-        if (ex && ex.answerKey && ans.toLowerCase() === ex.answerKey.trim().toLowerCase()) {
+        if (ex && ex.answerKey && ans && ans.toLowerCase() === ex.answerKey.trim().toLowerCase()) {
           autoScore = Number(ex.maxScore || 10);
         }
         AppState.addSubmission({
@@ -3678,7 +3843,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           roomId: currentRoom.id,
           studentId: currentStudent.studentId,
           exerciseId: exId,
-          answerData: { text: ans },
+          answerData: { text: ans, photoDataUrl: photoUrl || null },
           autoScore,
           teacherScore: null,
           teacherFeedback: '',
@@ -3736,11 +3901,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           return;
         }
 
+        const mobileMode = isMobileOrTablet();
         const isSharing = WebRTCManager.isStudentSharing();
         if (topRight) {
-          topRight.innerHTML = `
-            <span class="text-xs font-bold text-spark-navy hidden sm:inline">${escapeHtml(currentStudent.studentName)}</span>
-            <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ MH' : 'Chia sẻ màn hình'}</button>`;
+          if (mobileMode) {
+            topRight.innerHTML = `
+              <span class="text-xs font-bold text-spark-navy truncate max-w-[110px]">${escapeHtml(currentStudent.studentName)}</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">📱 ĐT/Tablet • Đồng bộ trực tiếp</span>`;
+          } else {
+            topRight.innerHTML = `
+              <span class="text-xs font-bold text-spark-navy hidden sm:inline">${escapeHtml(currentStudent.studentName)}</span>
+              <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ MH' : 'Chia sẻ màn hình'}</button>`;
+          }
         }
 
         const exercises = AppState.getRoomExercises(currentRoom.id);
@@ -3752,6 +3924,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
               <div>
                 <div class="text-xs font-bold text-spark-pink">PHÒNG ${escapeHtml(currentRoom.roomCode)}</div>
                 <h2 class="text-lg font-extrabold text-spark-navy">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
+                <p class="text-[11px] text-spark-text mt-0.5">${mobileMode ? 'Chế độ Điện thoại/Tablet: Bài gõ và ảnh chụp vở bài làm của em tự động gửi trực tiếp cho giáo viên.' : 'Chế độ Máy tính: Có thể bật Chia sẻ màn hình hoặc nộp bài trực tiếp bên dưới.'}</p>
               </div>
               <div class="text-xs text-spark-text">Đã nộp: <strong>${mySubs.length}</strong> bài</div>
             </div>
@@ -3760,15 +3933,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                 ? `<div class="bg-white rounded-3xl p-8 text-center text-xs sm:text-sm text-spark-text border border-gray-100">Giáo viên chưa đăng bài luyện tập nào trong phòng này.</div>`
                 : exercises.map((ex) => {
                     const sub = mySubs.find((s) => s.exerciseId === ex.id);
+                    const draftText = (currentStudent.liveDrafts && currentStudent.liveDrafts[ex.id]?.text) ?? sub?.answerData?.text ?? '';
+                    const photoPreview = (currentStudent.livePhotos && currentStudent.livePhotos[ex.id]) || sub?.answerData?.photoDataUrl || '';
                     return `
                       <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-soft space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                           <h3 class="text-base font-extrabold text-spark-navy">${escapeHtml(ex.title)}</h3>
                           <button type="button" onclick="ModalManager.openPreviewModal('${ex.id}', 'exercise')" class="px-3 py-1.5 rounded-xl bg-spark-orangePastel text-spark-orangeDark text-xs font-bold">Mở đề bài</button>
                         </div>
-                        <textarea id="stu-ans-${ex.id}" rows="3" placeholder="Nhập bài làm / đáp án của em..." class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none">${escapeHtml(sub?.answerData?.text || '')}</textarea>
+                        <textarea id="stu-ans-${ex.id}" rows="3" oninput="StudentRoomManager.handleLiveDraftInput('${ex.id}', this.value)" placeholder="Nhập bài làm / đáp án của em..." class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none">${escapeHtml(draftText)}</textarea>
+                        
+                        <div class="p-3 rounded-2xl bg-spark-bg border border-dashed border-spark-pink/40 flex flex-wrap items-center justify-between gap-2">
+                          <div class="text-xs text-spark-navy font-semibold">📷 Chụp ảnh bài làm / màn hình (ĐT &amp; Tablet):</div>
+                          <label class="px-3.5 py-1.5 rounded-xl bg-white border border-spark-pink/40 text-spark-pink hover:bg-spark-pink hover:text-white text-xs font-bold cursor-pointer transition-colors">
+                            <span>${photoPreview ? 'Chụp / Đổi ảnh khác' : 'Chụp ảnh gửi GV'}</span>
+                            <input type="file" accept="image/*" capture="environment" class="hidden" onchange="StudentRoomManager.handlePhotoUpload('${ex.id}', this.files)" />
+                          </label>
+                          ${photoPreview ? `<div class="w-full mt-2"><img src="${photoPreview}" alt="Ảnh bài làm" class="max-h-48 rounded-xl border border-gray-200 shadow-sm mx-auto" /></div>` : ''}
+                        </div>
+
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                          <div class="text-xs text-spark-text">${sub ? `Đã nộp lúc ${formatDateVN(sub.submittedAt)}${sub.teacherScore !== null && sub.teacherScore !== undefined ? ` • <strong class="text-emerald-600">Điểm GV: ${sub.teacherScore}</strong> (${escapeHtml(sub.teacherFeedback || '')})` : ''}` : 'Chưa nộp'}</div>
+                          <div class="text-xs text-spark-text">${sub ? `Đã nộp lúc ${formatDateVN(sub.submittedAt)}${sub.teacherScore !== null && sub.teacherScore !== undefined ? ` • <strong class="text-emerald-600">Điểm GV: ${sub.teacherScore}</strong> (${escapeHtml(sub.teacherFeedback || '')})` : ''}` : 'Đang đồng bộ tiến độ...'}</div>
                           <button type="button" onclick="StudentRoomManager.submitExercise('${ex.id}')" class="btn-gradient px-5 py-2 rounded-xl text-white text-xs font-bold">Nộp bài</button>
                         </div>
                       </div>`;
@@ -3777,7 +3962,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           </div>`;
       }
 
-      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, submitExercise, handleRemovedSignal, renderStudentView };
+      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView };
     })();
 
     /* =====================================================================
