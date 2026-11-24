@@ -4203,6 +4203,13 @@ END $$;`;
         }
       }
 
+      async function startAndOpenExercise(id, scopeType) {
+        if (currentRoom && currentStudent && !WebRTCManager.isStudentSharing()) {
+          await WebRTCManager.startStudentScreenShare(currentRoom.id, currentStudent.studentId);
+        }
+        await ModalManager.openMaterialInNewTab(id, scopeType);
+      }
+
       function renderStudentView() {
         const container = document.getElementById('student-room-container');
         const topRight = document.getElementById('student-topbar-right');
@@ -4241,7 +4248,7 @@ END $$;`;
         if (topRight) {
           topRight.innerHTML = `
             <span class="text-xs font-bold text-spark-navy truncate max-w-[120px]">${escapeHtml(currentStudent.studentName)}</span>
-            <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ màn hình' : 'Chia sẻ màn hình'}</button>`;
+            ${isSharing ? `<button type="button" onclick="WebRTCManager.stopStudentScreenShare()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white">Ngừng chia sẻ màn hình</button>` : `<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">Chờ chia sẻ MH</span>`}`;
         }
 
         let exercises = AppState.getRoomExercises(currentRoom.id);
@@ -4267,9 +4274,9 @@ END $$;`;
               <div>
                 <div class="text-xs font-bold text-spark-pink">PHÒNG ${escapeHtml(currentRoom.roomCode)}</div>
                 <h2 class="text-xl font-extrabold text-spark-navy mt-0.5">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
-                <p class="text-xs text-spark-text mt-1">Nhấn <strong>Mở bài tập</strong> để làm bài và nhấn <strong>Chia sẻ màn hình</strong> để cấp quyền xem màn hình cho giáo viên.</p>
+                <p class="text-xs text-spark-text mt-1">Bấm <strong>Mở bài tập</strong> để cấp quyền chia sẻ màn hình cho giáo viên và mở bài tập ngay.</p>
               </div>
-              <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-4 py-2.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ màn hình' : 'Chia sẻ màn hình'}</button>
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${isSharing ? 'bg-emerald-100 text-emerald-700' : 'bg-spark-orangePastel text-spark-orangeDark'}">${isSharing ? 'Đang chia sẻ màn hình' : 'Sẵn sàng mở bài'}</span>
             </div>
 
             ${
@@ -4286,7 +4293,7 @@ END $$;`;
                           <h3 class="text-base font-extrabold text-spark-navy truncate">${escapeHtml(ex.title)}</h3>
                           ${ex.url ? `<div class="text-xs text-spark-text truncate mt-0.5">${escapeHtml(ex.url)}</div>` : ''}
                         </div>
-                        <button type="button" onclick="ModalManager.openMaterialInNewTab('${ex.id}', '${scopeType}')" class="btn-gradient px-5 py-2.5 rounded-xl text-white text-xs font-bold shrink-0">Mở bài tập</button>
+                        <button type="button" onclick="StudentRoomManager.startAndOpenExercise('${ex.id}', '${scopeType}')" class="btn-gradient px-5 py-2.5 rounded-xl text-white text-xs font-bold shrink-0">Mở bài tập</button>
                       </div>`;
                   }).join('')
             }
@@ -4304,7 +4311,7 @@ END $$;`;
         window.open(safeUrl, '_blank', 'noopener,noreferrer');
       }
 
-      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink };
+      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink, startAndOpenExercise };
     })();
 
     /* =====================================================================
