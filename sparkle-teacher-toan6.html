@@ -1587,13 +1587,24 @@
         localStorage.setItem(PROFILE_KEY, JSON.stringify(auth));
       }
 
+      const DEFAULT_SUPABASE_CFG = {
+        url: 'https://kcswjakmlxazmdkbuffk.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjc3dqYWttbHhhem1ka2J1ZmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDY4MzQsImV4cCI6MjExMDk4MjgzNH0.kg9nnqx1R5AMYX5avbvRwa0S1myFuItfyZ4rTNeX0vo',
+        bucket: 'sparkle-materials'
+      };
+
       function loadSupabaseConfig() {
         try {
           const raw = localStorage.getItem(SUPABASE_KEY);
-          if (!raw) return { url: '', anonKey: '', bucket: 'sparkle-materials' };
-          return JSON.parse(raw);
+          if (!raw) return { ...DEFAULT_SUPABASE_CFG };
+          const parsed = JSON.parse(raw);
+          return {
+            url: parsed.url || DEFAULT_SUPABASE_CFG.url,
+            anonKey: parsed.anonKey || DEFAULT_SUPABASE_CFG.anonKey,
+            bucket: parsed.bucket || DEFAULT_SUPABASE_CFG.bucket
+          };
         } catch {
-          return { url: '', anonKey: '', bucket: 'sparkle-materials' };
+          return { ...DEFAULT_SUPABASE_CFG };
         }
       }
 
@@ -1874,8 +1885,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       }
 
       async function upsertRecord(table, record) {
-        if (!client) return;
-        try { await client.from(table).upsert(record); } catch {}
+        const activeClient = (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.getClient)
+          ? window.SparkleSupabaseRBAC.getClient()
+          : client;
+        if (!activeClient) return { error: { message: 'Chưa kết nối Supabase' } };
+        try {
+          const res = await activeClient.from(table).upsert(record, { onConflict: 'id' });
+          if (res && res.error) {
+            console.error(`Supabase upsert [${table}] error:`, res.error);
+            if (table === 'practice_rooms' || table === 'exercises') {
+              Toast.show(`Lỗi đồng bộ Supabase (${table}): ${res.error.message}`, 'error');
+            }
+          }
+          return res;
+        } catch (err) {
+          console.error(`Supabase upsert [${table}] exception:`, err);
+          return { error: err };
+        }
       }
 
       async function uploadToSupabaseStorage(file, path) {
@@ -1941,8 +1967,42 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 
       function getStatus() { return { isConnected, hasClient: Boolean(client) }; }
 
+      let lastSyncError = '';
+
+      async function fetchRoomDirectly(cleanCode) {
+        if (!client) return null;
+        try {
+          const { data, error } = await client
+            .from('practice_rooms')
+            .select('*')
+            .ilike('room_code', cleanCode)
+            .limit(1);
+          if (error) {
+            lastSyncError = error.message;
+            return null;
+          }
+          if (Array.isArray(data) && data.length > 0) {
+            const r = data[0];
+            const key = `${r.lesson_id}__r${r.room_number}`;
+            const mapped = {
+              id: r.id, lessonId: r.lesson_id, roomNumber: r.room_number, teacherId: r.teacher_id,
+              roomCode: r.room_code, status: r.status, allowRejoin: r.allow_rejoin !== false,
+              createdAt: r.created_at, openedAt: r.opened_at, closedAt: r.closed_at,
+            };
+            AppState.state.practiceRooms[key] = mapped;
+            AppState.persist(false);
+            return mapped;
+          }
+        } catch (e) {
+          lastSyncError = e.message || 'Lỗi mạng';
+        }
+        return null;
+      }
+
+      function getLastError() { return lastSyncError; }
+
       return {
-        MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase,
+        MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, fetchRoomDirectly, getLastError,
         upsertRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
@@ -2386,15 +2446,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         return Object.values(state.practiceRooms).find((r) => r.roomCode && r.roomCode.toUpperCase() === clean) || null;
       }
 
-      function saveRoom(room) {
+      async function saveRoom(room) {
         const key = getRoomKey(room.lessonId, room.roomNumber);
         state.practiceRooms[key] = room;
         persist();
-        SupabaseEngine.upsertRecord('practice_rooms', {
-          id: room.id, lesson_id: room.lessonId, room_number: room.roomNumber, teacher_id: room.teacherId,
-          room_code: room.roomCode || `DRAFT-${room.id}`, status: room.status, allow_rejoin: room.allowRejoin,
-          opened_at: room.openedAt, closed_at: room.closedAt,
-        });
+        const fullPayload = {
+          id: room.id,
+          lesson_id: room.lessonId,
+          room_number: room.roomNumber,
+          teacher_id: room.teacherId,
+          room_code: room.roomCode || `DRAFT-${room.id}`,
+          status: room.status,
+          allow_rejoin: room.allowRejoin,
+          opened_at: room.openedAt,
+          closed_at: room.closedAt,
+        };
+        let res = await SupabaseEngine.upsertRecord('practice_rooms', fullPayload);
+        // Fallback if an older schema has fewer columns (e.g. without allow_rejoin/opened_at/closed_at)
+        if (res && res.error) {
+          const minPayload = {
+            id: room.id,
+            lesson_id: room.lessonId,
+            room_number: room.roomNumber,
+            teacher_id: room.teacherId,
+            room_code: room.roomCode || `DRAFT-${room.id}`,
+            status: room.status,
+          };
+          res = await SupabaseEngine.upsertRecord('practice_rooms', minPayload);
+        }
+        return res;
       }
 
       function getRoomExercises(roomId) { return state.exercises.filter((e) => e.roomId === roomId); }
@@ -3122,7 +3202,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         else UIRenderer.renderLessonDetail();
       }
 
-      function createOrResetRoom() {
+      async function createOrResetRoom() {
         const room = getActiveRoom();
         if (!room) return;
         const lesson = CurriculumData.getLessonById(room.lessonId);
@@ -3130,46 +3210,55 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         room.status = 'open';
         room.createdAt = room.createdAt || new Date().toISOString();
         room.openedAt = new Date().toISOString();
-        AppState.saveRoom(room);
+        const res = await AppState.saveRoom(room);
         renderRoomView();
-        Toast.show(`Đã tạo & mở phòng với mã ${room.roomCode}!`, 'success');
+        if (!res || !res.error) {
+          Toast.show(`Đã tạo & đồng bộ phòng ${room.roomCode} lên Supabase!`, 'success');
+        }
       }
 
-      function setRoomStatus(newStatus) {
+      async function setRoomStatus(newStatus) {
         const room = getActiveRoom();
         if (!room) return;
-        if (!room.roomCode) { createOrResetRoom(); return; }
+        if (!room.roomCode) { await createOrResetRoom(); return; }
         room.status = newStatus;
         if (newStatus === 'open') room.openedAt = new Date().toISOString();
         if (newStatus === 'closed') room.closedAt = new Date().toISOString();
-        AppState.saveRoom(room);
+        const res = await AppState.saveRoom(room);
         renderRoomView();
-        Toast.show(newStatus === 'open' ? 'Phòng luyện tập đã MỞ cho học sinh tham gia.' : 'Phòng luyện tập đã ĐÓNG.', 'info');
+        if (!res || !res.error) {
+          Toast.show(newStatus === 'open' ? `Phòng ${room.roomCode} đã MỞ & đồng bộ lên Supabase!` : 'Phòng luyện tập đã ĐÓNG.', 'info');
+        }
       }
 
-      function toggleAllowRejoin(checked) {
+      async function toggleAllowRejoin(checked) {
         const room = getActiveRoom();
         if (!room) return;
         room.allowRejoin = checked;
-        AppState.saveRoom(room);
+        await AppState.saveRoom(room);
       }
 
-      function publishAndCopyLink() {
+      async function publishAndCopyLink() {
         const room = getActiveRoom();
         if (!room) return;
-        if (!room.roomCode || room.status !== 'open') {
-          if (!room.roomCode) {
-            const lesson = CurriculumData.getLessonById(room.lessonId);
-            room.roomCode = generateRoomCode(lesson.num, room.roomNumber);
-            room.createdAt = new Date().toISOString();
-          }
-          room.status = 'open';
-          room.openedAt = new Date().toISOString();
-          AppState.saveRoom(room);
-          renderRoomView();
+        if (!room.roomCode) {
+          const lesson = CurriculumData.getLessonById(room.lessonId);
+          room.roomCode = generateRoomCode(lesson.num, room.roomNumber);
+          room.createdAt = new Date().toISOString();
         }
-        copyTextSafe(getStudentRoomUrl(room.roomCode));
-        Toast.show(`Đã kích hoạt phòng & sao chép link học sinh (${room.roomCode})!`, 'success');
+        room.status = 'open';
+        room.openedAt = new Date().toISOString();
+        const res = await AppState.saveRoom(room);
+        renderRoomView();
+        const url = getStudentRoomUrl(room.roomCode);
+        copyTextSafe(url);
+        if (res && res.error) {
+          Toast.show(`Cảnh báo: Chưa lưu được phòng lên Supabase (${res.error.message}). ĐT/Tablet sẽ chưa vào được!`, 'error');
+        } else if (window.location.protocol === 'file:') {
+          Toast.show(`Đã mở phòng ${room.roomCode}! Lưu ý: Bạn đang mở file cục bộ (file://), cần đưa file lên GitHub Pages/web để ĐT/Tablet mở được link.`, 'info');
+        } else {
+          Toast.show(`Đã mở phòng & đồng bộ Supabase thành công (${room.roomCode})!`, 'success');
+        }
       }
 
       function copyRoomLink(lessonId, roomNumber) {
@@ -3521,16 +3610,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       function isOpen() { return Boolean(currentRoom); }
       function isMatchingStudent(roomId, studentId) { return Boolean(currentRoom && currentStudent && currentRoom.id === roomId && currentStudent.studentId === studentId); }
 
-      function openStudentRoomByCode(code) {
-        const room = AppState.findRoomByCode(code);
+      async function openStudentRoomByCode(code) {
+        const cleanCode = String(code || '').trim().toUpperCase();
         document.getElementById('main-header').classList.add('hidden');
         document.getElementById('home-view').classList.add('hidden');
         document.getElementById('lesson-detail-view').classList.add('hidden');
         document.getElementById('practice-room-view').classList.add('hidden');
         document.getElementById('student-room-view').classList.remove('hidden');
 
-        currentRoom = room || { id: '', roomCode: code, status: 'not_found' };
-        const saved = sessionStorage.getItem(`sparkle_stu_${code}`);
+        const container = document.getElementById('student-room-container');
+        if (container) {
+          container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto space-y-3"><div class="w-10 h-10 border-4 border-spark-pink/30 border-t-spark-pink rounded-full animate-spin mx-auto"></div><h2 class="text-base font-extrabold text-spark-navy">Đang kết nối phòng luyện tập ${escapeHtml(cleanCode)}...</h2><p class="text-xs text-spark-text">Vui lòng chờ trong giây lát</p></div>`;
+        }
+
+        SupabaseEngine.connectSupabaseFromConfig();
+        await SupabaseEngine.syncFromSupabase();
+
+        // Direct fallback query by room_code in case syncFromSupabase missed it
+        let room = AppState.findRoomByCode(cleanCode);
+        if (!room && SupabaseEngine.fetchRoomDirectly) {
+          room = await SupabaseEngine.fetchRoomDirectly(cleanCode);
+        }
+        currentRoom = room || { id: '', roomCode: cleanCode, status: 'not_found' };
+        const saved = sessionStorage.getItem(`sparkle_stu_${cleanCode}`);
         if (saved) { try { currentStudent = JSON.parse(saved); } catch {} }
         renderStudentView();
       }
@@ -3614,7 +3716,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         }
 
         if (!currentRoom.id || currentRoom.status !== 'open') {
-          container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto"><h2 class="text-lg font-extrabold text-spark-navy">Phòng luyện tập hiện không mở</h2><p class="text-xs text-spark-text mt-2">Mã phòng: <strong class="font-mono">${escapeHtml(currentRoom.roomCode)}</strong> chưa mở hoặc đã đóng.</p></div>`;
+          const errHint = SupabaseEngine.getLastError();
+          container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto space-y-3"><h2 class="text-lg font-extrabold text-spark-navy">Phòng luyện tập hiện không mở</h2><p class="text-xs text-spark-text">Mã phòng: <strong class="font-mono">${escapeHtml(currentRoom.roomCode)}</strong> chưa mở, đã đóng hoặc chưa đồng bộ lên máy chủ.</p>${errHint ? `<p class="text-[11px] text-rose-600 bg-rose-50 p-2 rounded-xl">Chi tiết lỗi DB: ${escapeHtml(errHint)}</p>` : ''}<button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-5 py-2.5 rounded-xl btn-gradient text-white text-xs font-bold">Thử kết nối lại</button></div>`;
           return;
         }
 
@@ -4419,6 +4522,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       user: null,
       profile: null,
       role: null,
+      getClient() { return sbClient; },
 
       async init() {
         const params = new URLSearchParams(window.location.search);
@@ -4714,4 +4818,3 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
   </script>
 </body>
 </html>
-Integrating the admin schedule editing modal into the existing educational application code
