@@ -1,0 +1,2803 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NỔ BÓNG NƯỚC – THỬ THÁCH TRỤC ĐỐI XỨNG (Toán 6)</title>
+    <style>
+        /* ==========================================================================
+           1. BIẾN MÀU SẮC & THIẾT LẬP CƠ BẢN (3D CARTOON WATER THEME)
+           ========================================================================== */
+        :root {
+            --sky-top: #0284c7;
+            --sky-mid: #0ea5e9;
+            --sky-bot: #38bdf8;
+            --deep-blue: #0c4a6e;
+            --navy-text: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.94);
+            --card-border: #bae6fd;
+            --yellow-main: #facc15;
+            --yellow-dark: #ca8a04;
+            --orange-main: #fb923c;
+            --orange-dark: #ea580c;
+            --red-main: #f43f5e;
+            --red-dark: #be123c;
+            --green-main: #22c55e;
+            --green-dark: #15803d;
+            --blue-btn: #38bdf8;
+            --blue-btn-dark: #0284c7;
+            --font-main: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: var(--font-main);
+            background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-bot) 100%);
+            color: var(--navy-text);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            padding: 10px;
+        }
+
+        /* ==========================================================================
+           2. HIỆU ỨNG NỀN BONG BÓNG & GIỌT NƯỚC TRANG TRÍ
+           ========================================================================== */
+        .bg-decorations {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 14vh;
+            opacity: 0.35;
+        }
+
+        .floating-bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.15) 60%, rgba(56, 189, 248, 0.4) 100%);
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.6), 0 4px 12px rgba(2, 132, 199, 0.25);
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(105vh) scale(0.85) translateX(0);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.75;
+            }
+            85% {
+                opacity: 0.75;
+            }
+            100% {
+                transform: translateY(-15vh) scale(1.15) translateX(25px);
+                opacity: 0;
+            }
+        }
+
+        /* ==========================================================================
+           3. THANH CÔNG CỤ GÓC TRÊN (ÂM THANH, TOÀN MÀN HÌNH, TẢI FILE)
+           ========================================================================== */
+        .top-utility-bar {
+            position: fixed;
+            top: 10px;
+            right: 14px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .util-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--deep-blue);
+            border: 2px solid #7dd3fc;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #0284c7, 0 6px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+        }
+
+        .util-btn:hover {
+            background: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #0284c7, 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .util-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #0284c7;
+        }
+
+        .util-btn.muted {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+            box-shadow: 0 4px 0 #dc2626;
+        }
+
+        /* ==========================================================================
+           4. KHUNG CHỨA TRÒ CHƠI CHÍNH (TỐI ƯU 16:9 CHO MÀN CHIẾU LỚP HỌC)
+           ========================================================================== */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1360px;
+            min-height: min(92vh, 840px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            animation: screenFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes screenFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* ==========================================================================
+           5. MÀN HÌNH 1: CHỦ ĐỀ (TITLE SCREEN)
+           ========================================================================== */
+        .title-card {
+            position: relative;
+            width: 100%;
+            max-width: 1060px;
+            background: radial-gradient(circle at 50% 25%, rgba(255,255,255,0.97) 0%, rgba(224,242,254,0.95) 100%);
+            border: 6px solid #ffffff;
+            border-radius: 36px;
+            padding: 36px 28px;
+            text-align: center;
+            box-shadow: 0 18px 0 #0369a1, 0 28px 50px rgba(0, 25, 60, 0.38);
+            overflow: hidden;
+        }
+
+        .badge-grade {
+            display: inline-block;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.05rem;
+            padding: 6px 22px;
+            border-radius: 999px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+        }
+
+        .main-game-title {
+            font-size: clamp(2.6rem, 5.5vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.08;
+            color: #0284c7;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow:
+                0 3px 0 #ffffff,
+                0 6px 0 #0369a1,
+                0 10px 20px rgba(2, 132, 199, 0.4);
+            margin-bottom: 10px;
+            animation: titleFloat 3s ease-in-out infinite;
+        }
+
+        .main-game-subtitle {
+            font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+            font-weight: 700;
+            color: #0c4a6e;
+            background: rgba(186, 230, 253, 0.7);
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 999px;
+            margin-bottom: 24px;
+            border: 2px solid #7dd3fc;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .hero-balloons-showcase {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(16px, 3vw, 38px);
+            margin: 10px auto 28px;
+            flex-wrap: wrap;
+        }
+
+        .hero-balloon-item {
+            width: clamp(82px, 11vw, 125px);
+            height: clamp(102px, 13.5vw, 150px);
+            filter: drop-shadow(0 12px 14px rgba(2, 132, 199, 0.28));
+            animation: balloonBob 2.6s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .hero-balloon-item:hover {
+            transform: scale(1.12) rotate(5deg);
+        }
+
+        .hero-balloon-item:nth-child(1) { animation-delay: 0s; }
+        .hero-balloon-item:nth-child(2) { animation-delay: 0.4s; }
+        .hero-balloon-item:nth-child(3) { animation-delay: 0.8s; }
+        .hero-balloon-item:nth-child(4) { animation-delay: 1.2s; }
+
+        @keyframes balloonBob {
+            0%, 100% { transform: translateY(0) rotate(-3deg) scale(1); }
+            50% { transform: translateY(-14px) rotate(4deg) scale(1.05); }
+        }
+
+        .cta-btn-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .btn-3d {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: var(--font-main);
+            font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+            font-weight: 900;
+            padding: 16px 42px;
+            border-radius: 999px;
+            border: 4px solid #ffffff;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+        }
+
+        .btn-3d-primary {
+            background: linear-gradient(180deg, #fde047 0%, #facc15 45%, #eab308 100%);
+            color: #713f12;
+            box-shadow: 0 9px 0 #a16207, 0 16px 28px rgba(0, 0, 0, 0.28);
+            animation: pulseBtn 2s infinite;
+        }
+
+        .btn-3d-primary:hover {
+            filter: brightness(1.06);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 0 #a16207, 0 20px 32px rgba(0, 0, 0, 0.32);
+        }
+
+        .btn-3d-primary:active {
+            transform: translateY(5px);
+            box-shadow: 0 4px 0 #a16207, 0 8px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-3d-secondary {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            color: #ffffff;
+            box-shadow: 0 9px 0 #075985, 0 16px 28px rgba(0, 0, 0, 0.22);
+            font-size: clamp(1.1rem, 1.9vw, 1.4rem);
+            padding: 14px 32px;
+        }
+
+        .btn-3d-secondary:hover {
+            filter: brightness(1.08);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 0 #075985, 0 20px 32px rgba(0, 0, 0, 0.28);
+        }
+
+        .btn-3d-secondary:active {
+            transform: translateY(5px);
+            box-shadow: 0 4px 0 #075985;
+        }
+
+        @keyframes pulseBtn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+
+        /* ==========================================================================
+           6. MÀN HÌNH 2: HƯỚNG DẪN (INSTRUCTIONS SCREEN)
+           ========================================================================== */
+        .guide-card {
+            width: 100%;
+            max-width: 1120px;
+            background: var(--card-bg);
+            border: 5px solid #ffffff;
+            border-radius: 32px;
+            padding: 28px 34px;
+            box-shadow: 0 16px 0 #0369a1, 0 24px 48px rgba(0, 0, 0, 0.32);
+        }
+
+        .guide-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .guide-title {
+            font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+            font-weight: 900;
+            color: #0369a1;
+            text-transform: uppercase;
+        }
+
+        .guide-layout {
+            display: grid;
+            grid-template-columns: 1.55fr 1fr;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .rules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            list-style: none;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 18px;
+            padding: 12px 16px;
+            font-size: clamp(1rem, 1.45vw, 1.22rem);
+            font-weight: 600;
+            color: #0f172a;
+            box-shadow: 0 4px 0 #bae6fd;
+        }
+
+        .rule-num {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #0c4a6e;
+        }
+
+        .guide-visual-box {
+            background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+            border: 3px solid #7dd3fc;
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.8);
+        }
+
+        .demo-timer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #ffffff;
+            border: 3px solid #f97316;
+            color: #ea580c;
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-size: 1.35rem;
+            font-weight: 900;
+            box-shadow: 0 5px 0 #fdba74;
+        }
+
+        /* ==========================================================================
+           7. MÀN HÌNH 3: GIAO DIỆN CÂU HỎI (GAMEPLAY SCREEN)
+           ========================================================================== */
+        .game-board {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* KHU VỰC 1: THANH THÔNG TIN (TOP INFO BAR) */
+        .info-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #ffffff;
+            border-radius: 22px;
+            padding: 10px 20px;
+            display: grid;
+            grid-template-columns: auto auto 1fr auto;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 8px 0 #0284c7, 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-pill {
+            background: #f0f9ff;
+            border: 2px solid #7dd3fc;
+            border-radius: 14px;
+            padding: 6px 16px;
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
+            font-weight: 800;
+            color: #0369a1;
+            white-space: nowrap;
+        }
+
+        .stat-pill span {
+            color: #0f172a;
+            font-weight: 900;
+        }
+
+        .progress-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .step-dots {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+        }
+
+        .step-dot {
+            height: 12px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            transition: all 0.25s;
+        }
+
+        .step-dot.current {
+            background: #38bdf8;
+            border-color: #0284c7;
+            transform: scaleY(1.25);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+        }
+
+        .step-dot.correct {
+            background: #22c55e;
+            border-color: #15803d;
+        }
+
+        .step-dot.wrong {
+            background: #f43f5e;
+            border-color: #be123c;
+        }
+
+        .timer-bar-track {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+
+        .timer-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #22c55e, #38bdf8);
+            border-radius: 999px;
+            transition: width 1s linear, background 0.3s ease;
+        }
+
+        .timer-bar-fill.warn-orange {
+            background: linear-gradient(90deg, #f59e0b, #fb923c);
+        }
+
+        .timer-bar-fill.warn-red {
+            background: linear-gradient(90deg, #dc2626, #f43f5e);
+        }
+
+        .timer-badge {
+            min-width: 125px;
+            text-align: center;
+            background: #ecfdf5;
+            border: 3px solid #22c55e;
+            color: #15803d;
+            border-radius: 16px;
+            padding: 6px 14px;
+            font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+            font-weight: 900;
+            box-shadow: 0 4px 0 #16a34a;
+            transition: all 0.25s ease;
+        }
+
+        .timer-badge.warn-orange {
+            background: #fff7ed;
+            border-color: #f97316;
+            color: #c2410c;
+            box-shadow: 0 4px 0 #ea580c;
+            animation: pulseTimer 0.8s infinite;
+        }
+
+        .timer-badge.warn-red {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #b91c1c;
+            box-shadow: 0 4px 0 #dc2626;
+            animation: pulseTimer 0.4s infinite;
+        }
+
+        @keyframes pulseTimer {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.07); }
+        }
+
+        /* KHU VỰC 2 & KHU VỰC 4: CÂU HỎI + HÌNH MINH HỌA + BÓNG NƯỚC */
+        .stage-grid {
+            display: grid;
+            grid-template-columns: 1fr 290px;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .question-diagram-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 4px solid #ffffff;
+            border-radius: 26px;
+            padding: 16px 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 0 #0284c7, 0 14px 28px rgba(0, 0, 0, 0.22);
+        }
+
+        .question-header-text {
+            font-size: clamp(1.25rem, 2.05vw, 1.72rem);
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.32;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 6px 12px;
+            background: #f0f9ff;
+            border-radius: 16px;
+            border-left: 6px solid #0284c7;
+        }
+
+        .svg-stage-wrapper {
+            position: relative;
+            width: 100%;
+            height: clamp(190px, 29vh, 275px);
+            background: #ffffff;
+            border: 2px dashed #bae6fd;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 8px;
+        }
+
+        .svg-stage-wrapper svg {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        /* Hiệu ứng hiện trục đối xứng sau khi trả lời */
+        .sym-axis-reveal {
+            opacity: 0;
+            transition: opacity 0.45s ease;
+        }
+
+        .sym-axis-reveal.visible {
+            opacity: 1;
+        }
+
+        /* KHU VỰC 4: QUẢ BÓNG NƯỚC TƯƠNG TÁC */
+        .balloon-zone-card {
+            background: linear-gradient(180deg, rgba(240,249,255,0.96) 0%, rgba(186,230,253,0.94) 100%);
+            border: 4px solid #ffffff;
+            border-radius: 26px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 0 #0284c7, 0 14px 28px rgba(0, 0, 0, 0.22);
+        }
+
+        .balloon-zone-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0369a1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 14px;
+            border-radius: 999px;
+            z-index: 2;
+        }
+
+        .balloon-stage-box {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .water-balloon-wrapper {
+            width: 145px;
+            height: 175px;
+            transform-origin: 50% 15%;
+            transition: transform 0.35s ease;
+        }
+
+        /* Trạng thái bóng bình thường (20s -> 11s) */
+        .balloon-idle {
+            animation: balloonGentle 2.4s ease-in-out infinite;
+        }
+
+        @keyframes balloonGentle {
+            0%, 100% { transform: scale(1) rotate(-2deg); }
+            50% { transform: scale(1.05) rotate(2deg); }
+        }
+
+        /* Trạng thái cảnh báo cam (10s -> 6s) */
+        .balloon-warn-orange {
+            animation: balloonWobbleOrange 0.45s ease-in-out infinite;
+        }
+
+        @keyframes balloonWobbleOrange {
+            0%, 100% { transform: scale(1.12) rotate(-4deg); }
+            50% { transform: scale(1.16) rotate(4deg); }
+        }
+
+        /* Trạng thái nguy hiểm đỏ (5s -> 1s) */
+        .balloon-warn-red {
+            animation: balloonShakeRed 0.16s ease-in-out infinite;
+        }
+
+        @keyframes balloonShakeRed {
+            0% { transform: scale(1.24, 1.20) translate(-3px, 1px) rotate(-5deg); }
+            25% { transform: scale(1.21, 1.26) translate(3px, -2px) rotate(4deg); }
+            50% { transform: scale(1.26, 1.22) translate(-3px, -1px) rotate(-4deg); }
+            75% { transform: scale(1.22, 1.27) translate(3px, 2px) rotate(5deg); }
+            100% { transform: scale(1.24, 1.20) translate(0, 0) rotate(-5deg); }
+        }
+
+        /* Trạng thái trả lời đúng: bóng vui nhộn & phát sáng */
+        .balloon-saved {
+            animation: balloonHappyBounce 0.65s ease-in-out infinite;
+            filter: drop-shadow(0 0 18px rgba(250, 204, 21, 0.95));
+        }
+
+        @keyframes balloonHappyBounce {
+            0%, 100% { transform: translateY(0) scale(1.06, 0.96); }
+            50% { transform: translateY(-14px) scale(0.96, 1.08); }
+        }
+
+        /* Trạng thái nổ tung */
+        .balloon-popping {
+            animation: balloonExplode 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        }
+
+        @keyframes balloonExplode {
+            0% { transform: scale(1.26); opacity: 1; }
+            50% { transform: scale(1.58); opacity: 0.9; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Lớp hiệu ứng tia nước bắn tung tóe */
+        .splash-explosion-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+
+        .splash-explosion-layer.active {
+            opacity: 1;
+        }
+
+        .splash-puddle-svg {
+            width: 210px;
+            height: 210px;
+            transform: scale(0.2);
+            opacity: 0;
+        }
+
+        .splash-explosion-layer.active .splash-puddle-svg {
+            animation: splashBurstAnim 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes splashBurstAnim {
+            0% { transform: scale(0.2); opacity: 1; }
+            45% { transform: scale(1.18); opacity: 1; }
+            100% { transform: scale(1.05); opacity: 0.88; }
+        }
+
+        .water-drop-particle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50% 50% 50% 0;
+            background: radial-gradient(circle at 30% 30%, #e0f2fe, #0284c7);
+            opacity: 0;
+        }
+
+        .splash-explosion-layer.active .water-drop-particle {
+            animation: dropFlyOut 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes dropFlyOut {
+            0% {
+                transform: translate(0, 0) scale(1.1);
+                opacity: 1;
+            }
+            80% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        .balloon-status-caption {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0c4a6e;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 5px 12px;
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        /* KHU VỰC 3: BỐN PHƯƠNG ÁN TRẢ LỜI (2x2 GRID) */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 3px solid #7dd3fc;
+            border-radius: 20px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            text-align: left;
+            font-family: var(--font-main);
+            font-size: clamp(1.05rem, 1.55vw, 1.32rem);
+            font-weight: 700;
+            color: #0f172a;
+            box-shadow: 0 6px 0 #0284c7, 0 8px 16px rgba(0, 0, 0, 0.12);
+            transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.15s, border-color 0.15s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #f0f9ff;
+            border-color: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #0284c7, 0 12px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        .option-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #0284c7;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        .option-letter {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #0369a1;
+        }
+
+        /* Đáp án đúng (Xanh lá) */
+        .option-btn.correct-choice {
+            background: #dcfce7 !important;
+            border-color: #16a34a !important;
+            color: #14532d !important;
+            box-shadow: 0 6px 0 #15803d !important;
+            animation: choiceBounce 0.4s ease;
+        }
+
+        .option-btn.correct-choice .option-letter {
+            background: linear-gradient(135deg, #22c55e, #15803d);
+            box-shadow: 0 3px 0 #14532d;
+        }
+
+        /* Đáp án chọn sai (Đỏ) */
+        .option-btn.wrong-choice {
+            background: #ffe4e6 !important;
+            border-color: #e11d48 !important;
+            color: #881337 !important;
+            box-shadow: 0 6px 0 #be123c !important;
+            animation: choiceShake 0.4s ease;
+        }
+
+        .option-btn.wrong-choice .option-letter {
+            background: linear-gradient(135deg, #f43f5e, #be123c);
+            box-shadow: 0 3px 0 #881337;
+        }
+
+        @keyframes choiceBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @keyframes choiceShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        /* BẢNG PHẢN HỒI & GIẢI THÍCH ĐÁP ÁN */
+        .feedback-banner {
+            display: none;
+            background: #ffffff;
+            border: 4px solid #38bdf8;
+            border-radius: 22px;
+            padding: 12px 20px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 8px 0 #0369a1, 0 14px 28px rgba(0, 0, 0, 0.25);
+            animation: feedbackSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .feedback-banner.show {
+            display: flex;
+        }
+
+        .feedback-banner.status-correct {
+            background: #f0fdf4;
+            border-color: #22c55e;
+            box-shadow: 0 8px 0 #15803d, 0 14px 28px rgba(0, 0, 0, 0.22);
+        }
+
+        .feedback-banner.status-wrong {
+            background: #fff1f2;
+            border-color: #f43f5e;
+            box-shadow: 0 8px 0 #be123c, 0 14px 28px rgba(0, 0, 0, 0.22);
+        }
+
+        @keyframes feedbackSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback-content {
+            flex: 1;
+        }
+
+        .feedback-status-title {
+            font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .status-correct .feedback-status-title {
+            color: #15803d;
+        }
+
+        .status-wrong .feedback-status-title {
+            color: #be123c;
+        }
+
+        .feedback-explanation {
+            font-size: clamp(0.98rem, 1.35vw, 1.15rem);
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.38;
+        }
+
+        .next-question-btn {
+            flex-shrink: 0;
+            background: linear-gradient(180deg, #fde047 0%, #facc15 100%);
+            color: #713f12;
+            border: 3px solid #ffffff;
+            border-radius: 999px;
+            padding: 12px 28px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #a16207, 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s;
+            text-transform: uppercase;
+        }
+
+        .next-question-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+        }
+
+        .next-question-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #a16207;
+        }
+
+        /* ==========================================================================
+           8. MÀN HÌNH 4: KẾT THÚC & XEM LẠI ĐÁP ÁN (END SCREEN & REVIEW)
+           ========================================================================== */
+        .end-card {
+            width: 100%;
+            max-width: 1020px;
+            background: var(--card-bg);
+            border: 6px solid #ffffff;
+            border-radius: 34px;
+            padding: 28px 32px;
+            text-align: center;
+            box-shadow: 0 16px 0 #0369a1, 0 26px 50px rgba(0, 0, 0, 0.35);
+        }
+
+        .end-title {
+            font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+            font-weight: 900;
+            color: #0284c7;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .rank-banner {
+            display: inline-block;
+            background: linear-gradient(135deg, #fef08a, #facc15);
+            border: 4px solid #ffffff;
+            color: #713f12;
+            padding: 10px 30px;
+            border-radius: 999px;
+            font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+            font-weight: 900;
+            box-shadow: 0 6px 0 #ca8a04, 0 10px 20px rgba(0,0,0,0.15);
+            margin-bottom: 22px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 26px;
+        }
+
+        .stat-card {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 20px;
+            padding: 14px 10px;
+            box-shadow: 0 5px 0 #bae6fd;
+        }
+
+        .stat-card-label {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .stat-card-value {
+            font-size: clamp(1.4rem, 2.3vw, 2rem);
+            font-weight: 900;
+            color: #0284c7;
+        }
+
+        /* BẢNG XEM LẠI ĐÁP ÁN CHI TIẾT */
+        .review-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(12, 74, 110, 0.82);
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .review-modal.open {
+            display: flex;
+        }
+
+        .review-container {
+            width: 100%;
+            max-width: 1100px;
+            max-height: 90vh;
+            background: #ffffff;
+            border: 5px solid #7dd3fc;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+        }
+
+        .review-header {
+            background: linear-gradient(90deg, #0284c7, #0369a1);
+            color: #ffffff;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .review-header h3 {
+            font-size: 1.45rem;
+            font-weight: 900;
+        }
+
+        .close-review-btn {
+            background: #f43f5e;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 999px;
+            padding: 6px 18px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .review-list {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .review-item {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .review-item.review-ok {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        .review-item.review-fail {
+            border-color: #fda4af;
+            background: #fff1f2;
+        }
+
+        .review-svg-box {
+            height: 165px;
+            background: #ffffff;
+            border: 2px dashed #bae6fd;
+            border-radius: 14px;
+            padding: 6px;
+        }
+
+        .review-svg-box svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ==========================================================================
+           9. RESPONSIVE CHO MÀN HÌNH THẤP (1366x768, 1280x720, 1024x768, TABLET)
+           ========================================================================== */
+        @media (max-height: 780px) {
+            body {
+                padding: 6px;
+            }
+            .info-bar {
+                padding: 7px 14px;
+            }
+            .question-diagram-card {
+                padding: 10px 16px;
+            }
+            .question-header-text {
+                font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+                margin-bottom: 6px;
+                padding: 4px 10px;
+            }
+            .svg-stage-wrapper {
+                height: clamp(150px, 24vh, 210px);
+            }
+            .balloon-stage-box {
+                width: 165px;
+                height: 165px;
+            }
+            .water-balloon-wrapper {
+                width: 120px;
+                height: 145px;
+            }
+            .option-btn {
+                padding: 9px 14px;
+                font-size: clamp(0.98rem, 1.4vw, 1.18rem);
+            }
+            .option-letter {
+                width: 36px;
+                height: 36px;
+                font-size: 1.1rem;
+            }
+            .feedback-banner {
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 960px) {
+            .guide-layout {
+                grid-template-columns: 1fr;
+            }
+            .stage-grid {
+                grid-template-columns: 1fr 220px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .review-item {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .info-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+            .progress-section {
+                grid-column: span 2;
+            }
+            .stage-grid {
+                grid-template-columns: 1fr;
+            }
+            .balloon-zone-card {
+                flex-direction: row;
+                padding: 8px 16px;
+            }
+            .balloon-stage-box {
+                width: 110px;
+                height: 110px;
+            }
+            .water-balloon-wrapper {
+                width: 85px;
+                height: 105px;
+            }
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            .feedback-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================================
+         LỚP TRANG TRÍ NỀN BONG BÓNG NƯỚC & SÓNG NƯỚC
+         ========================================================================== -->
+    <div class="bg-decorations" id="bgDecorations">
+        <svg class="bg-wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path fill="#ffffff" d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+    </div>
+
+    <!-- ==========================================================================
+         THANH TIỆN ÍCH GÓC TRÊN (ÂM THANH, TOÀN MÀN HÌNH, TẢI FILE ĐỘC LẬP)
+         ========================================================================== -->
+    <div class="top-utility-bar">
+        <button class="util-btn" id="btnSoundToggle" onclick="toggleSound()" title="Bật/Tắt âm thanh">
+            <span id="soundIcon">🔊</span> <span id="soundLabel">Âm thanh: BẬT</span>
+        </button>
+        <button class="util-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="Chế độ toàn màn hình trình chiếu">
+            <span>⛶</span> Toàn màn hình
+        </button>
+        <button class="util-btn" onclick="downloadStandaloneHTML()" title="Tải về máy file HTML để mở trực tiếp không cần mạng">
+            <span>⬇</span> Tải file HTML
+        </button>
+    </div>
+
+    <!-- ==========================================================================
+         KHUNG CHÍNH CỦA ỨNG DỤNG
+         ========================================================================== -->
+    <main class="app-container">
+
+        <!-- ======================================================================
+             1. MÀN HÌNH CHỦ ĐỀ (TITLE SCREEN)
+             ====================================================================== -->
+        <section class="screen active" id="screenTitle">
+            <div class="title-card">
+                <div class="badge-grade">Toán Học Lớp 6 • Hình Học Trực Quan</div>
+                <h1 class="main-game-title">NỔ BÓNG NƯỚC</h1>
+                <div class="main-game-subtitle">“Cùng chinh phục 10 thử thách về trục đối xứng!”</div>
+
+                <!-- 4 Quả bóng nước 3D nhiều màu: Đỏ, Vàng, Xanh lá, Xanh dương -->
+                <div class="hero-balloons-showcase">
+                    <!-- Bóng Đỏ -->
+                    <div class="hero-balloon-item" onclick="playPreviewBoing()">
+                        <svg viewBox="0 0 120 150">
+                            <defs>
+                                <radialGradient id="gradRed" cx="35%" cy="30%" r="65%">
+                                    <stop offset="0%" stop-color="#fda4af"/>
+                                    <stop offset="45%" stop-color="#f43f5e"/>
+                                    <stop offset="100%" stop-color="#9f1239"/>
+                                </radialGradient>
+                            </defs>
+                            <path d="M52,18 L68,18 L63,28 L57,28 Z" fill="#be123c"/>
+                            <rect x="50" y="25" width="20" height="6" rx="3" fill="#fde047"/>
+                            <path d="M60,30 C95,30 108,65 104,98 C100,126 82,142 60,142 C38,142 20,126 16,98 C12,65 25,30 60,30 Z" fill="url(#gradRed)"/>
+                            <ellipse cx="42" cy="62" rx="12" ry="20" transform="rotate(-20 42 62)" fill="rgba(255,255,255,0.55)"/>
+                            <circle cx="36" cy="88" r="4" fill="rgba(255,255,255,0.5)"/>
+                            <circle cx="46" cy="82" r="5" fill="#0f172a"/>
+                            <circle cx="74" cy="82" r="5" fill="#0f172a"/>
+                            <path d="M50,95 Q60,105 70,95" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <!-- Bóng Vàng -->
+                    <div class="hero-balloon-item" onclick="playPreviewBoing()">
+                        <svg viewBox="0 0 120 150">
+                            <defs>
+                                <radialGradient id="gradYellow" cx="35%" cy="30%" r="65%">
+                                    <stop offset="0%" stop-color="#fef9c3"/>
+                                    <stop offset="45%" stop-color="#facc15"/>
+                                    <stop offset="100%" stop-color="#ca8a04"/>
+                                </radialGradient>
+                            </defs>
+                            <path d="M52,18 L68,18 L63,28 L57,28 Z" fill="#a16207"/>
+                            <rect x="50" y="25" width="20" height="6" rx="3" fill="#38bdf8"/>
+                            <path d="M60,30 C95,30 108,65 104,98 C100,126 82,142 60,142 C38,142 20,126 16,98 C12,65 25,30 60,30 Z" fill="url(#gradYellow)"/>
+                            <ellipse cx="42" cy="62" rx="12" ry="20" transform="rotate(-20 42 62)" fill="rgba(255,255,255,0.65)"/>
+                            <circle cx="46" cy="82" r="5" fill="#0f172a"/>
+                            <circle cx="74" cy="82" r="5" fill="#0f172a"/>
+                            <path d="M48,94 Q60,106 72,94" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <!-- Bóng Xanh Lá -->
+                    <div class="hero-balloon-item" onclick="playPreviewBoing()">
+                        <svg viewBox="0 0 120 150">
+                            <defs>
+                                <radialGradient id="gradGreen" cx="35%" cy="30%" r="65%">
+                                    <stop offset="0%" stop-color="#bbf7d0"/>
+                                    <stop offset="45%" stop-color="#22c55e"/>
+                                    <stop offset="100%" stop-color="#15803d"/>
+                                </radialGradient>
+                            </defs>
+                            <path d="M52,18 L68,18 L63,28 L57,28 Z" fill="#166534"/>
+                            <rect x="50" y="25" width="20" height="6" rx="3" fill="#facc15"/>
+                            <path d="M60,30 C95,30 108,65 104,98 C100,126 82,142 60,142 C38,142 20,126 16,98 C12,65 25,30 60,30 Z" fill="url(#gradGreen)"/>
+                            <ellipse cx="42" cy="62" rx="12" ry="20" transform="rotate(-20 42 62)" fill="rgba(255,255,255,0.55)"/>
+                            <circle cx="46" cy="82" r="5" fill="#0f172a"/>
+                            <circle cx="74" cy="82" r="5" fill="#0f172a"/>
+                            <path d="M50,95 Q60,104 70,95" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <!-- Bóng Xanh Dương -->
+                    <div class="hero-balloon-item" onclick="playPreviewBoing()">
+                        <svg viewBox="0 0 120 150">
+                            <defs>
+                                <radialGradient id="gradBlue" cx="35%" cy="30%" r="65%">
+                                    <stop offset="0%" stop-color="#e0f2fe"/>
+                                    <stop offset="45%" stop-color="#38bdf8"/>
+                                    <stop offset="100%" stop-color="#0369a1"/>
+                                </radialGradient>
+                            </defs>
+                            <path d="M52,18 L68,18 L63,28 L57,28 Z" fill="#075985"/>
+                            <rect x="50" y="25" width="20" height="6" rx="3" fill="#f43f5e"/>
+                            <path d="M60,30 C95,30 108,65 104,98 C100,126 82,142 60,142 C38,142 20,126 16,98 C12,65 25,30 60,30 Z" fill="url(#gradBlue)"/>
+                            <ellipse cx="42" cy="62" rx="12" ry="20" transform="rotate(-20 42 62)" fill="rgba(255,255,255,0.6)"/>
+                            <circle cx="46" cy="82" r="5" fill="#0f172a"/>
+                            <circle cx="74" cy="82" r="5" fill="#0f172a"/>
+                            <path d="M50,95 Q60,105 70,95" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="cta-btn-group">
+                    <button class="btn-3d btn-3d-primary" onclick="startNewGame()">
+                        <span>🎈</span> BẮT ĐẦU CHƠI
+                    </button>
+                    <button class="btn-3d btn-3d-secondary" onclick="showScreen('screenGuide')">
+                        <span>📖</span> HƯỚNG DẪN LUẬT CHƠI
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================================
+             2. MÀN HÌNH HƯỚNG DẪN (INSTRUCTIONS SCREEN)
+             ====================================================================== -->
+        <section class="screen" id="screenGuide">
+            <div class="guide-card">
+                <div class="guide-header">
+                    <h2 class="guide-title">HƯỚNG DẪN THỬ THÁCH NỔ BÓNG NƯỚC</h2>
+                </div>
+
+                <div class="guide-layout">
+                    <ul class="rules-list">
+                        <li class="rule-item">
+                            <span class="rule-num">1</span>
+                            <span>Có <strong>10 câu hỏi</strong> trắc nghiệm về chủ đề <strong>Trục đối xứng</strong>.</span>
+                        </li>
+                        <li class="rule-item">
+                            <span class="rule-num">2</span>
+                            <span>Mỗi câu có <strong>20 giây</strong> đếm ngược để suy nghĩ và trả lời.</span>
+                        </li>
+                        <li class="rule-item">
+                            <span class="rule-num">3</span>
+                            <span>Chọn một trong bốn đáp án <strong>A, B, C, D</strong> trên màn hình.</span>
+                        </li>
+                        <li class="rule-item">
+                            <span class="rule-num">4</span>
+                            <span><strong>Trả lời đúng:</strong> Bóng nước không nổ, được cộng <strong>+1 điểm</strong> và xem hình minh họa trục đối xứng.</span>
+                        </li>
+                        <li class="rule-item">
+                            <span class="rule-num">5</span>
+                            <span><strong>Trả lời sai hoặc hết 20 giây:</strong> Bóng nước phát nổ, nước bắn tung tóe và hiện đáp án đúng.</span>
+                        </li>
+                        <li class="rule-item">
+                            <span class="rule-num">6</span>
+                            <span>Sau khi xem giải thích và trục đối xứng trên hình, nhấn <strong>“CÂU TIẾP THEO”</strong> để tiếp tục.</span>
+                        </li>
+                    </ul>
+
+                    <!-- Minh họa trực quan đồng hồ 20 giây và bóng nước -->
+                    <div class="guide-visual-box">
+                        <div class="demo-timer-pill">
+                            <span>⏱️</span> Đồng hồ: 20 giây
+                        </div>
+                        <svg width="135" height="160" viewBox="0 0 120 150">
+                            <path d="M52,18 L68,18 L63,28 L57,28 Z" fill="#0284c7"/>
+                            <rect x="50" y="25" width="20" height="6" rx="3" fill="#facc15"/>
+                            <path d="M60,30 C95,30 108,65 104,98 C100,126 82,142 60,142 C38,142 20,126 16,98 C12,65 25,30 60,30 Z" fill="url(#gradRed)"/>
+                            <ellipse cx="42" cy="62" rx="12" ry="20" transform="rotate(-20 42 62)" fill="rgba(255,255,255,0.55)"/>
+                            <circle cx="46" cy="82" r="5" fill="#0f172a"/>
+                            <circle cx="74" cy="82" r="5" fill="#0f172a"/>
+                            <path d="M50,95 Q60,105 70,95" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                        <p style="font-weight:700; color:#0c4a6e; font-size:1.02rem; line-height:1.4;">
+                            Còn <strong>10s</strong> bóng chuyển cam & rung nhẹ.<br>
+                            Còn <strong>5s</strong> bóng chuyển đỏ & phồng to!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="cta-btn-group">
+                    <button class="btn-3d btn-3d-primary" onclick="startNewGame()">
+                        <span>🚀</span> VÀO THỬ THÁCH
+                    </button>
+                    <button class="btn-3d btn-3d-secondary" onclick="showScreen('screenTitle')">
+                        Quay lại
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================================
+             3. MÀN HÌNH CÂU HỎI (GAMEPLAY SCREEN)
+             ====================================================================== -->
+        <section class="screen" id="screenGame">
+            <div class="game-board">
+
+                <!-- KHU VỰC 1: THANH THÔNG TIN -->
+                <div class="info-bar">
+                    <div class="stat-pill">
+                        Câu hỏi: <span id="uiQuestionIndex">1/10</span>
+                    </div>
+                    <div class="stat-pill">
+                        Điểm số: <span id="uiCurrentScore">0/10</span>
+                    </div>
+                    <div class="progress-section">
+                        <div class="step-dots" id="uiStepDots"></div>
+                        <div class="timer-bar-track">
+                            <div class="timer-bar-fill" id="uiTimerBar"></div>
+                        </div>
+                    </div>
+                    <div class="timer-badge" id="uiTimerBadge">
+                        ⏱ <span id="uiTimerSeconds">20</span> giây
+                    </div>
+                </div>
+
+                <!-- KHU VỰC 2 (CÂU HỎI + HÌNH HỌC SVG) & KHU VỰC 4 (BÓNG NƯỚC) -->
+                <div class="stage-grid">
+                    <!-- Khu vực 2: Câu hỏi & Hình vẽ SVG -->
+                    <div class="question-diagram-card">
+                        <div class="question-header-text" id="uiQuestionText">
+                            Câu hỏi đang tải...
+                        </div>
+                        <div class="svg-stage-wrapper" id="uiSvgContainer">
+                            <!-- Hình học SVG được vẽ tự động tại đây -->
+                        </div>
+                    </div>
+
+                    <!-- Khu vực 4: Quả bóng nước tương tác -->
+                    <div class="balloon-zone-card">
+                        <div class="balloon-zone-title">BÓNG NƯỚC THỬ THÁCH</div>
+
+                        <div class="balloon-stage-box">
+                            <!-- Quả bóng nước SVG -->
+                            <div class="water-balloon-wrapper balloon-idle" id="uiBalloonWrapper">
+                                <svg viewBox="0 0 140 170" id="uiBalloonSvg">
+                                    <defs>
+                                        <radialGradient id="activeBalloonGrad" cx="35%" cy="30%" r="65%">
+                                            <stop offset="0%" stop-color="#bae6fd" id="gradStop1"/>
+                                            <stop offset="50%" stop-color="#0ea5e9" id="gradStop2"/>
+                                            <stop offset="100%" stop-color="#0369a1" id="gradStop3"/>
+                                        </radialGradient>
+                                    </defs>
+                                    <!-- Dây treo & nút thắt cổ bóng -->
+                                    <line x1="70" y1="0" x2="70" y2="20" stroke="#0284c7" stroke-width="4"/>
+                                    <path d="M60,18 L80,18 L74,30 L66,30 Z" fill="#0284c7" id="balloonNeck"/>
+                                    <rect x="58" y="27" width="24" height="7" rx="3.5" fill="#facc15"/>
+                                    <!-- Thân quả bóng nước -->
+                                    <path d="M70,33 C112,33 126,74 122,112 C117,145 96,162 70,162 C44,162 23,145 18,112 C14,74 28,33 70,33 Z" fill="url(#activeBalloonGrad)"/>
+                                    <!-- Vệt bóng loáng 3D -->
+                                    <ellipse cx="48" cy="70" rx="14" ry="24" transform="rotate(-20 48 70)" fill="rgba(255,255,255,0.58)"/>
+                                    <circle cx="40" cy="102" r="5" fill="rgba(255,255,255,0.5)"/>
+                                    <!-- Khuôn mặt biểu cảm của bóng nước -->
+                                    <g id="balloonFaceNormal">
+                                        <circle cx="54" cy="95" r="5.5" fill="#0f172a"/>
+                                        <circle cx="86" cy="95" r="5.5" fill="#0f172a"/>
+                                        <circle cx="52" cy="93" r="2" fill="#ffffff"/>
+                                        <circle cx="84" cy="93" r="2" fill="#ffffff"/>
+                                        <path d="M58,110 Q70,120 82,110" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                    </g>
+                                    <g id="balloonFaceWorried" style="display:none;">
+                                        <circle cx="54" cy="95" r="6" fill="#0f172a"/>
+                                        <circle cx="86" cy="95" r="6" fill="#0f172a"/>
+                                        <path d="M46,84 L60,88" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                                        <path d="M94,84 L80,88" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                                        <path d="M56,115 Q70,104 84,115" stroke="#0f172a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                        <!-- Giọt mồ hôi -->
+                                        <path d="M104,78 C104,78 110,88 104,92 C98,88 104,78 104,78 Z" fill="#e0f2fe"/>
+                                    </g>
+                                </svg>
+                            </div>
+
+                            <!-- Hiệu ứng Nổ Bóng Nước & Bắn Tia Nước -->
+                            <div class="splash-explosion-layer" id="uiSplashLayer">
+                                <svg class="splash-puddle-svg" viewBox="0 0 200 200">
+                                    <path fill="#0ea5e9" d="M100,22 C112,45 138,18 145,45 C152,72 185,58 172,88 C159,118 192,135 162,150 C132,165 142,190 112,175 C82,160 65,192 50,165 C35,138 12,148 25,118 C38,88 10,68 38,52 C66,36 88,-1 100,22 Z"/>
+                                    <path fill="#38bdf8" d="M100,42 C110,58 130,42 135,62 C140,82 165,75 152,98 C139,121 162,132 140,142 C118,152 122,172 102,160 C82,148 68,168 58,148 C48,128 30,132 42,110 C54,88 35,72 58,62 C81,52 90,26 100,42 Z"/>
+                                    <circle cx="100" cy="100" r="32" fill="#bae6fd"/>
+                                    <text x="100" y="108" text-anchor="middle" fill="#0c4a6e" font-size="24" font-weight="900">BÙM!</text>
+                                </svg>
+                                <!-- Các giọt nước văng ra xung quanh -->
+                                <div class="water-drop-particle" style="--dx:-85px; --dy:-70px;"></div>
+                                <div class="water-drop-particle" style="--dx:85px; --dy:-70px;"></div>
+                                <div class="water-drop-particle" style="--dx:-95px; --dy:15px;"></div>
+                                <div class="water-drop-particle" style="--dx:95px; --dy:15px;"></div>
+                                <div class="water-drop-particle" style="--dx:-65px; --dy:85px;"></div>
+                                <div class="water-drop-particle" style="--dx:65px; --dy:85px;"></div>
+                                <div class="water-drop-particle" style="--dx:0px; --dy:-95px;"></div>
+                                <div class="water-drop-particle" style="--dx:0px; --dy:95px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="balloon-status-caption" id="uiBalloonCaption">
+                            Hãy chọn đáp án đúng để bảo vệ bóng nước!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KHU VỰC 3: BỐN PHƯƠNG ÁN A, B, C, D -->
+                <div class="options-grid" id="uiOptionsGrid">
+                    <button class="option-btn" id="optBtn0" onclick="handleSelectAnswer(0)">
+                        <span class="option-letter">A</span>
+                        <span class="option-text" id="optText0">Đáp án A</span>
+                    </button>
+                    <button class="option-btn" id="optBtn1" onclick="handleSelectAnswer(1)">
+                        <span class="option-letter">B</span>
+                        <span class="option-text" id="optText1">Đáp án B</span>
+                    </button>
+                    <button class="option-btn" id="optBtn2" onclick="handleSelectAnswer(2)">
+                        <span class="option-letter">C</span>
+                        <span class="option-text" id="optText2">Đáp án C</span>
+                    </button>
+                    <button class="option-btn" id="optBtn3" onclick="handleSelectAnswer(3)">
+                        <span class="option-letter">D</span>
+                        <span class="option-text" id="optText3">Đáp án D</span>
+                    </button>
+                </div>
+
+                <!-- KHU VỰC PHẢN HỒI & GIẢI THÍCH SAU KHI CHỌN HOẶC HẾT GIỜ -->
+                <div class="feedback-banner" id="uiFeedbackBanner">
+                    <div class="feedback-content">
+                        <div class="feedback-status-title" id="uiFeedbackTitle">CHÍNH XÁC!</div>
+                        <div class="feedback-explanation" id="uiFeedbackExplanation">Giải thích chi tiết...</div>
+                    </div>
+                    <button class="next-question-btn" id="uiNextQuestionBtn" onclick="goToNextQuestion()">
+                        CÂU TIẾP THEO ➜
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ======================================================================
+             4. MÀN HÌNH KẾT THÚC (END SCREEN)
+             ====================================================================== -->
+        <section class="screen" id="screenEnd">
+            <div class="end-card">
+                <div class="badge-grade">Kết Quả Chung Cuộc</div>
+                <h2 class="end-title">HOÀN THÀNH THỬ THÁCH NỔ BÓNG NƯỚC!</h2>
+
+                <div class="rank-banner" id="endRankTitle">
+                    🏆 Bậc thầy trục đối xứng
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-label">Tổng số câu</div>
+                        <div class="stat-card-value">10</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Số câu đúng</div>
+                        <div class="stat-card-value" id="endCorrectCount" style="color:#16a34a;">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Câu sai / Hết giờ</div>
+                        <div class="stat-card-value" id="endWrongCount" style="color:#e11d48;">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Tổng điểm</div>
+                        <div class="stat-card-value" id="endTotalScore">0/10</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Tỉ lệ đúng</div>
+                        <div class="stat-card-value" id="endAccuracy">0%</div>
+                    </div>
+                </div>
+
+                <div class="cta-btn-group">
+                    <button class="btn-3d btn-3d-primary" onclick="startNewGame()">
+                        <span>🔄</span> CHƠI LẠI
+                    </button>
+                    <button class="btn-3d btn-3d-secondary" onclick="openReviewModal()">
+                        <span>📋</span> XEM LẠI ĐÁP ÁN
+                    </button>
+                    <button class="btn-3d btn-3d-secondary" onclick="returnToLecture()">
+                        <span>🏠</span> QUAY VỀ BÀI GIẢNG
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==========================================================================
+         MODAL XEM LẠI ĐÁP ÁN CHI TIẾT 10 CÂU HỎI
+         ========================================================================== -->
+    <div class="review-modal" id="reviewModal">
+        <div class="review-container">
+            <div class="review-header">
+                <h3>BẢNG XEM LẠI ĐÁP ÁN & HÌNH VẼ TRỤC ĐỐI XỨNG</h3>
+                <button class="close-review-btn" onclick="closeReviewModal()">Đóng ✕</button>
+            </div>
+            <div class="review-list" id="reviewListContainer">
+                <!-- Danh sách 10 câu hỏi kèm hình minh họa có trục đối xứng sẽ được tạo tại đây -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         JAVASCRIPT: QUẢN LÝ TRÒ CHƠI, ÂM THANH, ĐỒNG HỒ 20S & HÌNH HỌC SVG
+         ========================================================================== -->
+    <script>
+        /* ==========================================================================
+           1. HỆ THỐNG ÂM THANH (WEB AUDIO API - KHÔNG CẦN FILE BÊN NGOÀI)
+           ========================================================================== */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btnSoundToggle');
+            const icon = document.getElementById('soundIcon');
+            const label = document.getElementById('soundLabel');
+
+            if (soundEnabled) {
+                btn.classList.remove('muted');
+                icon.textContent = '🔊';
+                label.textContent = 'Âm thanh: BẬT';
+                playPreviewBoing();
+            } else {
+                btn.classList.add('muted');
+                icon.textContent = '🔇';
+                label.textContent = 'Âm thanh: TẮT';
+            }
+        }
+
+        // Âm thanh nảy bóng vui nhộn
+        function playPreviewBoing() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(280, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(580, ctx.currentTime + 0.18);
+                gain.gain.setValueAtTime(0.22, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        // Âm thanh tích tắc khi còn 5 giây cuối
+        function playTickSound(isUrgent) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(isUrgent ? 880 : 620, ctx.currentTime);
+                gain.gain.setValueAtTime(0.18, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.09);
+            } catch (e) {}
+        }
+
+        // Âm thanh trả lời đúng (Victory Chime)
+        function playCorrectSound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.5];
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+                    gain.gain.setValueAtTime(0.22, ctx.currentTime + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.008, ctx.currentTime + idx * 0.08 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + idx * 0.08);
+                    osc.stop(ctx.currentTime + idx * 0.08 + 0.26);
+                });
+            } catch (e) {}
+        }
+
+        // Âm thanh bóng nước nổ tung tóe (Water Balloon Pop & Splash)
+        function playWaterBurstSound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                // 1. Tiếng nổ trầm đầu tiên
+                const osc = ctx.createOscillator();
+                const oscGain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(190, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(42, ctx.currentTime + 0.25);
+                oscGain.gain.setValueAtTime(0.38, ctx.currentTime);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
+                osc.connect(oscGain);
+                oscGain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.29);
+
+                // 2. Tiếng nước bắn tung tóe (Filtered White Noise)
+                const bufferSize = ctx.sampleRate * 0.45;
+                const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+                const whiteNoise = ctx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(950, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.45);
+
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.4, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
+
+                whiteNoise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                whiteNoise.start();
+            } catch (e) {}
+        }
+
+        /* ==========================================================================
+           2. HÀM VẼ HÌNH MINH HỌA HÌNH HỌC BẰNG SVG CHÍNH XÁC CHO 10 CÂU HỎI
+              - Không vẽ sẵn trục đối xứng trước khi học sinh trả lời.
+              - Sau khi trả lời (hoặc trong chế độ xem lại), lớp `.sym-axis-reveal`
+                sẽ hiển thị rõ các trục đối xứng bằng nét đứt.
+           ========================================================================== */
+        function getQuestionSVG(qNumber, showAnswerAxes = false) {
+            const axisClass = showAnswerAxes ? 'sym-axis-reveal visible' : 'sym-axis-reveal';
+
+            switch (qNumber) {
+                // CÂU 1: Hình nào dưới đây có đúng một trục đối xứng?
+                // A. Hình vuông | B. Hình chữ nhật | C. Tam giác cân không đều | D. Hình bình hành thường
+                case 1:
+                    return `
+                    <svg viewBox="0 0 760 220" preserveAspectRatio="xMidYMid meet">
+                        <!-- A. Hình vuông -->
+                        <g transform="translate(20, 15)">
+                            <rect x="35" y="25" width="90" height="90" fill="#e0f2fe" stroke="#0284c7" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="10" x2="80" y2="130"/>
+                                <line x1="20" y1="70" x2="140" y2="70"/>
+                                <line x1="25" y1="15" x2="135" y2="125"/>
+                                <line x1="135" y1="15" x2="25" y2="125"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">A. Hình vuông</text>
+                            <text class="${axisClass}" x="80" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b">(4 trục)</text>
+                        </g>
+
+                        <!-- B. Hình chữ nhật -->
+                        <g transform="translate(200, 15)">
+                            <rect x="20" y="38" width="125" height="68" fill="#fef9c3" stroke="#ca8a04" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="82.5" y1="15" x2="82.5" y2="125"/>
+                                <line x1="5" y1="72" x2="160" y2="72"/>
+                            </g>
+                            <text x="82.5" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">B. Hình chữ nhật</text>
+                            <text class="${axisClass}" x="82.5" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b">(2 trục)</text>
+                        </g>
+
+                        <!-- C. Tam giác cân không đều (ĐÁP ÁN ĐÚNG: 1 TRỤC) -->
+                        <g transform="translate(390, 15)">
+                            <polygon points="85,18 35,118 135,118" fill="#dcfce7" stroke="#16a34a" stroke-width="3.5" stroke-linejoin="round"/>
+                            <!-- Ký hiệu 2 cạnh bên bằng nhau -->
+                            <line x1="54" y1="66" x2="66" y2="70" stroke="#15803d" stroke-width="3"/>
+                            <line x1="116" y1="66" x2="104" y2="70" stroke="#15803d" stroke-width="3"/>
+                            <!-- Trục đối xứng duy nhất hiện ra sau khi trả lời -->
+                            <g class="${axisClass}">
+                                <line x1="85" y1="4" x2="85" y2="132" stroke="#e11d48" stroke-width="3.5" stroke-dasharray="7,5"/>
+                                <circle cx="85" cy="18" r="4.5" fill="#e11d48"/>
+                                <circle cx="85" cy="118" r="4.5" fill="#e11d48"/>
+                                <text x="85" y="174" text-anchor="middle" font-size="15" font-weight="900" fill="#15803d">✓ Đúng 1 trục</text>
+                            </g>
+                            <text x="85" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">C. Tam giác cân</text>
+                        </g>
+
+                        <!-- D. Hình bình hành thường -->
+                        <g transform="translate(575, 15)">
+                            <polygon points="45,35 150,35 120,112 15,112" fill="#ffe4e6" stroke="#e11d48" stroke-width="3.5" stroke-linejoin="round"/>
+                            <text x="82" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">D. Hình bình hành</text>
+                            <text class="${axisClass}" x="82" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b">(0 trục)</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 2: Hình vuông có bao nhiêu trục đối xứng? (Đáp án D: 4 trục)
+                case 2:
+                    return `
+                    <svg viewBox="0 0 500 230" preserveAspectRatio="xMidYMid meet">
+                        <!-- Hình vuông chuẩn tỉ lệ 1:1 (140x140) -->
+                        <rect x="180" y="45" width="140" height="140" fill="#e0f2fe" stroke="#0284c7" stroke-width="4"/>
+                        <!-- Ký hiệu góc vuông -->
+                        <polyline points="180,60 195,60 195,45" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+                        <polyline points="305,45 305,60 320,60" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+                        <polyline points="180,170 195,170 195,185" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+                        <polyline points="305,185 305,170 320,170" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+
+                        <!-- 4 Trục đối xứng màu khác nhau hiện ra sau khi trả lời -->
+                        <g class="${axisClass}">
+                            <!-- Trục 1: Dọc -->
+                            <line x1="250" y1="12" x2="250" y2="218" stroke="#e11d48" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="250" cy="12" r="11" fill="#e11d48"/>
+                            <text x="250" y="16" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">1</text>
+
+                            <!-- Trục 2: Ngang -->
+                            <line x1="140" y1="115" x2="360" y2="115" stroke="#16a34a" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="365" cy="115" r="11" fill="#16a34a"/>
+                            <text x="365" y="119" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">2</text>
+
+                            <!-- Trục 3: Chéo chính -->
+                            <line x1="152" y1="17" x2="348" y2="213" stroke="#d97706" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="146" cy="14" r="11" fill="#d97706"/>
+                            <text x="146" y="18" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">3</text>
+
+                            <!-- Trục 4: Chéo phụ -->
+                            <line x1="348" y1="17" x2="152" y2="213" stroke="#7c3aed" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="354" cy="14" r="11" fill="#7c3aed"/>
+                            <text x="354" y="18" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">4</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 3: Hình chữ nhật không phải hình vuông có bao nhiêu trục đối xứng? (Đáp án C: 2 trục)
+                case 3:
+                    return `
+                    <svg viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet">
+                        <!-- Hình chữ nhật (240x120) -->
+                        <rect x="150" y="50" width="240" height="120" fill="#fef9c3" stroke="#ca8a04" stroke-width="4"/>
+                        <polyline points="150,66 166,66 166,50" fill="none" stroke="#ca8a04" stroke-width="2.5"/>
+                        <polyline points="374,50 374,66 390,66" fill="none" stroke="#ca8a04" stroke-width="2.5"/>
+                        <polyline points="150,154 166,154 166,170" fill="none" stroke="#ca8a04" stroke-width="2.5"/>
+                        <polyline points="374,170 374,154 390,154" fill="none" stroke="#ca8a04" stroke-width="2.5"/>
+
+                        <!-- 2 Trục đối xứng (ngang và dọc) hiện sau khi trả lời -->
+                        <g class="${axisClass}">
+                            <line x1="270" y1="15" x2="270" y2="205" stroke="#e11d48" stroke-width="3.5" stroke-dasharray="8,5"/>
+                            <line x1="105" y1="110" x2="435" y2="110" stroke="#0284c7" stroke-width="3.5" stroke-dasharray="8,5"/>
+                            <circle cx="270" cy="50" r="5" fill="#e11d48"/>
+                            <circle cx="270" cy="170" r="5" fill="#e11d48"/>
+                            <circle cx="150" cy="110" r="5" fill="#0284c7"/>
+                            <circle cx="390" cy="110" r="5" fill="#0284c7"/>
+                            <text x="295" y="28" font-size="15" font-weight="900" fill="#e11d48">Trục dọc (1)</text>
+                            <text x="442" y="115" font-size="15" font-weight="900" fill="#0284c7">Trục ngang (2)</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 4: Hình nào sau đây không có trục đối xứng?
+                // A. Hình tròn | B. Hình vuông | C. Tam giác đều | D. Hình bình hành thường
+                case 4:
+                    return `
+                    <svg viewBox="0 0 760 220" preserveAspectRatio="xMidYMid meet">
+                        <!-- A. Hình tròn -->
+                        <g transform="translate(20, 15)">
+                            <circle cx="80" cy="72" r="46" fill="#e0f2fe" stroke="#0284c7" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#0284c7" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="14" x2="80" y2="130"/>
+                                <line x1="22" y1="72" x2="138" y2="72"/>
+                                <line x1="38" y1="30" x2="122" y2="114"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">A. Hình tròn</text>
+                            <text class="${axisClass}" x="80" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#0284c7">(Vô số trục)</text>
+                        </g>
+
+                        <!-- B. Hình vuông -->
+                        <g transform="translate(205, 15)">
+                            <rect x="35" y="27" width="90" height="90" fill="#dcfce7" stroke="#16a34a" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="14" x2="80" y2="130"/>
+                                <line x1="22" y1="72" x2="138" y2="72"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">B. Hình vuông</text>
+                            <text class="${axisClass}" x="80" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#16a34a">(4 trục)</text>
+                        </g>
+
+                        <!-- C. Tam giác đều -->
+                        <g transform="translate(390, 15)">
+                            <polygon points="80,22 28,112 132,112" fill="#fef9c3" stroke="#ca8a04" stroke-width="3.5" stroke-linejoin="round"/>
+                            <g class="${axisClass}" stroke="#ca8a04" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="10" x2="80" y2="124"/>
+                                <line x1="20" y1="116" x2="114" y2="62"/>
+                                <line x1="140" y1="116" x2="46" y2="62"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">C. Tam giác đều</text>
+                            <text class="${axisClass}" x="80" y="174" text-anchor="middle" font-size="14" font-weight="700" fill="#ca8a04">(3 trục)</text>
+                        </g>
+
+                        <!-- D. Hình bình hành thường (ĐÁP ÁN ĐÚNG: KHÔNG CÓ TRỤC ĐỐI XỨNG) -->
+                        <g transform="translate(570, 15)">
+                            <polygon points="48,32 154,32 122,112 16,112" fill="#ffe4e6" stroke="#e11d48" stroke-width="3.5" stroke-linejoin="round"/>
+                            <g class="${axisClass}">
+                                <rect x="15" y="156" width="140" height="26" rx="8" fill="#ffe4e6" stroke="#e11d48" stroke-width="2"/>
+                                <text x="85" y="174" text-anchor="middle" font-size="14" font-weight="900" fill="#be123c">✕ Không có trục</text>
+                            </g>
+                            <text x="85" y="150" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">D. Hình bình hành</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 5: Tam giác đều có bao nhiêu trục đối xứng? (Đáp án C: 3 trục)
+                // Tam giác đều chuẩn lượng giác: cạnh a = 160, cao h = 138.56
+                // Đỉnh A(250, 28), B(170, 166.56), C(330, 166.56)
+                // Trung điểm BC: M1(250, 166.56), Trung điểm AC: M2(290, 97.28), Trung điểm AB: M3(210, 97.28)
+                case 5:
+                    return `
+                    <svg viewBox="0 0 500 220" preserveAspectRatio="xMidYMid meet">
+                        <polygon points="250,28 170,166.56 330,166.56" fill="#dcfce7" stroke="#16a34a" stroke-width="4" stroke-linejoin="round"/>
+                        <!-- Ký hiệu 3 cạnh bằng nhau -->
+                        <line x1="204" y1="94" x2="216" y2="100" stroke="#15803d" stroke-width="3"/>
+                        <line x1="296" y1="94" x2="284" y2="100" stroke="#15803d" stroke-width="3"/>
+                        <line x1="250" y1="160" x2="250" y2="173" stroke="#15803d" stroke-width="3"/>
+
+                        <!-- 3 Trục đối xứng hiện ra sau khi trả lời -->
+                        <g class="${axisClass}">
+                            <!-- Trục 1 qua đỉnh trên -->
+                            <line x1="250" y1="8" x2="250" y2="195" stroke="#e11d48" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="250" cy="10" r="10" fill="#e11d48"/>
+                            <text x="250" y="14" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">1</text>
+
+                            <!-- Trục 2 qua đỉnh trái B(170,166.56) và trung điểm AC(290,97.28) -->
+                            <line x1="146" y1="180.4" x2="318" y2="81.1" stroke="#0284c7" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="324" cy="78" r="10" fill="#0284c7"/>
+                            <text x="324" y="82" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">2</text>
+
+                            <!-- Trục 3 qua đỉnh phải C(330,166.56) và trung điểm AB(210,97.28) -->
+                            <line x1="354" y1="180.4" x2="182" y2="81.1" stroke="#d97706" stroke-width="3" stroke-dasharray="7,5"/>
+                            <circle cx="176" cy="78" r="10" fill="#d97706"/>
+                            <text x="176" y="82" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">3</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 6: Hình thoi có bao nhiêu trục đối xứng? (Đáp án C: 2 trục là 2 đường chéo)
+                case 6:
+                    return `
+                    <svg viewBox="0 0 520 220" preserveAspectRatio="xMidYMid meet">
+                        <!-- Hình thoi tâm (260, 110), đường chéo ngang 240, đường chéo dọc 130 -->
+                        <polygon points="260,45 380,110 260,175 140,110" fill="#e0f2fe" stroke="#0284c7" stroke-width="4" stroke-linejoin="round"/>
+                        <!-- Ký hiệu 4 cạnh bằng nhau -->
+                        <line x1="196" y1="72" x2="204" y2="84" stroke="#0369a1" stroke-width="3"/>
+                        <line x1="324" y1="72" x2="316" y2="84" stroke="#0369a1" stroke-width="3"/>
+                        <line x1="196" y1="148" x2="204" y2="136" stroke="#0369a1" stroke-width="3"/>
+                        <line x1="324" y1="148" x2="316" y2="136" stroke="#0369a1" stroke-width="3"/>
+
+                        <!-- 2 Đường chéo là 2 trục đối xứng -->
+                        <g class="${axisClass}">
+                            <line x1="260" y1="14" x2="260" y2="206" stroke="#e11d48" stroke-width="3.5" stroke-dasharray="8,5"/>
+                            <line x1="100" y1="110" x2="420" y2="110" stroke="#16a34a" stroke-width="3.5" stroke-dasharray="8,5"/>
+                            <text x="275" y="28" font-size="15" font-weight="900" fill="#e11d48">Đường chéo 1</text>
+                            <text x="425" y="104" font-size="15" font-weight="900" fill="#16a34a">Đường chéo 2</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 7: Trục đối xứng của một tam giác cân đi qua những điểm nào?
+                // (Đáp án B: Đỉnh và trung điểm cạnh đáy)
+                case 7:
+                    return `
+                    <svg viewBox="0 0 520 225" preserveAspectRatio="xMidYMid meet">
+                        <!-- Tam giác cân ABC tại đỉnh A(260, 32), đáy B(160, 178), C(360, 178), trung điểm M(260, 178) -->
+                        <polygon points="260,32 160,178 360,178" fill="#fef9c3" stroke="#ca8a04" stroke-width="4" stroke-linejoin="round"/>
+                        <!-- Ký hiệu 2 cạnh bên AB = AC -->
+                        <line x1="202" y1="100" x2="216" y2="106" stroke="#a16207" stroke-width="3.5"/>
+                        <line x1="318" y1="100" x2="304" y2="106" stroke="#a16207" stroke-width="3.5"/>
+                        <!-- Ký hiệu MB = MC (M là trung điểm cạnh đáy BC) -->
+                        <line x1="208" y1="171" x2="208" y2="185" stroke="#a16207" stroke-width="3"/>
+                        <line x1="214" y1="171" x2="214" y2="185" stroke="#a16207" stroke-width="3"/>
+                        <line x1="306" y1="171" x2="306" y2="185" stroke="#a16207" stroke-width="3"/>
+                        <line x1="312" y1="171" x2="312" y2="185" stroke="#a16207" stroke-width="3"/>
+
+                        <!-- Đánh dấu Đỉnh A và Trung điểm M -->
+                        <circle cx="260" cy="32" r="6" fill="#0284c7"/>
+                        <text x="274" y="34" font-size="16" font-weight="900" fill="#0284c7">Đỉnh A</text>
+                        <text x="138" y="185" font-size="16" font-weight="800" fill="#0f172a">B</text>
+                        <text x="370" y="185" font-size="16" font-weight="800" fill="#0f172a">C</text>
+                        <circle cx="260" cy="178" r="6" fill="#e11d48"/>
+                        <text x="260" y="204" text-anchor="middle" font-size="15" font-weight="900" fill="#e11d48">M (Trung điểm cạnh đáy)</text>
+
+                        <!-- Trục đối xứng đi qua A và M hiện ra sau khi trả lời -->
+                        <g class="${axisClass}">
+                            <line x1="260" y1="6" x2="260" y2="215" stroke="#e11d48" stroke-width="3.5" stroke-dasharray="8,5"/>
+                            <rect x="261" y="164" width="14" height="14" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+                        </g>
+                    </svg>`;
+
+                // CÂU 8: Hình tròn có bao nhiêu trục đối xứng? (Đáp án D: Vô số)
+                case 8:
+                    return `
+                    <svg viewBox="0 0 520 225" preserveAspectRatio="xMidYMid meet">
+                        <circle cx="260" cy="112" r="76" fill="#e0f2fe" stroke="#0284c7" stroke-width="4"/>
+
+                        <!-- Nhiều đường thẳng đi qua tâm O hiện ra sau khi trả lời -->
+                        <g class="${axisClass}" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6,5">
+                            <line x1="260" y1="12" x2="260" y2="212"/>
+                            <line x1="160" y1="112" x2="360" y2="112"/>
+                            <line x1="189" y1="41" x2="331" y2="183"/>
+                            <line x1="331" y1="41" x2="189" y2="183"/>
+                            <line x1="168" y1="74" x2="352" y2="150"/>
+                            <line x1="168" y1="150" x2="352" y2="74"/>
+                            <line x1="222" y1="20" x2="298" y2="204"/>
+                            <line x1="298" y1="20" x2="222" y2="204"/>
+                            <text x="380" y="65" font-size="16" font-weight="900" fill="#e11d48" stroke="none">Vô số trục đi qua tâm O!</text>
+                        </g>
+
+                        <!-- Tâm O luôn hiển thị rõ -->
+                        <circle cx="260" cy="112" r="5.5" fill="#0f172a"/>
+                        <text x="272" y="106" font-size="17" font-weight="900" fill="#0f172a">O</text>
+                    </svg>`;
+
+                // CÂU 9: Một đường thẳng là trục đối xứng của hình khi nào?
+                // (Đáp án B: Hai phần của hình chồng khít lên nhau khi gấp theo đường thẳng đó)
+                case 9:
+                    return `
+                    <svg viewBox="0 0 600 225" preserveAspectRatio="xMidYMid meet">
+                        <!-- Nửa bên trái của hình cánh bướm / đa giác đối xứng -->
+                        <path d="M300,45 L210,30 L175,85 L225,115 L185,165 L245,185 L300,155 Z"
+                              fill="#38bdf8" fill-opacity="0.75" stroke="#0284c7" stroke-width="3.5" stroke-linejoin="round"/>
+                        <!-- Nửa bên phải đối xứng hoàn hảo -->
+                        <path d="M300,45 L390,30 L425,85 L375,115 L415,165 L355,185 L300,155 Z"
+                              fill="#facc15" fill-opacity="0.75" stroke="#ca8a04" stroke-width="3.5" stroke-linejoin="round"/>
+
+                        <!-- Đường thẳng d ở chính giữa -->
+                        <line x1="300" y1="10" x2="300" y2="212" stroke="#e11d48" stroke-width="4" stroke-dasharray="8,5"/>
+                        <text x="312" y="26" font-size="18" font-weight="900" fill="#e11d48">d</text>
+
+                        <!-- Mũi tên minh họa thao tác gấp hai nửa hình theo đường thẳng d -->
+                        <path d="M215,105 C245,75 275,75 292,102" fill="none" stroke="#0f172a" stroke-width="3" stroke-dasharray="4,3"/>
+                        <polygon points="294,106 284,99 293,93" fill="#0f172a"/>
+                        <path d="M385,105 C355,75 325,75 308,102" fill="none" stroke="#0f172a" stroke-width="3" stroke-dasharray="4,3"/>
+                        <polygon points="306,106 307,93 316,99" fill="#0f172a"/>
+
+                        <text x="120" y="115" text-anchor="middle" font-size="15" font-weight="800" fill="#0369a1">Phần 1</text>
+                        <text x="480" y="115" text-anchor="middle" font-size="15" font-weight="800" fill="#a16207">Phần 2</text>
+
+                        <g class="${axisClass}">
+                            <rect x="155" y="190" width="290" height="28" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                            <text x="300" y="209" text-anchor="middle" font-size="14" font-weight="900" fill="#15803d">Gấp theo đường thẳng d ➜ Hai nửa trùng khít!</text>
+                        </g>
+                    </svg>`;
+
+                // CÂU 10: Trong các hình sau, hình nào có nhiều trục đối xứng nhất?
+                // A. Hình vuông | B. Hình chữ nhật | C. Tam giác đều | D. Hình tròn
+                case 10:
+                    return `
+                    <svg viewBox="0 0 760 220" preserveAspectRatio="xMidYMid meet">
+                        <!-- A. Hình vuông -->
+                        <g transform="translate(20, 15)">
+                            <rect x="35" y="27" width="90" height="90" fill="#e0f2fe" stroke="#0284c7" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#0284c7" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="15" x2="80" y2="128"/>
+                                <line x1="22" y1="72" x2="138" y2="72"/>
+                                <line x1="28" y1="20" x2="132" y2="124"/>
+                                <line x1="132" y1="20" x2="28" y2="124"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">A. Hình vuông</text>
+                            <text class="${axisClass}" x="80" y="175" text-anchor="middle" font-size="14" font-weight="800" fill="#0284c7">4 trục</text>
+                        </g>
+
+                        <!-- B. Hình chữ nhật -->
+                        <g transform="translate(205, 15)">
+                            <rect x="20" y="38" width="120" height="68" fill="#fef9c3" stroke="#ca8a04" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#ca8a04" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="18" x2="80" y2="124"/>
+                                <line x1="8" y1="72" x2="152" y2="72"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">B. Hình chữ nhật</text>
+                            <text class="${axisClass}" x="80" y="175" text-anchor="middle" font-size="14" font-weight="800" fill="#ca8a04">2 trục</text>
+                        </g>
+
+                        <!-- C. Tam giác đều -->
+                        <g transform="translate(390, 15)">
+                            <polygon points="80,22 28,112 132,112" fill="#dcfce7" stroke="#16a34a" stroke-width="3.5" stroke-linejoin="round"/>
+                            <g class="${axisClass}" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,4">
+                                <line x1="80" y1="10" x2="80" y2="124"/>
+                                <line x1="20" y1="116" x2="114" y2="62"/>
+                                <line x1="140" y1="116" x2="46" y2="62"/>
+                            </g>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">C. Tam giác đều</text>
+                            <text class="${axisClass}" x="80" y="175" text-anchor="middle" font-size="14" font-weight="800" fill="#16a34a">3 trục</text>
+                        </g>
+
+                        <!-- D. Hình tròn (ĐÁP ÁN ĐÚNG: VÔ SỐ TRỤC ĐỐI XỨNG) -->
+                        <g transform="translate(575, 15)">
+                            <circle cx="80" cy="72" r="46" fill="#ffe4e6" stroke="#e11d48" stroke-width="3.5"/>
+                            <g class="${axisClass}" stroke="#e11d48" stroke-width="2.2" stroke-dasharray="5,4">
+                                <line x1="80" y1="12" x2="80" y2="132"/>
+                                <line x1="20" y1="72" x2="140" y2="72"/>
+                                <line x1="36" y1="28" x2="124" y2="116"/>
+                                <line x1="124" y1="28" x2="36" y2="116"/>
+                                <line x1="25" y1="50" x2="135" y2="94"/>
+                                <line x1="25" y1="94" x2="135" y2="50"/>
+                            </g>
+                            <circle cx="80" cy="72" r="4" fill="#be123c"/>
+                            <text x="80" y="152" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">D. Hình tròn</text>
+                            <text class="${axisClass}" x="80" y="175" text-anchor="middle" font-size="15" font-weight="900" fill="#e11d48">★ Vô số trục!</text>
+                        </g>
+                    </svg>`;
+            }
+        }
+
+        /* ==========================================================================
+           3. NGÂN HÀNG 10 CÂU HỎI CHUẨN XÁC THEO YÊU CẦU
+           ========================================================================== */
+        const QUESTIONS_BANK = [
+            {
+                id: 1,
+                topic: "Nhận biết hình có trục đối xứng",
+                question: "Câu 1: Hình nào dưới đây có đúng một trục đối xứng?",
+                options: [
+                    "Hình vuông.",
+                    "Hình chữ nhật.",
+                    "Tam giác cân không đều.",
+                    "Hình bình hành thường."
+                ],
+                correctIndex: 2, // C
+                explanation: "Tam giác cân không đều có đúng một trục đối xứng đi qua đỉnh và trung điểm cạnh đáy."
+            },
+            {
+                id: 2,
+                topic: "Số trục đối xứng của hình vuông",
+                question: "Câu 2: Hình vuông có bao nhiêu trục đối xứng?",
+                options: [
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4."
+                ],
+                correctIndex: 3, // D
+                explanation: "Hình vuông có 4 trục đối xứng, gồm hai đường thẳng đi qua trung điểm các cặp cạnh đối diện và hai đường chéo."
+            },
+            {
+                id: 3,
+                topic: "Số trục đối xứng của hình chữ nhật",
+                question: "Câu 3: Hình chữ nhật không phải hình vuông có bao nhiêu trục đối xứng?",
+                options: [
+                    "0.",
+                    "1.",
+                    "2.",
+                    "4."
+                ],
+                correctIndex: 2, // C
+                explanation: "Hình chữ nhật có hai trục đối xứng đi qua trung điểm của hai cặp cạnh đối diện."
+            },
+            {
+                id: 4,
+                topic: "Hình không có trục đối xứng",
+                question: "Câu 4: Hình nào sau đây không có trục đối xứng?",
+                options: [
+                    "Hình tròn.",
+                    "Hình vuông.",
+                    "Tam giác đều.",
+                    "Hình bình hành thường."
+                ],
+                correctIndex: 3, // D
+                explanation: "Hình bình hành thường không có trục đối xứng. Ba hình còn lại đều có trục đối xứng."
+            },
+            {
+                id: 5,
+                topic: "Số trục đối xứng của tam giác đều",
+                question: "Câu 5: Tam giác đều có bao nhiêu trục đối xứng?",
+                options: [
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4."
+                ],
+                correctIndex: 2, // C
+                explanation: "Tam giác đều có 3 trục đối xứng. Mỗi trục đi qua một đỉnh và trung điểm cạnh đối diện."
+            },
+            {
+                id: 6,
+                topic: "Số trục đối xứng của hình thoi",
+                question: "Câu 6: Hình thoi có bao nhiêu trục đối xứng?",
+                options: [
+                    "0.",
+                    "1.",
+                    "2.",
+                    "4."
+                ],
+                correctIndex: 2, // C
+                explanation: "Hai đường chéo của hình thoi là hai trục đối xứng."
+            },
+            {
+                id: 7,
+                topic: "Trục đối xứng của tam giác cân",
+                question: "Câu 7: Trục đối xứng của một tam giác cân đi qua những điểm nào?",
+                options: [
+                    "Hai đỉnh bất kỳ.",
+                    "Đỉnh và trung điểm cạnh đáy.",
+                    "Hai trung điểm của hai cạnh bên.",
+                    "Trung điểm hai cạnh bất kỳ."
+                ],
+                correctIndex: 1, // B
+                explanation: "Trục đối xứng đi qua đỉnh của tam giác cân và trung điểm của cạnh đáy."
+            },
+            {
+                id: 8,
+                topic: "Số trục đối xứng của hình tròn",
+                question: "Câu 8: Hình tròn có bao nhiêu trục đối xứng?",
+                options: [
+                    "1.",
+                    "2.",
+                    "4.",
+                    "Vô số."
+                ],
+                correctIndex: 3, // D
+                explanation: "Mọi đường thẳng đi qua tâm hình tròn đều là trục đối xứng."
+            },
+            {
+                id: 9,
+                topic: "Nhận biết trục đối xứng",
+                question: "Câu 9: Một đường thẳng là trục đối xứng của hình khi nào?",
+                options: [
+                    "Đường thẳng chia hình thành hai phần có diện tích bằng nhau.",
+                    "Hai phần của hình chồng khít lên nhau khi gấp theo đường thẳng đó.",
+                    "Đường thẳng đi qua một đỉnh của hình.",
+                    "Đường thẳng chia hình thành hai phần bất kỳ."
+                ],
+                correctIndex: 1, // B
+                explanation: "Khi gấp hình theo trục đối xứng, hai phần của hình trùng khít lên nhau."
+            },
+            {
+                id: 10,
+                topic: "Vận dụng tổng hợp",
+                question: "Câu 10: Trong các hình sau, hình nào có nhiều trục đối xứng nhất?",
+                options: [
+                    "Hình vuông.",
+                    "Hình chữ nhật.",
+                    "Tam giác đều.",
+                    "Hình tròn."
+                ],
+                correctIndex: 3, // D
+                explanation: "Hình tròn có vô số trục đối xứng, nhiều hơn số trục đối xứng của các hình còn lại."
+            }
+        ];
+
+        /* ==========================================================================
+           4. BIẾN TRẠNG THÁI TRÒ CHƠI & BỘ ĐẾM THỜI GIAN 20 GIÂY
+           ========================================================================== */
+        const MAX_TIME = 20;
+        let currentQuestionIdx = 0;
+        let currentScore = 0;
+        let timeLeft = MAX_TIME;
+        let timerInterval = null;
+        let isQuestionAnswered = false;
+        let userAnswersHistory = []; // Lưu lịch sử từng câu: { selectedIndex, isCorrect, isTimeout }
+
+        // Bảng màu bóng nước luân phiên tươi sáng cho từng câu hỏi
+        const BALLOON_PALETTES = [
+            { s1: '#bae6fd', s2: '#0ea5e9', s3: '#0369a1', neck: '#0284c7' }, // Xanh dương
+            { s1: '#bbf7d0', s2: '#22c55e', s3: '#15803d', neck: '#166534' }, // Xanh lá
+            { s1: '#fef08a', s2: '#eab308', s3: '#a16207', neck: '#ca8a04' }, // Vàng
+            { s1: '#fbcfe8', s2: '#ec4899', s3: '#9d174d', neck: '#be185d' }  // Hồng đỏ
+        ];
+
+        // Dừng triệt để bộ đếm thời gian cũ
+        function stopQuestionTimer() {
+            if (timerInterval !== null) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // Chuyển màn hình
+        function showScreen(screenId) {
+            stopQuestionTimer();
+            document.querySelectorAll('.screen').forEach(scr => {
+                scr.classList.remove('active');
+            });
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        // Khởi tạo trò chơi mới từ đầu
+        function startNewGame() {
+            stopQuestionTimer();
+            getAudioContext(); // Kích hoạt âm thanh sau thao tác click của người dùng
+            playPreviewBoing();
+
+            currentQuestionIdx = 0;
+            currentScore = 0;
+            isQuestionAnswered = false;
+            userAnswersHistory = new Array(QUESTIONS_BANK.length).fill(null);
+
+            showScreen('screenGame');
+            loadQuestion(currentQuestionIdx);
+        }
+
+        // Cập nhật thanh 10 chấm tiến trình câu hỏi
+        function renderStepDots() {
+            const container = document.getElementById('uiStepDots');
+            container.innerHTML = '';
+            for (let i = 0; i < QUESTIONS_BANK.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'step-dot';
+                if (userAnswersHistory[i]) {
+                    dot.classList.add(userAnswersHistory[i].isCorrect ? 'correct' : 'wrong');
+                } else if (i === currentQuestionIdx) {
+                    dot.classList.add('current');
+                }
+                container.appendChild(dot);
+            }
+        }
+
+        // Đặt màu sắc và trạng thái ban đầu của quả bóng nước cho câu hỏi mới
+        function resetBalloonVisual(qIndex) {
+            const wrapper = document.getElementById('uiBalloonWrapper');
+            const splash = document.getElementById('uiSplashLayer');
+            const faceNormal = document.getElementById('balloonFaceNormal');
+            const faceWorried = document.getElementById('balloonFaceWorried');
+            const caption = document.getElementById('uiBalloonCaption');
+
+            wrapper.className = 'water-balloon-wrapper balloon-idle';
+            splash.classList.remove('active');
+            faceNormal.style.display = 'block';
+            faceWorried.style.display = 'none';
+            caption.textContent = 'Hãy chọn đáp án đúng trước khi bóng nổ!';
+            caption.style.color = '#0c4a6e';
+
+            const palette = BALLOON_PALETTES[qIndex % BALLOON_PALETTES.length];
+            document.getElementById('gradStop1').setAttribute('stop-color', palette.s1);
+            document.getElementById('gradStop2').setAttribute('stop-color', palette.s2);
+            document.getElementById('gradStop3').setAttribute('stop-color', palette.s3);
+            document.getElementById('balloonNeck').setAttribute('fill', palette.neck);
+        }
+
+        // Tải nội dung câu hỏi thứ `index`
+        function loadQuestion(index) {
+            stopQuestionTimer();
+            isQuestionAnswered = false;
+            timeLeft = MAX_TIME;
+
+            const qData = QUESTIONS_BANK[index];
+
+            // 1. Cập nhật thông tin đầu trang
+            document.getElementById('uiQuestionIndex').textContent = `${index + 1}/${QUESTIONS_BANK.length}`;
+            document.getElementById('uiCurrentScore').textContent = `${currentScore}/${QUESTIONS_BANK.length}`;
+            renderStepDots();
+
+            // 2. Cập nhật câu hỏi & Hình vẽ SVG (chưa hiện trục đối xứng)
+            document.getElementById('uiQuestionText').textContent = qData.question;
+            document.getElementById('uiSvgContainer').innerHTML = getQuestionSVG(qData.id, false);
+
+            // 3. Cập nhật 4 nút đáp án A, B, C, D
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`optBtn${i}`);
+                const txt = document.getElementById(`optText${i}`);
+                btn.disabled = false;
+                btn.className = 'option-btn';
+                txt.textContent = qData.options[i];
+            }
+
+            // 4. Ẩn thanh giải thích của câu trước
+            const feedbackBanner = document.getElementById('uiFeedbackBanner');
+            feedbackBanner.className = 'feedback-banner';
+
+            // Đổi chữ nút tiếp theo nếu là câu cuối cùng
+            const nextBtn = document.getElementById('uiNextQuestionBtn');
+            nextBtn.textContent = (index === QUESTIONS_BANK.length - 1) ? 'XEM KẾT QUẢ 🏆' : 'CÂU TIẾP THEO ➜';
+
+            // 5. Khởi tạo lại quả bóng nước & đồng hồ 20 giây
+            resetBalloonVisual(index);
+            updateTimerUI();
+            startCountdownTimer();
+        }
+
+        // Cập nhật giao diện đồng hồ và hiệu ứng bóng nước theo số giây còn lại
+        function updateTimerUI() {
+            const timerSecondsEl = document.getElementById('uiTimerSeconds');
+            const timerBadgeEl = document.getElementById('uiTimerBadge');
+            const timerBarEl = document.getElementById('uiTimerBar');
+            const balloonWrapper = document.getElementById('uiBalloonWrapper');
+            const faceNormal = document.getElementById('balloonFaceNormal');
+            const faceWorried = document.getElementById('balloonFaceWorried');
+            const caption = document.getElementById('uiBalloonCaption');
+
+            timerSecondsEl.textContent = timeLeft;
+            const percent = Math.max(0, (timeLeft / MAX_TIME) * 100);
+            timerBarEl.style.width = `${percent}%`;
+
+            // Xóa các class cảnh báo cũ
+            timerBadgeEl.classList.remove('warn-orange', 'warn-red');
+            timerBarEl.classList.remove('warn-orange', 'warn-red');
+
+            if (timeLeft > 10) {
+                // 20s -> 11s: Bình thường
+                if (!isQuestionAnswered) {
+                    balloonWrapper.className = 'water-balloon-wrapper balloon-idle';
+                }
+            } else if (timeLeft > 5) {
+                // 10s -> 6s: Cảnh báo màu cam, bóng rung nhẹ
+                timerBadgeEl.classList.add('warn-orange');
+                timerBarEl.classList.add('warn-orange');
+                if (!isQuestionAnswered) {
+                    balloonWrapper.className = 'water-balloon-wrapper balloon-warn-orange';
+                    faceNormal.style.display = 'none';
+                    faceWorried.style.display = 'block';
+                    caption.textContent = '⚠️ Nhanh lên! Bóng nước đang căng dần!';
+                    caption.style.color = '#c2410c';
+                    // Đổi màu bóng sang tông cam cảnh báo
+                    document.getElementById('gradStop1').setAttribute('stop-color', '#fed7aa');
+                    document.getElementById('gradStop2').setAttribute('stop-color', '#f97316');
+                    document.getElementById('gradStop3').setAttribute('stop-color', '#c2410c');
+                }
+            } else if (timeLeft > 0) {
+                // 5s -> 1s: Cảnh báo đỏ, bóng phồng lớn và rung nhanh, phát tiếng tích tắc
+                timerBadgeEl.classList.add('warn-red');
+                timerBarEl.classList.add('warn-red');
+                if (!isQuestionAnswered) {
+                    balloonWrapper.className = 'water-balloon-wrapper balloon-warn-red';
+                    faceNormal.style.display = 'none';
+                    faceWorried.style.display = 'block';
+                    caption.textContent = '🚨 SẮP NỔ RỒI! Chỉ còn vài giây!';
+                    caption.style.color = '#b91c1c';
+                    // Đổi màu bóng sang đỏ căng phồng
+                    document.getElementById('gradStop1').setAttribute('stop-color', '#fecdd3');
+                    document.getElementById('gradStop2').setAttribute('stop-color', '#f43f5e');
+                    document.getElementById('gradStop3').setAttribute('stop-color', '#be123c');
+                    playTickSound(timeLeft <= 3);
+                }
+            } else {
+                // 0s: Hết giờ
+                timerBadgeEl.classList.add('warn-red');
+                timerBarEl.classList.add('warn-red');
+            }
+        }
+
+        // Bắt đầu đếm ngược 20 giây
+        function startCountdownTimer() {
+            stopQuestionTimer();
+            timerInterval = setInterval(() => {
+                if (isQuestionAnswered) {
+                    stopQuestionTimer();
+                    return;
+                }
+                timeLeft--;
+                updateTimerUI();
+
+                if (timeLeft <= 0) {
+                    stopQuestionTimer();
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        // Hiển thị trục đối xứng trên hình SVG sau khi học sinh trả lời hoặc hết giờ
+        function revealSymmetryAxesOnDiagram() {
+            const axes = document.querySelectorAll('#uiSvgContainer .sym-axis-reveal');
+            axes.forEach(el => el.classList.add('visible'));
+        }
+
+        // Khóa toàn bộ 4 phương án để tránh chọn nhiều lần hoặc cộng điểm lặp
+        function lockAllOptions() {
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`optBtn${i}`).disabled = true;
+            }
+        }
+
+        // Kích hoạt hiệu ứng nổ bóng nước
+        function triggerBalloonExplosion() {
+            const wrapper = document.getElementById('uiBalloonWrapper');
+            const splash = document.getElementById('uiSplashLayer');
+            wrapper.className = 'water-balloon-wrapper balloon-popping';
+            splash.classList.add('active');
+            playWaterBurstSound();
+        }
+
+        // Xử lý khi học sinh nhấn chọn 1 trong 4 đáp án
+        function handleSelectAnswer(selectedIndex) {
+            if (isQuestionAnswered) return; // Chống cộng điểm nhiều lần
+            isQuestionAnswered = true;
+            stopQuestionTimer();
+            lockAllOptions();
+
+            const qData = QUESTIONS_BANK[currentQuestionIdx];
+            const isCorrect = (selectedIndex === qData.correctIndex);
+
+            // Lưu lịch sử trả lời
+            userAnswersHistory[currentQuestionIdx] = {
+                selectedIndex: selectedIndex,
+                isCorrect: isCorrect,
+                isTimeout: false
+            };
+
+            // Đánh dấu màu đáp án
+            const selectedBtn = document.getElementById(`optBtn${selectedIndex}`);
+            const correctBtn = document.getElementById(`optBtn${qData.correctIndex}`);
+
+            if (isCorrect) {
+                selectedBtn.classList.add('correct-choice');
+                currentScore += 1;
+                document.getElementById('uiCurrentScore').textContent = `${currentScore}/${QUESTIONS_BANK.length}`;
+
+                // Bóng nước không nổ, phát sáng vui nhộn
+                const wrapper = document.getElementById('uiBalloonWrapper');
+                wrapper.className = 'water-balloon-wrapper balloon-saved';
+                document.getElementById('balloonFaceNormal').style.display = 'block';
+                document.getElementById('balloonFaceWorried').style.display = 'none';
+                const caption = document.getElementById('uiBalloonCaption');
+                caption.textContent = '🎉 Tuyệt vời! Bóng nước được an toàn!';
+                caption.style.color = '#15803d';
+
+                playCorrectSound();
+                showFeedbackBanner(
+                    true,
+                    "CHÍNH XÁC! BẠN ĐÃ GIỮ ĐƯỢC BÓNG NƯỚC!",
+                    qData.explanation
+                );
+            } else {
+                selectedBtn.classList.add('wrong-choice');
+                correctBtn.classList.add('correct-choice');
+
+                // Bóng nước nổ ngay lập tức
+                triggerBalloonExplosion();
+                const caption = document.getElementById('uiBalloonCaption');
+                caption.textContent = '💥 Bóng nước đã phát nổ!';
+                caption.style.color = '#be123c';
+
+                showFeedbackBanner(
+                    false,
+                    "RẤT TIẾC! BÓNG NƯỚC ĐÃ NỔ!",
+                    qData.explanation
+                );
+            }
+
+            renderStepDots();
+            revealSymmetryAxesOnDiagram();
+        }
+
+        // Xử lý khi hết 20 giây mà chưa trả lời
+        function handleTimeout() {
+            if (isQuestionAnswered) return;
+            isQuestionAnswered = true;
+            stopQuestionTimer();
+            lockAllOptions();
+
+            const qData = QUESTIONS_BANK[currentQuestionIdx];
+
+            userAnswersHistory[currentQuestionIdx] = {
+                selectedIndex: -1,
+                isCorrect: false,
+                isTimeout: true
+            };
+
+            // Đánh dấu đáp án đúng bằng màu xanh
+            const correctBtn = document.getElementById(`optBtn${qData.correctIndex}`);
+            correctBtn.classList.add('correct-choice');
+
+            // Phát hiệu ứng nổ bóng nước
+            triggerBalloonExplosion();
+            const caption = document.getElementById('uiBalloonCaption');
+            caption.textContent = '⏰ Hết giờ! Bóng nước đã nổ!';
+            caption.style.color = '#be123c';
+
+            showFeedbackBanner(
+                false,
+                "HẾT GIỜ! BÓNG NƯỚC ĐÃ NỔ!",
+                qData.explanation
+            );
+
+            renderStepDots();
+            revealSymmetryAxesOnDiagram();
+        }
+
+        // Hiển thị thanh thông báo kết quả câu hỏi và lời giải thích
+        function showFeedbackBanner(isSuccess, titleText, explanationText) {
+            const banner = document.getElementById('uiFeedbackBanner');
+            const titleEl = document.getElementById('uiFeedbackTitle');
+            const expEl = document.getElementById('uiFeedbackExplanation');
+
+            banner.className = 'feedback-banner show ' + (isSuccess ? 'status-correct' : 'status-wrong');
+            titleEl.textContent = titleText;
+            expEl.textContent = `💡 Giải thích: ${explanationText}`;
+        }
+
+        // Chuyển sang câu hỏi tiếp theo hoặc màn hình kết thúc
+        function goToNextQuestion() {
+            stopQuestionTimer();
+            if (currentQuestionIdx < QUESTIONS_BANK.length - 1) {
+                currentQuestionIdx++;
+                loadQuestion(currentQuestionIdx);
+            } else {
+                showEndScreen();
+            }
+        }
+
+        /* ==========================================================================
+           5. MÀN HÌNH KẾT THÚC & XẾP HẠNG VUI NHỘN
+           ========================================================================== */
+        function showEndScreen() {
+            stopQuestionTimer();
+            showScreen('screenEnd');
+
+            const totalQuestions = QUESTIONS_BANK.length;
+            const wrongOrTimeout = totalQuestions - currentScore;
+            const accuracyPercent = Math.round((currentScore / totalQuestions) * 100);
+
+            document.getElementById('endCorrectCount').textContent = currentScore;
+            document.getElementById('endWrongCount').textContent = wrongOrTimeout;
+            document.getElementById('endTotalScore').textContent = `${currentScore}/${totalQuestions}`;
+            document.getElementById('endAccuracy').textContent = `${accuracyPercent}%`;
+
+            // Xếp hạng vui nhộn theo đúng thang điểm yêu cầu
+            const rankEl = document.getElementById('endRankTitle');
+            if (currentScore >= 9) {
+                rankEl.textContent = '👑 Danh hiệu: Bậc thầy trục đối xứng';
+            } else if (currentScore >= 7) {
+                rankEl.textContent = '🌟 Danh hiệu: Chuyên gia hình học';
+            } else if (currentScore >= 5) {
+                rankEl.textContent = '🧭 Danh hiệu: Nhà thám hiểm hình học';
+            } else {
+                rankEl.textContent = '💪 Danh hiệu: Cần luyện tập thêm';
+            }
+
+            playCorrectSound();
+        }
+
+        // Mở bảng xem lại toàn bộ 10 câu hỏi và hình minh họa có trục đối xứng
+        function openReviewModal() {
+            const container = document.getElementById('reviewListContainer');
+            container.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+
+            QUESTIONS_BANK.forEach((q, idx) => {
+                const hist = userAnswersHistory[idx] || { selectedIndex: -1, isCorrect: false, isTimeout: true };
+                const item = document.createElement('div');
+                item.className = 'review-item ' + (hist.isCorrect ? 'review-ok' : 'review-fail');
+
+                let userStatusHtml = '';
+                if (hist.isTimeout || hist.selectedIndex === -1) {
+                    userStatusHtml = `<span style="color:#be123c; font-weight:800;">⏰ Hết giờ (Chưa chọn)</span>`;
+                } else if (hist.isCorrect) {
+                    userStatusHtml = `<span style="color:#15803d; font-weight:800;">✓ Bạn chọn: ${letters[hist.selectedIndex]}. ${q.options[hist.selectedIndex]} (Chính xác)</span>`;
+                } else {
+                    userStatusHtml = `<span style="color:#be123c; font-weight:800;">✕ Bạn chọn: ${letters[hist.selectedIndex]}. ${q.options[hist.selectedIndex]} (Sai)</span>`;
+                }
+
+                item.innerHTML = `
+                    <div>
+                        <div style="font-size:1.15rem; font-weight:900; color:#0f172a; margin-bottom:6px;">
+                            ${q.question}
+                        </div>
+                        <div style="margin-bottom:6px; font-size:0.98rem;">
+                            ${userStatusHtml}
+                        </div>
+                        <div style="margin-bottom:8px; font-size:1rem; font-weight:800; color:#0369a1;">
+                            🎯 Đáp án đúng: ${letters[q.correctIndex]}. ${q.options[q.correctIndex]}
+                        </div>
+                        <div style="font-size:0.96rem; color:#334155; background:#ffffff; padding:8px 12px; border-radius:10px; border:1px solid #cbd5e1;">
+                            <strong>Giải thích:</strong> ${q.explanation}
+                        </div>
+                    </div>
+                    <div class="review-svg-box">
+                        ${getQuestionSVG(q.id, true)}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            document.getElementById('reviewModal').classList.add('open');
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.remove('open');
+        }
+
+        function returnToLecture() {
+            stopQuestionTimer();
+            closeReviewModal();
+            showScreen('screenTitle');
+        }
+
+        /* ==========================================================================
+           6. CHỨC NĂNG TOÀN MÀN HÌNH & TẢI FILE HTML ĐỘC LẬP VỀ MÁY
+           ========================================================================== */
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function downloadStandaloneHTML() {
+            const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'No_Bong_Nuoc_On_Tap_Truc_Doi_Xung_Lop_6.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /* ==========================================================================
+           7. KHỞI TẠO BONG BÓNG NƯỚC TRANG TRÍ KHI TẢI TRANG
+           ========================================================================== */
+        function initBackgroundBubbles() {
+            const container = document.getElementById('bgDecorations');
+            const bubbleCount = 16;
+            for (let i = 0; i < bubbleCount; i++) {
+                const b = document.createElement('div');
+                b.className = 'floating-bubble';
+                const size = Math.floor(Math.random() * 38) + 16;
+                b.style.width = `${size}px`;
+                b.style.height = `${size}px`;
+                b.style.left = `${Math.random() * 96}%`;
+                b.style.animationDuration = `${Math.random() * 10 + 9}s`;
+                b.style.animationDelay = `${Math.random() * 8}s`;
+                container.appendChild(b);
+            }
+        }
+
+        window.onload = function () {
+            initBackgroundBubbles();
+        };
+    </script>
+</body>
+</html>
