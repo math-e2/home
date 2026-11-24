@@ -4222,7 +4222,7 @@ END $$;`;
                 <h2 class="text-xl font-extrabold text-spark-navy mt-0.5">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
                 <p class="text-xs text-spark-text mt-1">Bấm <strong>Mở bài tập</strong> để mở bài và truyền tải trạng thái tới giáo viên.</p>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-bold ${isSharing ? 'bg-emerald-100 text-emerald-700' : 'bg-spark-orangePastel text-spark-orangeDark'}">${isSharing ? 'Đã truyền tải tới GV' : 'Sẵn sàng'}</span>
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${currentStudent.screenStatus === 'sharing' ? 'bg-emerald-100 text-emerald-700' : 'bg-spark-orangePastel text-spark-orangeDark'}">${currentStudent.screenStatus === 'sharing' ? 'Đã truyền tải tới GV' : 'Sẵn sàng'}</span>
             </div>
 
             ${
@@ -4871,19 +4871,26 @@ END $$;`;
       }
       function handleHeroFileUpload(files) {
         if (!files || !files[0]) return;
+        const photo = document.getElementById('hero-mascot-photo');
+        const svg = document.getElementById('hero-mascot-svg');
+        const resetBtn = document.getElementById('hero-reset-btn');
+        if (!photo) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-          document.getElementById('hero-mascot-photo').src = e.target.result;
-          document.getElementById('hero-mascot-photo').classList.remove('hidden');
-          document.getElementById('hero-mascot-svg').classList.add('hidden');
-          document.getElementById('hero-reset-btn').classList.remove('hidden');
+          photo.src = e.target.result;
+          photo.classList.remove('hidden');
+          if (svg) svg.classList.add('hidden');
+          if (resetBtn) resetBtn.classList.remove('hidden');
         };
         reader.readAsDataURL(files[0]);
       }
       function resetHeroPhoto() {
-        document.getElementById('hero-mascot-photo').classList.add('hidden');
-        document.getElementById('hero-mascot-svg').classList.remove('hidden');
-        document.getElementById('hero-reset-btn').classList.add('hidden');
+        const photo = document.getElementById('hero-mascot-photo');
+        const svg = document.getElementById('hero-mascot-svg');
+        const resetBtn = document.getElementById('hero-reset-btn');
+        if (photo) photo.classList.add('hidden');
+        if (svg) svg.classList.remove('hidden');
+        if (resetBtn) resetBtn.classList.add('hidden');
       }
       function toggleBgRemovalMode() { Toast.show('Đã chuyển chế độ xử lý phông nền.', 'info'); }
       function handleLogoUpload(files) {
@@ -5447,4 +5454,3 @@ END $$;`;
 </body>
 
 </html>
-Processed and analyzed in code
