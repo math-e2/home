@@ -4277,7 +4277,14 @@ END $$;`;
             </div>
             ${
               exercises.length === 0
-                ? `<div class="bg-white rounded-3xl p-8 text-center text-xs sm:text-sm text-spark-text border border-gray-100">Giáo viên chưa đăng bài luyện tập nào trong phòng này.</div>`
+                ? `<div class="bg-white rounded-3xl p-6 sm:p-7 text-center space-y-4 border border-gray-100 shadow-soft">
+                    <div class="text-xs sm:text-sm text-spark-text font-medium">Chưa có bài luyện tập nào được gắn sẵn trong phòng <strong>${escapeHtml(currentRoom.roomCode)}</strong>.</div>
+                    <div class="max-w-xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <input id="stu-direct-html-url" type="url" placeholder="Dán link bài tập HTML (https://...) nếu giáo viên gửi link..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:border-spark-pink outline-none" />
+                      <button type="button" onclick="StudentRoomManager.openDirectHtmlLink()" class="btn-gradient px-4 py-2.5 rounded-xl text-white text-xs font-bold shrink-0">Mở HTML tab mới</button>
+                      <button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-3.5 py-2.5 rounded-xl bg-spark-bg border border-gray-200 hover:border-spark-pink text-spark-navy text-xs font-bold shrink-0">Tải lại</button>
+                    </div>
+                  </div>`
                 : exercises.map((ex) => {
                     const sub = mySubs.find((s) => s.exerciseId === ex.id);
                     const draftText = (currentStudent.liveDrafts && currentStudent.liveDrafts[ex.id]?.text) ?? sub?.answerData?.text ?? '';
@@ -4317,7 +4324,18 @@ END $$;`;
         installLiveObservation();
       }
 
-      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView };
+      function openDirectHtmlLink() {
+        const inp = document.getElementById('stu-direct-html-url');
+        const rawUrl = (inp?.value || '').trim();
+        if (!rawUrl) {
+          Toast.show('Vui lòng dán đường dẫn link bài tập HTML (https://...).', 'error');
+          return;
+        }
+        const safeUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl;
+        window.open(safeUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink };
     })();
 
     /* =====================================================================
@@ -5511,3 +5529,4 @@ END $$;`;
 </body>
 
 </html>
+Analyzing
