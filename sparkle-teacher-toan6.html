@@ -1991,21 +1991,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           const p = AppState.state.participants.find((x) => x.roomId === payload.roomId && x.studentId === payload.studentId && x.status !== 'removed');
           if (p) {
             if (!p.liveDrafts) p.liveDrafts = {};
-            p.liveDrafts[payload.exId] = { text: payload.text, updatedAt: new Date().toISOString() };
+            if (payload.exId && typeof payload.text === 'string') {
+              p.liveDrafts[payload.exId] = { text: payload.text, updatedAt: payload.clientAt || new Date().toISOString() };
+            }
+            if (payload.fields && typeof payload.fields === 'object') p.liveFields = payload.fields;
+            if (payload.activity) {
+              p.liveActivity = [payload.activity, ...(p.liveActivity || [])].slice(0, 18);
+            }
+            if (payload.canvasDataUrl) p.latestCanvasUrl = payload.canvasDataUrl;
             if (payload.photoDataUrl) {
               if (!p.livePhotos) p.livePhotos = {};
-              p.livePhotos[payload.exId] = payload.photoDataUrl;
+              if (payload.exId) p.livePhotos[payload.exId] = payload.photoDataUrl;
               p.latestPhotoUrl = payload.photoDataUrl;
-              p.screenStatus = 'mobile_photo';
-            } else {
+              if (p.screenStatus !== 'sharing') p.screenStatus = 'mobile_photo';
+            } else if (p.screenStatus !== 'sharing') {
               p.screenStatus = 'mobile_live';
             }
+            p.deviceMode = payload.deviceMode || p.deviceMode || 'unknown';
             p.lastSeenAt = new Date().toISOString();
           }
           if (PracticeRoomManager.isOpen()) {
             PracticeRoomManager.renderRoomView();
             if (PracticeRoomManager.getMonitoringStudentId && PracticeRoomManager.getMonitoringStudentId() === payload.studentId) {
-              PracticeRoomManager.openStudentMonitor(payload.studentId);
+              PracticeRoomManager.refreshStudentMonitor(payload.studentId);
             }
           }
         } else if (eventType.startsWith('WEBRTC_')) {
@@ -2070,10 +2078,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       let teacherPC = null;
       let activeTeacherTarget = null;
       let studentContext = null;
+      let pendingTeacherCandidates = [];
+      let pendingStudentCandidates = [];
+
+      async function flushCandidates(pc, queue) {
+        if (!pc || !pc.remoteDescription) return;
+        const items = queue.splice(0);
+        for (const candidate of items) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (err) { console.warn('WebRTC ICE candidate skipped:', err); }
+        }
+      }
 
       async function startStudentScreenShare(roomId, studentId) {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-          Toast.show('Trình duyệt hiện tại không hỗ trợ chia sẻ màn hình (getDisplayMedia).', 'error');
+        if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          Toast.show('Thiết bị/trình duyệt này chưa hỗ trợ chia sẻ toàn màn hình. Giáo viên vẫn theo dõi thao tác bên trong SPARKLE.', 'info');
           return false;
         }
         try {
@@ -2097,6 +2115,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (!localStream) return;
         if (studentPC) { try { studentPC.close(); } catch {} }
         studentPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        pendingStudentCandidates = [];
         localStream.getTracks().forEach((track) => studentPC.addTrack(track, localStream));
         studentPC.onicecandidate = (e) => {
           if (e.candidate) {
@@ -2161,6 +2180,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
           if (!activeTeacherTarget || activeTeacherTarget.roomId !== payload.roomId || activeTeacherTarget.studentId !== payload.studentId) return;
           if (teacherPC) { try { teacherPC.close(); } catch {} }
           teacherPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+          pendingTeacherCandidates = [];
           teacherPC.ontrack = (e) => {
             const videoEl = document.getElementById('teacher-remote-video');
             const phEl = document.getElementById('teacher-remote-placeholder');
@@ -2174,6 +2194,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
             if (e.candidate) SupabaseEngine.broadcast('WEBRTC_ICE', { roomId: payload.roomId, studentId: payload.studentId, from: 'teacher', candidate: e.candidate.toJSON() });
           };
           await teacherPC.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          await flushCandidates(teacherPC, pendingTeacherCandidates);
           const answer = await teacherPC.createAnswer();
           await teacherPC.setLocalDescription(answer);
           SupabaseEngine.broadcast('WEBRTC_ANSWER', { roomId: payload.roomId, studentId: payload.studentId, sdp: answer });
@@ -2182,13 +2203,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         if (eventType === 'WEBRTC_ANSWER') {
           if (studentPC && studentContext && studentContext.studentId === payload.studentId) {
             await studentPC.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            await flushCandidates(studentPC, pendingStudentCandidates);
           }
           return;
         }
         if (eventType === 'WEBRTC_ICE') {
-          const cand = new RTCIceCandidate(payload.candidate);
-          if (payload.from === 'student' && teacherPC) await teacherPC.addIceCandidate(cand).catch(() => {});
-          else if (payload.from === 'teacher' && studentPC) await studentPC.addIceCandidate(cand).catch(() => {});
+          if (payload.from === 'student' && teacherPC) {
+            if (teacherPC.remoteDescription) await teacherPC.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
+            else pendingTeacherCandidates.push(payload.candidate);
+          } else if (payload.from === 'teacher' && studentPC) {
+            if (studentPC.remoteDescription) await studentPC.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
+            else pendingStudentCandidates.push(payload.candidate);
+          }
         }
       }
 
@@ -3528,6 +3554,47 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         }
       }
 
+      function renderStudentMonitorLive(p) {
+        const badge = document.getElementById('monitor-screen-badge');
+        if (badge) {
+          const device = p.deviceMode === 'mobile_tablet' ? 'Điện thoại/Tablet' : p.deviceMode === 'desktop' ? 'Máy tính' : 'Thiết bị';
+          badge.textContent = `${device} • ${p.screenStatus === 'sharing' ? 'Đang chia sẻ màn hình' : 'Đang theo dõi thao tác trong SPARKLE'}`;
+        }
+        const phEl = document.getElementById('teacher-remote-placeholder');
+        const videoEl = document.getElementById('teacher-remote-video');
+        if (!phEl) return;
+        if (videoEl && videoEl.srcObject) return;
+        const fields = Object.entries(p.liveFields || {}).filter(([,v]) => String(v ?? '').trim());
+        const drafts = Object.entries(p.liveDrafts || {}).filter(([,v]) => String(v?.text ?? '').trim());
+        const activity = (p.liveActivity || []).slice(0, 8);
+        const image = p.latestCanvasUrl || p.latestPhotoUrl || '';
+        phEl.classList.remove('hidden');
+        phEl.classList.add('w-full');
+        phEl.classList.remove('max-w-sm');
+        phEl.innerHTML = `
+          <div class="w-full h-full min-h-[250px] bg-white text-left rounded-xl p-3 sm:p-4 overflow-y-auto space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <div><div class="text-sm font-extrabold text-spark-navy">Theo dõi thao tác trực tiếp</div><div class="text-[10px] text-spark-text">Cập nhật ${p.lastSeenAt ? formatDateVN(p.lastSeenAt) : 'vừa xong'}</div></div>
+              <span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">● LIVE</span>
+            </div>
+            ${image ? `<div><div class="text-[11px] font-bold text-spark-navy mb-1">Ảnh / nét vẽ gần nhất</div><img src="${image}" alt="Bài làm trực tiếp" class="max-h-52 max-w-full object-contain rounded-lg border border-gray-200 mx-auto" /></div>` : ''}
+            <div><div class="text-[11px] font-bold text-spark-navy mb-1">Nội dung học sinh đang làm</div>
+              ${fields.length ? fields.map(([k,v]) => `<div class="mb-1 rounded-lg bg-spark-bg p-2"><div class="text-[10px] text-spark-text">${escapeHtml(k)}</div><div class="text-xs text-spark-navy whitespace-pre-wrap break-words">${escapeHtml(String(v))}</div></div>`).join('') : drafts.length ? drafts.map(([k,v]) => `<div class="mb-1 rounded-lg bg-spark-bg p-2"><div class="text-[10px] text-spark-text">${escapeHtml(k)}</div><div class="text-xs text-spark-navy whitespace-pre-wrap break-words">${escapeHtml(String(v.text))}</div></div>`).join('') : '<div class="text-xs text-spark-text bg-spark-bg rounded-lg p-3">Đang chờ học sinh thao tác hoặc nhập câu trả lời…</div>'}
+            </div>
+            <div><div class="text-[11px] font-bold text-spark-navy mb-1">Hoạt động gần đây</div>
+              ${activity.length ? `<ul class="space-y-1">${activity.map(a => `<li class="text-[10px] text-spark-text border-l-2 border-spark-pink pl-2">${escapeHtml(a.label || a.type || 'Thao tác')} <span class="opacity-70">${a.time ? new Date(a.time).toLocaleTimeString('vi-VN') : ''}</span></li>`).join('')}</ul>` : '<div class="text-[10px] text-spark-text">Chưa ghi nhận thao tác mới.</div>'}
+            </div>
+            <div class="text-[10px] text-spark-text border-t pt-2">Đây là dữ liệu thao tác trong trang SPARKLE; không phải hình ảnh toàn bộ màn hình thiết bị.</div>
+          </div>`;
+      }
+
+      function refreshStudentMonitor(studentId) {
+        if (monitoringStudentId !== studentId) return;
+        const room = getActiveRoom();
+        const p = room && AppState.getRoomParticipants(room.id).find((x) => x.studentId === studentId);
+        if (p) renderStudentMonitorLive(p);
+      }
+
       function openStudentMonitor(studentId) {
         const room = getActiveRoom();
         if (!room) return;
@@ -3541,25 +3608,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         document.getElementById('monitor-student-name').textContent = p.studentName || p.studentId;
         document.getElementById('monitor-student-meta').textContent = `Mã phòng: ${room.roomCode} • Tham gia lúc: ${formatDateVN(p.joinedAt)}`;
         document.getElementById('monitor-student-status').textContent = p.status === 'graded' ? 'Đã chấm' : p.status === 'submitted' ? 'Đã nộp bài' : 'Đang làm';
-        const isMobileLive = p.screenStatus === 'mobile_photo' || p.screenStatus === 'mobile_live';
-        document.getElementById('monitor-screen-badge').textContent =
-          p.screenStatus === 'sharing' ? 'Màn hình: Đang chia sẻ (PC)' :
-          p.screenStatus === 'mobile_photo' ? '📱 ĐT/Tablet: Đã gửi ảnh bài làm' :
-          p.screenStatus === 'mobile_live' ? '📱 ĐT/Tablet: Đang gõ bài trực tiếp' :
-          'Màn hình: Chưa chia sẻ';
-
-        const phEl = document.getElementById('teacher-remote-placeholder');
-        const stText = document.getElementById('teacher-remote-status-text');
-        if (phEl && stText) {
-          if (p.latestPhotoUrl) {
-            phEl.classList.remove('hidden');
-            phEl.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center p-2"><img src="${p.latestPhotoUrl}" alt="Ảnh bài làm học sinh" class="max-h-[240px] rounded-xl border border-white/20 shadow-lg object-contain" /><span class="text-[11px] text-emerald-300 font-bold mt-1.5">📱 Ảnh chụp bài làm trực tiếp từ ĐT/Tablet</span></div>`;
-          } else if (isMobileLive) {
-            const draftsList = Object.values(p.liveDrafts || {}).map(d => d.text).filter(Boolean).join(' | ');
-            phEl.classList.remove('hidden');
-            stText.textContent = draftsList ? `📱 Học sinh đang nhập trên ĐT/Tablet: "${draftsList}"` : '📱 Học sinh đang làm bài trên Điện thoại/Tablet';
-          }
-        }
+        renderStudentMonitorLive(p);
 
         const subs = AppState.getRoomSubmissions(room.id, studentId);
         const exercises = AppState.getRoomExercises(room.id);
@@ -3672,7 +3721,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         isOpen, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
         createOrResetRoom, setRoomStatus, toggleAllowRejoin, publishAndCopyLink,
         copyRoomLink, previewStudentInterface, renderRoomView, openStudentMonitor,
-        closeStudentMonitor, requestStudentScreen, saveGrade, removeStudent,
+        closeStudentMonitor, requestStudentScreen, refreshStudentMonitor, saveGrade, removeStudent,
         deleteExercise, exportScoreboardCSV,
       };
     })();
@@ -3685,6 +3734,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
       let currentStudent = null;
       let removed = false;
       let liveSyncTimer = null;
+      let observationInstalled = false;
+      let observationTimer = null;
+      let lastObservedActivity = null;
+      const observedDocuments = new WeakSet();
 
       function isMobileOrTablet() {
         const ua = navigator.userAgent || '';
@@ -3720,6 +3773,123 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 
       function isOpen() { return Boolean(currentRoom); }
       function isMatchingStudent(roomId, studentId) { return Boolean(currentRoom && currentStudent && currentRoom.id === roomId && currentStudent.studentId === studentId); }
+
+      function describeObservedTarget(target) {
+        if (!target || !target.closest) return 'Tương tác trên bài học';
+        const el = target.closest('button,a,input,textarea,select,[contenteditable="true"],canvas,[role="button"]') || target;
+        const label = el.getAttribute?.('aria-label') || el.getAttribute?.('placeholder') || el.getAttribute?.('name') || el.id || el.innerText || el.value || el.tagName || 'Tương tác';
+        return String(label).replace(/\s+/g, ' ').trim().slice(0, 90);
+      }
+
+      function collectLiveFields() {
+        const root = document.getElementById('student-room-view') || document.getElementById('student-room-container') || document;
+        const out = {};
+        root.querySelectorAll('textarea,input:not([type="password"]):not([type="file"]),select,[contenteditable="true"]').forEach((el, i) => {
+          const key = (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.name || el.id || `Ô nhập ${i + 1}`).slice(0, 70);
+          const value = el.isContentEditable ? el.innerText : el.value;
+          if (value !== undefined && String(value).trim()) out[key] = String(value).slice(0, 1500);
+        });
+        return Object.fromEntries(Object.entries(out).slice(0, 24));
+      }
+
+      function makeCanvasPreview(canvas) {
+        try {
+          if (!canvas || !canvas.width || !canvas.height) return null;
+          const scale = Math.min(1, 640 / Math.max(canvas.width, canvas.height));
+          const copy = document.createElement('canvas');
+          copy.width = Math.max(1, Math.round(canvas.width * scale));
+          copy.height = Math.max(1, Math.round(canvas.height * scale));
+          copy.getContext('2d').drawImage(canvas, 0, 0, copy.width, copy.height);
+          return copy.toDataURL('image/jpeg', 0.58);
+        } catch { return null; }
+      }
+
+      function sendObservation(activity, canvasDataUrl = null) {
+        if (!currentRoom || !currentStudent) return;
+        const payload = {
+          roomId: currentRoom.id,
+          studentId: currentStudent.studentId,
+          exId: activity?.exerciseId || null,
+          text: activity?.exerciseId ? (document.getElementById(`stu-ans-${activity.exerciseId}`)?.value || '') : null,
+          fields: collectLiveFields(),
+          activity: activity ? { ...activity, time: new Date().toISOString() } : null,
+          canvasDataUrl,
+          deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop',
+          clientAt: new Date().toISOString()
+        };
+        currentStudent.liveFields = payload.fields;
+        if (activity) currentStudent.liveActivity = [payload.activity, ...(currentStudent.liveActivity || [])].slice(0, 18);
+        if (canvasDataUrl) currentStudent.latestCanvasUrl = canvasDataUrl;
+        currentStudent.lastSeenAt = payload.clientAt;
+        if (currentStudent.screenStatus !== 'sharing' && currentStudent.screenStatus !== 'mobile_photo') currentStudent.screenStatus = 'mobile_live';
+        SupabaseEngine.broadcast('STUDENT_LIVE_PROGRESS', payload);
+      }
+
+      function queueObservation(activity, canvasDataUrl = null) {
+        lastObservedActivity = activity || lastObservedActivity;
+        if (observationTimer) clearTimeout(observationTimer);
+        observationTimer = setTimeout(() => {
+          sendObservation(lastObservedActivity, canvasDataUrl);
+          lastObservedActivity = null;
+        }, 320);
+      }
+
+      function attachObservationToDocument(doc) {
+        if (!doc) return;
+        if (observedDocuments.has(doc)) {
+          doc.querySelectorAll('iframe').forEach(frame => {
+            try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch {}
+          });
+          return;
+        }
+        observedDocuments.add(doc);
+        const inStudentWorkspace = (target) => {
+          try {
+            return doc === document
+              ? Boolean(target.closest('#student-room-view, #student-room-container'))
+              : true;
+          } catch { return false; }
+        };
+        doc.addEventListener('input', (ev) => {
+          if (!inStudentWorkspace(ev.target)) return;
+          queueObservation({ type: 'input', label: describeObservedTarget(ev.target), exerciseId: ev.target.id?.startsWith('stu-ans-') ? ev.target.id.slice(8) : null });
+        }, true);
+        doc.addEventListener('change', (ev) => {
+          if (!inStudentWorkspace(ev.target)) return;
+          queueObservation({ type: 'change', label: describeObservedTarget(ev.target) });
+        }, true);
+        doc.addEventListener('click', (ev) => {
+          if (!inStudentWorkspace(ev.target)) return;
+          const label = describeObservedTarget(ev.target);
+          if (/^(button|a|BUTTON|A)$/.test(ev.target.tagName) || ev.target.closest('button,a,[role="button"]')) {
+            queueObservation({ type: 'click', label: `Đã nhấn: ${label}` });
+          }
+        }, true);
+        doc.addEventListener('pointerup', (ev) => {
+          if (!inStudentWorkspace(ev.target) || ev.target?.tagName !== 'CANVAS') return;
+          queueObservation({ type: 'draw', label: 'Học sinh vừa vẽ / viết trên bảng làm bài' }, makeCanvasPreview(ev.target));
+        }, true);
+        doc.querySelectorAll('iframe').forEach(frame => {
+          try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch { /* Cross-origin iframe cannot be inspected by browser security rules. */ }
+          frame.addEventListener('load', () => {
+            try { if (frame.contentDocument) attachObservationToDocument(frame.contentDocument); } catch {}
+          });
+        });
+      }
+
+      function installLiveObservation() {
+        if (!observationInstalled) {
+          observationInstalled = true;
+          attachObservationToDocument(document);
+          const root = document.getElementById('student-room-view') || document.getElementById('student-room-container');
+          if (root && window.MutationObserver) {
+            const observer = new MutationObserver(() => attachObservationToDocument(document));
+            observer.observe(root, { childList: true, subtree: true });
+          }
+        } else {
+          attachObservationToDocument(document);
+        }
+      }
 
       async function openStudentRoomByCode(code) {
         const cleanCode = String(code || '').trim().toUpperCase();
@@ -3773,6 +3943,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         sessionStorage.setItem(`sparkle_stu_${currentRoom.roomCode}`, JSON.stringify(participant));
         SupabaseEngine.broadcast('STUDENT_JOINED', { roomId: currentRoom.id, studentId, studentName: name });
         renderStudentView();
+        installLiveObservation();
+
+        // Sau khi tham gia phòng, tự mở bài tập đầu tiên ngay trong trang.
+        // Ưu tiên bài tập gắn trực tiếp với Practice Room; nếu phòng chưa có
+        // bài tập riêng thì dùng tài liệu của bài học làm phương án dự phòng.
+        let assignedItems = AppState.getRoomExercises(currentRoom.id) || [];
+        let firstItem = assignedItems[0] || null;
+        let firstScope = 'exercise';
+        if (!firstItem && currentRoom.lessonId) {
+          const lessonItems = AppState.getMaterialsForLesson(currentRoom.lessonId)
+            .filter((m) => (m.url || m.blobKey) && (m.materialType === 'exercise' || m.materialType === 'homework'));
+          firstItem = lessonItems[0] || null;
+          firstScope = 'material';
+        }
+
+        if (firstItem && (firstItem.url || firstItem.blobKey)) {
+          try {
+            await ModalManager.openPreviewModal(firstItem.id, firstScope);
+            Toast.show(`Chào ${name}! Bài tập đã được mở.`, 'success');
+          } catch (err) {
+            console.error('Không thể tự mở bài tập sau khi tham gia phòng:', err);
+            Toast.show('Đã vào phòng. Em nhấn “Xem ngay” để mở bài tập nhé.', 'info');
+          }
+        } else {
+          Toast.show('Đã vào phòng. Hiện phòng chưa có link bài tập được gắn.', 'info');
+        }
       }
 
       function handleLiveDraftInput(exId, val) {
@@ -3794,8 +3990,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
             studentId: currentStudent.studentId,
             exId,
             text: val,
-            photoDataUrl: currentStudent.latestPhotoUrl || null,
-            deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop'
+            fields: collectLiveFields(),
+            deviceMode: isMobileOrTablet() ? 'mobile_tablet' : 'desktop',
+            clientAt: new Date().toISOString()
           });
         }, 500);
       }
@@ -3904,15 +4101,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
         const mobileMode = isMobileOrTablet();
         const isSharing = WebRTCManager.isStudentSharing();
         if (topRight) {
-          if (mobileMode) {
-            topRight.innerHTML = `
-              <span class="text-xs font-bold text-spark-navy truncate max-w-[110px]">${escapeHtml(currentStudent.studentName)}</span>
-              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">📸 Chụp ảnh màn hình • Đồng bộ trực tiếp</span>`;
-          } else {
-            topRight.innerHTML = `
-              <span class="text-xs font-bold text-spark-navy hidden sm:inline">${escapeHtml(currentStudent.studentName)}</span>
-              <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ MH' : 'Chia sẻ màn hình'}</button>`;
-          }
+          const canShareScreen = Boolean(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && window.isSecureContext);
+          topRight.innerHTML = `
+            <span class="text-xs font-bold text-spark-navy truncate max-w-[110px]">${escapeHtml(currentStudent.studentName)}</span>
+            ${canShareScreen ? `<button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ' : 'Chia sẻ màn hình'}</button>` : `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">✓ Theo dõi thao tác trực tiếp</span>`}`;
         }
 
         let exercises = AppState.getRoomExercises(currentRoom.id);
@@ -3939,7 +4131,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
               <div>
                 <div class="text-xs font-bold text-spark-pink">PHÒNG ${escapeHtml(currentRoom.roomCode)}</div>
                 <h2 class="text-lg font-extrabold text-spark-navy">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
-                <p class="text-[11px] text-spark-text mt-0.5">${mobileMode ? 'Chế độ Điện thoại/Tablet: Bài gõ và ảnh chụp vở bài làm của em tự động gửi trực tiếp cho giáo viên.' : 'Chế độ Máy tính: Có thể bật Chia sẻ màn hình hoặc nộp bài trực tiếp bên dưới.'}</p>
+                <p class="text-[11px] text-spark-text mt-0.5">${mobileMode ? 'Điện thoại/Tablet: thao tác, nội dung nhập và nét vẽ trong SPARKLE được cập nhật cho giáo viên. Nếu trình duyệt hỗ trợ, em có thể bật chia sẻ màn hình.' : 'Thao tác và nội dung bài làm trong SPARKLE được cập nhật cho giáo viên. Em có thể bật chia sẻ màn hình nếu cần.'}</p>
+                <p class="text-[10px] text-emerald-700 mt-1">🔎 Lưu ý: Giáo viên theo dõi hoạt động bên trong trang/bài học SPARKLE; việc chia sẻ toàn bộ màn hình cần em chủ động cấp quyền.</p>
               </div>
               <div class="text-xs text-spark-text">Đã nộp: <strong>${mySubs.length}</strong> bài</div>
             </div>
@@ -3982,6 +4175,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
                   }).join('')
             }
           </div>`;
+        installLiveObservation();
       }
 
       return { isOpen, isMatchingStudent, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView };
@@ -5168,4 +5362,3 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.practice_rooms, public.room
 </body>
 
 </html>
-Analyzing
