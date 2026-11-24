@@ -2212,6 +2212,14 @@ END $$;`;
 
           AppState.updateParticipantScreenStatus(roomId, studentId, 'sharing');
           SupabaseEngine.broadcast('WEBRTC_SCREEN_STATUS', { roomId, studentId, status: 'sharing' });
+          SupabaseEngine.upsertRecord('screen_sessions', {
+            id: `${roomId}__${studentId}__live`,
+            room_id: roomId,
+            student_id: studentId,
+            signaling_data: { status: 'sharing', updatedAt: new Date().toISOString() },
+            status: 'sharing',
+            started_at: new Date().toISOString(),
+          }).catch(() => {});
           await createAndSendOffer(roomId, studentId);
           StudentRoomManager.renderStudentView();
           Toast.show('Đang chia sẻ màn hình với giáo viên!', 'success');
@@ -3673,36 +3681,27 @@ END $$;`;
 
       function renderStudentMonitorLive(p) {
         const badge = document.getElementById('monitor-screen-badge');
+        const isSharingNow = p.screenStatus === 'sharing';
         if (badge) {
-          const device = p.deviceMode === 'mobile_tablet' ? 'Điện thoại/Tablet' : p.deviceMode === 'desktop' ? 'Máy tính' : 'Thiết bị';
-          badge.textContent = `${device} • ${p.screenStatus === 'sharing' ? 'Đang chia sẻ màn hình' : 'Đang theo dõi thao tác trong SPARKLE'}`;
+          badge.textContent = isSharingNow ? 'Màn hình: HS đang chia sẻ' : 'Màn hình: Chờ HS cấp quyền chia sẻ';
+          badge.className = isSharingNow
+            ? 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700'
+            : 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700';
         }
         const phEl = document.getElementById('teacher-remote-placeholder');
         const videoEl = document.getElementById('teacher-remote-video');
         if (!phEl) return;
         if (videoEl && videoEl.srcObject) return;
-        const fields = Object.entries(p.liveFields || {}).filter(([,v]) => String(v ?? '').trim());
-        const drafts = Object.entries(p.liveDrafts || {}).filter(([,v]) => String(v?.text ?? '').trim());
-        const activity = (p.liveActivity || []).slice(0, 8);
-        const image = p.latestCanvasUrl || p.latestPhotoUrl || '';
-        phEl.classList.remove('hidden');
-        phEl.classList.add('w-full');
-        phEl.classList.remove('max-w-sm');
+        phEl.classList.remove('hidden', 'w-full');
+        phEl.classList.add('max-w-sm');
         phEl.innerHTML = `
-          <div class="w-full h-full min-h-[250px] bg-white text-left rounded-xl p-3 sm:p-4 overflow-y-auto space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <div><div class="text-sm font-extrabold text-spark-navy">Theo dõi thao tác trực tiếp</div><div class="text-[10px] text-spark-text">Cập nhật ${p.lastSeenAt ? formatDateVN(p.lastSeenAt) : 'vừa xong'}</div></div>
-              <span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">● LIVE</span>
-            </div>
-            ${image ? `<div><div class="text-[11px] font-bold text-spark-navy mb-1">Ảnh / nét vẽ gần nhất</div><img src="${image}" alt="Bài làm trực tiếp" class="max-h-52 max-w-full object-contain rounded-lg border border-gray-200 mx-auto" /></div>` : ''}
-            <div><div class="text-[11px] font-bold text-spark-navy mb-1">Nội dung học sinh đang làm</div>
-              ${fields.length ? fields.map(([k,v]) => `<div class="mb-1 rounded-lg bg-spark-bg p-2"><div class="text-[10px] text-spark-text">${escapeHtml(k)}</div><div class="text-xs text-spark-navy whitespace-pre-wrap break-words">${escapeHtml(String(v))}</div></div>`).join('') : drafts.length ? drafts.map(([k,v]) => `<div class="mb-1 rounded-lg bg-spark-bg p-2"><div class="text-[10px] text-spark-text">${escapeHtml(k)}</div><div class="text-xs text-spark-navy whitespace-pre-wrap break-words">${escapeHtml(String(v.text))}</div></div>`).join('') : '<div class="text-xs text-spark-text bg-spark-bg rounded-lg p-3">Đang chờ học sinh thao tác hoặc nhập câu trả lời…</div>'}
-            </div>
-            <div><div class="text-[11px] font-bold text-spark-navy mb-1">Hoạt động gần đây</div>
-              ${activity.length ? `<ul class="space-y-1">${activity.map(a => `<li class="text-[10px] text-spark-text border-l-2 border-spark-pink pl-2">${escapeHtml(a.label || a.type || 'Thao tác')} <span class="opacity-70">${a.time ? new Date(a.time).toLocaleTimeString('vi-VN') : ''}</span></li>`).join('')}</ul>` : '<div class="text-[10px] text-spark-text">Chưa ghi nhận thao tác mới.</div>'}
-            </div>
-            <div class="text-[10px] text-spark-text border-t pt-2">Đây là dữ liệu thao tác trong trang SPARKLE; không phải hình ảnh toàn bộ màn hình thiết bị.</div>
-          </div>`;
+          <div class="w-12 h-12 rounded-2xl bg-white/10 text-spark-orange mx-auto mb-3 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <p id="teacher-remote-status-text" class="text-xs sm:text-sm text-white/90 font-semibold">${isSharingNow ? 'Học sinh đang chia sẻ màn hình, đang kết nối luồng video WebRTC...' : 'Học sinh chưa cấp quyền chia sẻ màn hình'}</p>
+          <p class="text-[11px] text-white/60 mt-1.5 leading-relaxed">Học sinh cần nhấn nút <strong>"Chia sẻ màn hình"</strong> trên giao diện phòng học để cấp quyền cho giáo viên.</p>
+          <button type="button" onclick="PracticeRoomManager.requestStudentScreen()" class="mt-3 px-4 py-1.5 rounded-xl bg-spark-orange text-white text-xs font-bold">Yêu cầu HS chia sẻ màn hình</button>
+        `;
       }
 
       function refreshStudentMonitor(studentId) {
@@ -3712,9 +3711,10 @@ END $$;`;
         if (p) renderStudentMonitorLive(p);
       }
 
-      function openStudentMonitor(studentId) {
+      async function openStudentMonitor(studentId) {
         const room = getActiveRoom();
         if (!room) return;
+        if (SupabaseEngine.syncFromSupabase) await SupabaseEngine.syncFromSupabase();
         const p = AppState.getRoomParticipants(room.id).find((x) => x.studentId === studentId);
         if (!p) return;
 
@@ -4237,13 +4237,11 @@ END $$;`;
           return;
         }
 
-        const mobileMode = isMobileOrTablet();
         const isSharing = WebRTCManager.isStudentSharing();
         if (topRight) {
-          const canShareScreen = Boolean(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && window.isSecureContext);
           topRight.innerHTML = `
-            <span class="text-xs font-bold text-spark-navy truncate max-w-[110px]">${escapeHtml(currentStudent.studentName)}</span>
-            ${canShareScreen ? `<button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ' : 'Chia sẻ màn hình'}</button>` : `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">✓ Theo dõi thao tác trực tiếp</span>`}`;
+            <span class="text-xs font-bold text-spark-navy truncate max-w-[120px]">${escapeHtml(currentStudent.studentName)}</span>
+            <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ màn hình' : 'Chia sẻ màn hình'}</button>`;
         }
 
         let exercises = AppState.getRoomExercises(currentRoom.id);
@@ -4262,66 +4260,37 @@ END $$;`;
             }));
           }
         }
-        const mySubs = AppState.getRoomSubmissions(currentRoom.id, currentStudent.studentId);
 
         container.innerHTML = `
-          <div class="space-y-5">
-            <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-soft flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-5 max-w-3xl mx-auto">
+            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-soft flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div class="text-xs font-bold text-spark-pink">PHÒNG ${escapeHtml(currentRoom.roomCode)}</div>
-                <h2 class="text-lg font-extrabold text-spark-navy">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
-                <p class="text-[11px] text-spark-text mt-0.5">${mobileMode ? 'Điện thoại/Tablet: thao tác, nội dung nhập và nét vẽ trong SPARKLE được cập nhật cho giáo viên. Nếu trình duyệt hỗ trợ, em có thể bật chia sẻ màn hình.' : 'Thao tác và nội dung bài làm trong SPARKLE được cập nhật cho giáo viên. Em có thể bật chia sẻ màn hình nếu cần.'}</p>
-                <p class="text-[10px] text-emerald-700 mt-1">🔎 Lưu ý: Giáo viên theo dõi hoạt động bên trong trang/bài học SPARKLE; việc chia sẻ toàn bộ màn hình cần em chủ động cấp quyền.</p>
+                <h2 class="text-xl font-extrabold text-spark-navy mt-0.5">Xin chào, ${escapeHtml(currentStudent.studentName)}!</h2>
+                <p class="text-xs text-spark-text mt-1">Nhấn <strong>Mở bài tập</strong> để làm bài và nhấn <strong>Chia sẻ màn hình</strong> để cấp quyền xem màn hình cho giáo viên.</p>
               </div>
-              <div class="text-xs text-spark-text">Đã nộp: <strong>${mySubs.length}</strong> bài</div>
+              <button type="button" onclick="${isSharing ? 'WebRTCManager.stopStudentScreenShare()' : `WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')`}" class="px-4 py-2.5 rounded-xl text-xs font-bold ${isSharing ? 'bg-rose-500 text-white' : 'btn-gradient text-white'}">${isSharing ? 'Ngừng chia sẻ màn hình' : 'Chia sẻ màn hình'}</button>
             </div>
+
             ${
               exercises.length === 0
-                ? `<div class="bg-white rounded-3xl p-6 sm:p-7 text-center space-y-4 border border-gray-100 shadow-soft">
-                    <div class="text-xs sm:text-sm text-spark-text font-medium">Chưa có bài luyện tập nào được gắn sẵn trong phòng <strong>${escapeHtml(currentRoom.roomCode)}</strong>.</div>
-                    <div class="max-w-xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <input id="stu-direct-html-url" type="url" placeholder="Dán link bài tập HTML (https://...) nếu giáo viên gửi link..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:border-spark-pink outline-none" />
-                      <button type="button" onclick="StudentRoomManager.openDirectHtmlLink()" class="btn-gradient px-4 py-2.5 rounded-xl text-white text-xs font-bold shrink-0">Mở HTML tab mới</button>
-                      <button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-3.5 py-2.5 rounded-xl bg-spark-bg border border-gray-200 hover:border-spark-pink text-spark-navy text-xs font-bold shrink-0">Tải lại</button>
-                    </div>
+                ? `<div class="bg-white rounded-3xl p-8 text-center space-y-3 border border-gray-100 shadow-soft">
+                    <div class="text-sm font-semibold text-spark-text">Chưa có bài tập nào được gắn trong phòng này.</div>
+                    <button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-4 py-2 rounded-xl bg-spark-bg border border-gray-200 hover:border-spark-pink text-spark-navy text-xs font-bold">Tải lại phòng</button>
                   </div>`
                 : exercises.map((ex) => {
-                    const sub = mySubs.find((s) => s.exerciseId === ex.id);
-                    const draftText = (currentStudent.liveDrafts && currentStudent.liveDrafts[ex.id]?.text) ?? sub?.answerData?.text ?? '';
-                    const photoPreview = (currentStudent.livePhotos && currentStudent.livePhotos[ex.id]) || sub?.answerData?.photoDataUrl || '';
                     const scopeType = ex._isMaterialFallback ? 'material' : 'exercise';
                     return `
-                      <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-soft space-y-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                          <div class="min-w-0">
-                            <h3 class="text-base font-extrabold text-spark-navy">${escapeHtml(ex.title)}</h3>
-                            ${ex.url ? `<a href="${escapeHtml(ex.url)}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-spark-pink underline break-all font-medium">${escapeHtml(ex.url)}</a>` : ''}
-                          </div>
-                          <div class="flex flex-wrap items-center gap-2 shrink-0">
-                            <button type="button" onclick="ModalManager.openPreviewModal('${ex.id}', '${scopeType}')" class="px-3 py-1.5 rounded-xl bg-spark-orangePastel text-spark-orangeDark text-xs font-bold">Xem ngay</button>
-                            <button type="button" onclick="ModalManager.openMaterialInNewTab('${ex.id}', '${scopeType}')" class="btn-gradient px-3.5 py-1.5 rounded-xl text-white text-xs font-bold">Mở HTML tab mới</button>
-                          </div>
+                      <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-soft flex flex-wrap items-center justify-between gap-3">
+                        <div class="min-w-0">
+                          <h3 class="text-base font-extrabold text-spark-navy truncate">${escapeHtml(ex.title)}</h3>
+                          ${ex.url ? `<div class="text-xs text-spark-text truncate mt-0.5">${escapeHtml(ex.url)}</div>` : ''}
                         </div>
-                        <textarea id="stu-ans-${ex.id}" rows="3" oninput="StudentRoomManager.handleLiveDraftInput('${ex.id}', this.value)" placeholder="Nhập bài làm / đáp án của em..." class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none">${escapeHtml(draftText)}</textarea>
-                        
-                        <div class="p-3 rounded-2xl bg-spark-bg border border-dashed border-spark-pink/40 flex flex-wrap items-center justify-between gap-2">
-                          <div class="text-xs text-spark-navy font-semibold">📸 Chụp ảnh màn hình / bài làm gửi giáo viên:</div>
-                          <label class="px-3.5 py-1.5 rounded-xl bg-white border border-spark-pink/40 text-spark-pink hover:bg-spark-pink hover:text-white text-xs font-bold cursor-pointer transition-colors">
-                            <span>${photoPreview ? 'Chụp lại ảnh màn hình gửi GV' : 'Chụp ảnh màn hình gửi GV'}</span>
-                            <input type="file" accept="image/*" class="hidden" onchange="StudentRoomManager.handlePhotoUpload('${ex.id}', this.files)" />
-                          </label>
-                          ${photoPreview ? `<div class="w-full mt-2"><img src="${photoPreview}" alt="Ảnh bài làm" class="max-h-48 rounded-xl border border-gray-200 shadow-sm mx-auto" /></div>` : ''}
-                        </div>
-
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                          <div class="text-xs text-spark-text">${sub ? `Đã nộp lúc ${formatDateVN(sub.submittedAt)}${sub.teacherScore !== null && sub.teacherScore !== undefined ? ` • <strong class="text-emerald-600">Điểm GV: ${sub.teacherScore}</strong> (${escapeHtml(sub.teacherFeedback || '')})` : ''}` : 'Đang đồng bộ tiến độ...'}</div>
-                          <button type="button" onclick="StudentRoomManager.submitExercise('${ex.id}')" class="btn-gradient px-5 py-2 rounded-xl text-white text-xs font-bold">Nộp bài</button>
-                        </div>
+                        <button type="button" onclick="ModalManager.openMaterialInNewTab('${ex.id}', '${scopeType}')" class="btn-gradient px-5 py-2.5 rounded-xl text-white text-xs font-bold shrink-0">Mở bài tập</button>
                       </div>`;
                   }).join('')
             }
           </div>`;
-        installLiveObservation();
       }
 
       function openDirectHtmlLink() {
@@ -5518,15 +5487,11 @@ END $$;`;
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      if (isMobileDevice()) {
-        createFloatingCaptureBar();
-      }
-    }, 300);
+    // Minimal student mode: only open exercise + screen share controls
   });
 })();
 </script>
 </body>
 
 </html>
-Analyzing
+Processed and analyzed in code
