@@ -1706,7 +1706,13 @@ END $$;`;
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_materials' }, () => scheduleSync(400))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => scheduleSync(250))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'student_submissions' }, () => scheduleSync(250))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, () => scheduleSync(400))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, (payload) => {
+              const rec = payload?.new;
+              if (rec && typeof StudentRoomManager !== 'undefined' && StudentRoomManager.handleRoomStatusSignal) {
+                StudentRoomManager.handleRoomStatusSignal(rec.id, rec.room_code, rec.status);
+              }
+              scheduleSync(400);
+            })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'exercises' }, () => scheduleSync(400))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'screen_sessions' }, (payload) => {
               const activeRoom = (typeof PracticeRoomManager !== 'undefined' && PracticeRoomManager.getActiveRoom) ? PracticeRoomManager.getActiveRoom() : null;
@@ -2048,6 +2054,14 @@ END $$;`;
             StudentRoomManager.renderStudentView();
             Toast.show('Giáo viên vừa chấm điểm bài làm của bạn!', 'success');
           }
+        } else if (eventType === 'ROOM_STATUS_CHANGED') {
+          if (payload && payload.roomId && AppState.state.practiceRooms[payload.roomId]) {
+            AppState.state.practiceRooms[payload.roomId].status = payload.status;
+          }
+          if (typeof StudentRoomManager !== 'undefined' && StudentRoomManager.handleRoomStatusSignal) {
+            StudentRoomManager.handleRoomStatusSignal(payload?.roomId, payload?.roomCode, payload?.status);
+          }
+          if (PracticeRoomManager.isOpen()) PracticeRoomManager.renderRoomView();
         } else if (eventType === 'STUDENT_REMOVED') {
           AppState.reloadFromLocal();
           if (StudentRoomManager.isOpen()) StudentRoomManager.handleRemovedSignal(payload.studentId, payload.roomId);
@@ -3518,9 +3532,15 @@ END $$;`;
         if (newStatus === 'open') room.openedAt = new Date().toISOString();
         if (newStatus === 'closed') room.closedAt = new Date().toISOString();
         const res = await AppState.saveRoom(room);
+        SupabaseEngine.broadcast('ROOM_STATUS_CHANGED', {
+          roomId: room.id,
+          roomCode: room.roomCode,
+          status: newStatus,
+          ts: Date.now(),
+        });
         renderRoomView();
         if (!res || !res.error) {
-          Toast.show(newStatus === 'open' ? `Phòng ${room.roomCode} đã MỞ & đồng bộ lên Supabase!` : 'Phòng luyện tập đã ĐÓNG.', 'info');
+          Toast.show(newStatus === 'open' ? `Phòng ${room.roomCode} đã MỞ & đồng bộ lên Supabase!` : 'Phòng luyện tập đã ĐÓNG. Học sinh đã bị khóa thao tác.', 'info');
         }
       }
 
@@ -4488,7 +4508,7 @@ END $$;`;
       }
 
       async function sendObservation(activity, canvasDataUrl = null, forceCapture = false) {
-        if (!currentRoom || !currentStudent) return;
+        if (!currentRoom || !currentStudent || removed || currentRoom.status !== 'open') return;
         let frameUrl = canvasDataUrl;
         if (!frameUrl && (forceCapture || document.querySelector('#preview-modal:not(.hidden) iframe'))) {
           frameUrl = await captureActualExerciseScreen();
@@ -4532,8 +4552,21 @@ END $$;`;
 
       function startLiveMirrorLoop() {
         if (liveMirrorInterval) clearInterval(liveMirrorInterval);
-        liveMirrorInterval = setInterval(() => {
-          if (currentRoom && currentStudent && !removed && document.querySelector('#preview-modal:not(.hidden) iframe')) {
+        let tickCount = 0;
+        liveMirrorInterval = setInterval(async () => {
+          if (!currentRoom || !currentStudent || removed || currentRoom.status !== 'open') {
+            lockStudentWorkspace();
+            return;
+          }
+          tickCount++;
+          if (tickCount % 2 === 0 && SupabaseEngine.fetchRoomDirectly && currentRoom.roomCode) {
+            const freshRoom = await SupabaseEngine.fetchRoomDirectly(currentRoom.roomCode);
+            if (freshRoom && freshRoom.status !== 'open') {
+              handleRoomStatusSignal(freshRoom.id, freshRoom.roomCode, freshRoom.status);
+              return;
+            }
+          }
+          if (document.querySelector('#preview-modal:not(.hidden) iframe')) {
             detectAndSyncIframeCompletion();
             sendObservation(null, null, false);
           }
@@ -4773,7 +4806,12 @@ END $$;`;
       }
 
       function submitExercise(exId) {
-        if (!currentRoom || !currentStudent) return;
+        if (!currentRoom || !currentStudent || removed || currentRoom.status !== 'open') {
+          Toast.show('Phòng luyện tập đã đóng, không thể nộp bài.', 'error');
+          lockStudentWorkspace();
+          renderStudentView();
+          return;
+        }
         const ans = (document.getElementById(`stu-ans-${exId}`)?.value || '').trim();
         const photoUrl = (currentStudent.livePhotos && currentStudent.livePhotos[exId]) || '';
         if (!ans && !photoUrl) { Toast.show('Vui lòng nhập đáp án hoặc chụp ảnh bài làm trước khi nộp.', 'error'); return; }
@@ -4803,11 +4841,45 @@ END $$;`;
         renderStudentView();
       }
 
+      function lockStudentWorkspace() {
+        if (liveMirrorInterval) { clearInterval(liveMirrorInterval); liveMirrorInterval = null; }
+        if (observationTimer) { clearTimeout(observationTimer); observationTimer = null; }
+        if (window.__sparkleStuHeartbeat) { clearInterval(window.__sparkleStuHeartbeat); window.__sparkleStuHeartbeat = null; }
+        WebRTCManager.stopStudentScreenShare();
+        if (typeof ModalManager !== 'undefined' && ModalManager.closePreviewModal) {
+          ModalManager.closePreviewModal();
+        }
+      }
+
+      function handleRoomStatusSignal(roomId, roomCode, newStatus) {
+        if (!currentRoom) return;
+        const matchById = roomId && currentRoom.id && currentRoom.id === roomId;
+        const matchByCode = roomCode && currentRoom.roomCode && currentRoom.roomCode.toUpperCase() === String(roomCode).toUpperCase();
+        if (!matchById && !matchByCode) return;
+
+        const prevStatus = currentRoom.status;
+        currentRoom.status = newStatus;
+        if (currentRoom.id && AppState.state.practiceRooms[currentRoom.id]) {
+          AppState.state.practiceRooms[currentRoom.id].status = newStatus;
+        }
+        if (newStatus !== 'open') {
+          lockStudentWorkspace();
+          renderStudentView();
+          if (prevStatus === 'open') {
+            Toast.show('Giáo viên đã ĐÓNG phòng luyện tập. Bài làm của em đã được khóa.', 'info');
+          }
+        } else if (prevStatus !== 'open') {
+          renderStudentView();
+          Toast.show('Giáo viên đã MỞ lại phòng luyện tập!', 'success');
+        }
+      }
+
       function handleRemovedSignal(studentId, roomId) {
         if (isMatchingStudent(roomId, studentId)) {
           removed = true;
-          WebRTCManager.stopStudentScreenShare();
+          lockStudentWorkspace();
           renderStudentView();
+          Toast.show('Giáo viên đã mời em ra khỏi phòng luyện tập.', 'info');
         }
       }
 
@@ -4869,7 +4941,11 @@ END $$;`;
       }
 
       async function startAndOpenExercise(id, scopeType) {
-        if (!currentRoom || !currentStudent) return;
+        if (!currentRoom || !currentStudent || removed || currentRoom.status !== 'open') {
+          lockStudentWorkspace();
+          renderStudentView();
+          return;
+        }
         activeExerciseId = id;
         lastSyncedCompletionKey = '';
         const list = scopeType === 'exercise' ? AppState.state.exercises : AppState.state.materials;
@@ -4898,13 +4974,16 @@ END $$;`;
         if (latestRoom) currentRoom = latestRoom;
 
         if (removed) {
+          lockStudentWorkspace();
           container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto"><h2 class="text-lg font-extrabold text-rose-600">Bạn đã được mời ra khỏi phòng</h2><p class="text-xs text-spark-text mt-2">Vui lòng liên hệ giáo viên nếu cần tham gia lại.</p></div>`;
           return;
         }
 
         if (!currentRoom.id || currentRoom.status !== 'open') {
+          lockStudentWorkspace();
           const errHint = SupabaseEngine.getLastError();
-          container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto space-y-3"><h2 class="text-lg font-extrabold text-spark-navy">Phòng luyện tập hiện không mở</h2><p class="text-xs text-spark-text">Mã phòng: <strong class="font-mono">${escapeHtml(currentRoom.roomCode)}</strong> chưa mở, đã đóng hoặc chưa đồng bộ lên máy chủ.</p>${errHint ? `<p class="text-[11px] text-rose-600 bg-rose-50 p-2 rounded-xl">Chi tiết lỗi DB: ${escapeHtml(errHint)}</p>` : ''}<button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-5 py-2.5 rounded-xl btn-gradient text-white text-xs font-bold">Thử kết nối lại</button></div>`;
+          const isClosed = currentRoom.status === 'closed';
+          container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center shadow-soft max-w-md mx-auto space-y-3"><div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center text-xl font-extrabold">🔒</div><h2 class="text-lg font-extrabold text-spark-navy">${isClosed ? 'Phòng luyện tập đã đóng' : 'Phòng luyện tập hiện không mở'}</h2><p class="text-xs text-spark-text">Mã phòng: <strong class="font-mono">${escapeHtml(currentRoom.roomCode)}</strong> ${isClosed ? 'đã được giáo viên đóng lại nên em không thể tiếp tục thao tác trên bài tập.' : 'chưa mở, đã đóng hoặc chưa đồng bộ lên máy chủ.'}</p>${errHint ? `<p class="text-[11px] text-rose-600 bg-rose-50 p-2 rounded-xl">Chi tiết lỗi DB: ${escapeHtml(errHint)}</p>` : ''}<button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-5 py-2.5 rounded-xl btn-gradient text-white text-xs font-bold">Kiểm tra lại trạng thái phòng</button></div>`;
           return;
         }
 
@@ -4998,7 +5077,7 @@ END $$;`;
         sendObservation({ type: 'sync', label: 'Đồng bộ lại màn hình theo yêu cầu GV' }, null, true);
       }
 
-      return { isOpen, isMatchingStudent, handleTeacherSyncRequest, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink, startAndOpenExercise };
+      return { isOpen, isMatchingStudent, handleTeacherSyncRequest, handleRoomStatusSignal, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink, startAndOpenExercise };
     })();
 
     /* =====================================================================
@@ -6307,4 +6386,4 @@ END $$;`;
 
 </html>
 Processed and analyzed in code
-Analyzing database synchronization performance issues
+Analyzing
