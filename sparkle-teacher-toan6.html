@@ -2268,14 +2268,14 @@ END $$;`;
         SupabaseEngine.broadcast('WEBRTC_OFFER', { roomId, studentId, sdp: offer });
       }
 
-      function stopStudentScreenShare() {
+      function stopStudentScreenShare(skipRender = false) {
         if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
         if (studentPC) { try { studentPC.close(); } catch {} studentPC = null; }
         if (studentContext) {
           AppState.updateParticipantScreenStatus(studentContext.roomId, studentContext.studentId, 'ended');
           SupabaseEngine.broadcast('WEBRTC_SCREEN_STATUS', { roomId: studentContext.roomId, studentId: studentContext.studentId, status: 'ended' });
         }
-        if (StudentRoomManager.isOpen()) StudentRoomManager.renderStudentView();
+        if (!skipRender && StudentRoomManager.isOpen()) StudentRoomManager.renderStudentView();
       }
 
       function attachTeacherViewer(roomId, studentId) {
@@ -4845,10 +4845,20 @@ END $$;`;
         if (liveMirrorInterval) { clearInterval(liveMirrorInterval); liveMirrorInterval = null; }
         if (observationTimer) { clearTimeout(observationTimer); observationTimer = null; }
         if (window.__sparkleStuHeartbeat) { clearInterval(window.__sparkleStuHeartbeat); window.__sparkleStuHeartbeat = null; }
-        WebRTCManager.stopStudentScreenShare();
-        if (typeof ModalManager !== 'undefined' && ModalManager.closePreviewModal) {
-          ModalManager.closePreviewModal();
-        }
+        try {
+          if (typeof ModalManager !== 'undefined' && ModalManager.closePreviewModal) {
+            ModalManager.closePreviewModal();
+          }
+        } catch {}
+        try {
+          const pm = document.getElementById('preview-modal');
+          const pmb = document.getElementById('preview-modal-body');
+          if (pmb) pmb.innerHTML = '';
+          if (pm) { pm.classList.add('hidden'); pm.classList.remove('flex'); }
+        } catch {}
+        try {
+          WebRTCManager.stopStudentScreenShare(true);
+        } catch {}
       }
 
       function handleRoomStatusSignal(roomId, roomCode, newStatus) {
@@ -6386,4 +6396,4 @@ END $$;`;
 
 </html>
 Processed and analyzed in code
-Analyzing
+Analyzing call stack overflow during session closure
