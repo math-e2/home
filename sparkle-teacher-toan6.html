@@ -1046,7 +1046,7 @@
   <!-- MODAL 5: STUDENT MONITOR, WEBRTC LIVE SCREEN & GRADING MODAL          -->
   <!-- ===================================================================== -->
   <div id="student-monitor-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-spark-navy/65 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+    <div class="bg-white rounded-3xl w-full max-w-6xl max-h-[94vh] shadow-2xl flex flex-col overflow-hidden animate-fade-in">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-gradient-to-r from-spark-pinkPastel/40 to-spark-orangePastel/40">
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -3306,6 +3306,12 @@ END $$;`;
       let scoreSearch = '';
       let scoreStatusFilter = 'all';
       let scoreSortDesc = true;
+      let dashboardGridCols = 2;
+
+      function setDashboardGridCols(cols) {
+        dashboardGridCols = cols;
+        renderRoomBody();
+      }
 
       function isOpen() { return Boolean(currentLessonId && currentRoomNumber); }
       function getActiveRoom() {
@@ -3521,13 +3527,19 @@ END $$;`;
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 class="text-base font-extrabold text-spark-navy">Danh sách học sinh trong phòng (${participants.length})</h3>
-                  <p class="text-xs text-spark-text">Theo dõi tiến độ, xem màn hình trực tiếp WebRTC, chấm điểm hoặc xóa học sinh khỏi phòng.</p>
+                  <p class="text-xs text-spark-text">Theo dõi tiến độ, xem màn hình trực tiếp, chấm điểm hoặc xóa học sinh khỏi phòng.</p>
+                </div>
+                <div class="inline-flex items-center gap-1 bg-spark-bg p-1 rounded-xl border border-gray-200 text-[11px] font-bold">
+                  <span class="px-2 text-spark-text hidden sm:inline">Cỡ khung:</span>
+                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(1)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 1 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">1 cột lớn</button>
+                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(2)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 2 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">2 cột</button>
+                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(3)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 3 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">3 cột</button>
                 </div>
               </div>
               ${
                 participants.length === 0
                   ? `<div class="rounded-2xl border border-dashed border-gray-200 bg-spark-bg/60 p-8 text-center text-xs sm:text-sm text-spark-text">Chưa có học sinh nào tham gia phòng này. Hãy nhấn <strong>PHÁT LINK CHO HỌC SINH</strong> để gửi link tham gia.</div>`
-                  : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  : `<div class="grid gap-5 ${dashboardGridCols === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : dashboardGridCols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}">
                       ${participants.map((p) => {
                         const pSubs = submissions.filter((s) => s.studentId === p.studentId);
                         const latestSub = pSubs[0] || null;
@@ -3911,7 +3923,7 @@ END $$;`;
       }
 
       return {
-        openZoomModal, closeZoomModal, setZoomScale,
+        openZoomModal, closeZoomModal, setZoomScale, setDashboardGridCols,
         isOpen, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
         createOrResetRoom, setRoomStatus, toggleAllowRejoin, publishAndCopyLink,
         copyRoomLink, previewStudentInterface, renderRoomView, openStudentMonitor,
@@ -4217,9 +4229,13 @@ END $$;`;
             : window.html2canvas;
 
           if (typeof h2c === 'function' && targetEl) {
-            const rect = targetEl.getBoundingClientRect();
-            const w = Math.max(Math.round(rect.width || targetEl.scrollWidth || targetEl.clientWidth || 1280), 640);
-            const h = Math.max(Math.round(rect.height || targetEl.scrollHeight || targetEl.clientHeight || 720), 360);
+            // Dùng kích thước bố cục gốc (chưa bị transform: scale) để không bị bóp ngang & chồng chữ
+            const rawW = targetEl.offsetWidth || targetEl.scrollWidth || targetEl.clientWidth || 1280;
+            const rawH = targetEl.offsetHeight || targetEl.scrollHeight || targetEl.clientHeight || 720;
+            const w = Math.max(Math.round(rawW), 640);
+            const h = Math.max(Math.round(rawH), 360);
+            const winW = Math.max(w, frameWin?.innerWidth || 1280);
+            const winH = Math.max(h, frameWin?.innerHeight || 720);
             // Tăng độ nét: 1.25 trên máy tính, 1.0 trên mobile/tablet
             const scale = isMobileOrTablet() ? 1.0 : 1.25;
 
@@ -4236,12 +4252,19 @@ END $$;`;
                 backgroundColor: '#FFFFFF',
                 width: w,
                 height: h,
-                windowWidth: w,
-                windowHeight: h,
+                windowWidth: winW,
+                windowHeight: winH,
                 scrollX: 0,
                 scrollY: 0,
                 onclone: (clonedDoc, clonedEl) => {
-                  // 1. Chép pixel từ tất cả <canvas> gốc (bảng vẽ, hình học) sang bản clone
+                  // 1. Gỡ transform scale trên khung chứa nếu có để chụp đúng tỷ lệ gốc 16:9
+                  const clonedStage = clonedDoc.getElementById('stage-16-9');
+                  if (clonedStage) {
+                    clonedStage.style.transform = 'none';
+                    clonedStage.style.margin = '0';
+                  }
+
+                  // 2. Chép pixel từ tất cả <canvas> gốc (bảng vẽ, hình học) sang bản clone
                   const clonedCanvases = Array.from((clonedEl || clonedDoc).querySelectorAll('canvas'));
                   sourceCanvases.forEach((srcCanvas, idx) => {
                     const dstCanvas = clonedCanvases[idx];
@@ -4254,7 +4277,7 @@ END $$;`;
                     } catch {}
                   });
 
-                  // 2. Đảm bảo phần tử không bị ẩn bởi animation/opacity trong lúc chụp
+                  // 3. Tắt animation/transition lúc chụp để không bị mờ/ẩn phần tử
                   const styleFix = clonedDoc.createElement('style');
                   styleFix.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
                   clonedDoc.head.appendChild(styleFix);
