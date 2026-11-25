@@ -1965,6 +1965,24 @@ END $$;`;
         }
       }
 
+      async function updateRecord(table, id, patch) {
+        const activeClient = (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.getClient)
+          ? window.SparkleSupabaseRBAC.getClient()
+          : client;
+        if (!activeClient) return { error: { message: 'Chưa kết nối Supabase' } };
+        try {
+          const res = await activeClient.from(table).update(patch).eq('id', id);
+          if (res && res.error) {
+            console.error(`Supabase update [${table}] error:`, res.error);
+            Toast.show(`Lỗi cập nhật Supabase (${table}): ${res.error.message}`, 'error');
+          }
+          return res;
+        } catch (err) {
+          console.error(`Supabase update [${table}] exception:`, err);
+          return { error: err };
+        }
+      }
+
       async function deleteRecord(table, id) {
         const activeClient = (window.SparkleSupabaseRBAC && window.SparkleSupabaseRBAC.getClient)
           ? window.SparkleSupabaseRBAC.getClient()
@@ -2205,7 +2223,7 @@ END $$;`;
 
       return {
         MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, syncRoomLiveSessions, fetchRoomDirectly, fetchExercisesForRoom, getLastError,
-        upsertRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
+        upsertRecord, updateRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
 
@@ -2800,7 +2818,7 @@ END $$;`;
         persist();
         SupabaseEngine.upsertRecord('room_participants', {
           id: participant.id, room_id: participant.roomId, student_id: participant.studentId,
-          student_name: participant.studentName, session_token_hash: participant.sessionTokenHash,
+          student_name: participant.studentName, session_token_hash: participant.sessionTokenHash || 'session_ok',
           status: participant.status, joined_at: participant.joinedAt, last_seen_at: participant.lastSeenAt, removed_at: participant.removedAt || null,
         });
       }
@@ -3582,7 +3600,8 @@ END $$;`;
             p.screenStatus = 'ended';
             p.latestCanvasUrl = '';
             p.removedAt = new Date().toISOString();
-            AppState.upsertParticipant(p);
+            AppState.persist(false);
+            await SupabaseEngine.updateRecord('room_participants', p.id, { status: 'removed', removed_at: p.removedAt });
             await SupabaseEngine.deleteRecord('screen_sessions', `${room.id}__${p.studentId}__live`);
           }
         }
@@ -3734,7 +3753,9 @@ END $$;`;
                 </div>
               </div>
               ${
-                participants.length === 0
+                room.status === 'closed'
+                  ? `<div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-8 text-center text-xs sm:text-sm text-spark-navy space-y-2"><div class="font-extrabold text-rose-600">🔒 Phòng luyện tập đã đóng</div><p class="text-spark-text">Toàn bộ học sinh đã được ngắt kết nối. Giáo viên có thể xem hoặc xuất điểm đã lưu tại tab <strong>Bảng điểm phòng</strong>.</p></div>`
+                  : participants.length === 0
                   ? `<div class="rounded-2xl border border-dashed border-gray-200 bg-spark-bg/60 p-8 text-center text-xs sm:text-sm text-spark-text">Chưa có học sinh nào tham gia phòng này. Hãy nhấn <strong>PHÁT LINK CHO HỌC SINH</strong> để gửi link tham gia.</div>`
                   : `<div class="grid gap-5 ${dashboardGridCols === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : dashboardGridCols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}">
                       ${participants.map((p) => {
@@ -4054,7 +4075,8 @@ END $$;`;
             p.screenStatus = 'ended';
             p.latestCanvasUrl = '';
             p.removedAt = new Date().toISOString();
-            AppState.upsertParticipant(p);
+            AppState.persist(false);
+            await SupabaseEngine.updateRecord('room_participants', p.id, { status: 'removed', removed_at: p.removedAt });
             await SupabaseEngine.deleteRecord('screen_sessions', `${room.id}__${studentId}__live`);
             SupabaseEngine.broadcast('STUDENT_REMOVED', { roomId: room.id, studentId });
             if (monitoringStudentId === studentId) closeStudentMonitor();
