@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài 50 – Tính Giá Trị Biểu Thức Khi Biết Giá Trị Của Các Biến</title>
+  <style>
+    :root {
+      --navy: #0f2942;
+      --navy-light: #1e3a5f;
+      --teal: #0f766e;
+      --teal-bright: #14b8a6;
+      --teal-soft: #ccfbf1;
+      --orange: #ea580c;
+      --orange-hover: #c2410c;
+      --orange-soft: #ffedd5;
+      --cream: #fdfbf7;
+      --yellow-soft: #fef9c3;
+      --yellow-border: #eab308;
+      --white: #ffffff;
+      --border: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --green: #16a34a;
+      --green-bg: #dcfce7;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --font-main: Verdana, "Segoe UI", Tahoma, Geneva, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0a1929;
+      font-family: var(--font-main);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #viewport-wrap {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Sân khấu 16:9 chuẩn trình chiếu */
+    #stage {
+      width: 1440px;
+      height: 810px;
+      background:
+        radial-gradient(circle at 6% 10%, rgba(204, 251, 241, 0.72) 0%, transparent 32%),
+        radial-gradient(circle at 94% 88%, rgba(255, 237, 213, 0.78) 0%, transparent 34%),
+        var(--cream);
+      border-radius: 20px;
+      border: 6px solid #ffffff;
+      box-shadow: 0 24px 68px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 20px 12px 20px;
+      gap: 10px;
+      transform-origin: center center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    /* Thanh tiêu đề trên cùng */
+    .top-header {
+      height: 54px;
+      background: linear-gradient(90deg, var(--navy) 0%, var(--navy-light) 55%, var(--teal) 100%);
+      border-radius: 14px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #ffffff;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(15, 41, 66, 0.22);
+    }
+
+    .top-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lesson-badge {
+      background: var(--orange);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .top-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-title-vi {
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .top-title-en {
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .top-progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-bar-bg {
+      width: 180px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, #fde047, #fb923c);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .slide-num-pill {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    /* Khung nội dung chính */
+    .main-stage {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.96);
+      border: 2.5px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      animation: fadeSlide 0.3s ease;
+    }
+    .slide.active { display: flex; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tiêu đề mỗi slide */
+    .slide-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .slide-head-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .slide-h1 {
+      font-size: 21px;
+      font-weight: 900;
+      color: var(--navy);
+    }
+
+    .slide-h1-en {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .role-tag {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 13px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .role-tag.guide {
+      background: var(--teal-soft);
+      color: var(--teal);
+      border: 1.5px solid var(--teal-bright);
+    }
+    .role-tag.student {
+      background: var(--orange-soft);
+      color: #9a3412;
+      border: 1.5px solid #fb923c;
+    }
+
+    /* Hộp Đề bài nền màu cam nổi bật, chữ viết bình thường chuẩn sách giáo khoa */
+    .problem-box {
+      background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+      border: 2px solid #fb923c;
+      border-left: 6px solid var(--orange);
+      border-radius: 12px;
+      padding: 10px 16px;
+      flex-shrink: 0;
+    }
+
+    .problem-vi {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.35;
+    }
+
+    .problem-en {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #9a3412;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* Bố cục 2 cột linh hoạt */
+    .grid-2 {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .grid-2-wide-left {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: #fff7ed;
+      border: 2px solid #fdba74;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .panel-white {
+      background: #fff7ed;
+    }
+
+    .clickable-area {
+      cursor: pointer;
+    }
+
+    .click-hint-box {
+      border: 2px dashed #ea580c;
+      background: #ffedd5;
+      color: #9a3412;
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: center;
+      font-size: 13.5px;
+      font-weight: 800;
+    }
+
+    /* ==================== SLIDE 1: BIỂU THỨC & LỚP NGOẶC ==================== */
+    .expr-showcase {
+      background: #ffedd5;
+      border: 2.5px solid #fb923c;
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .expr-big {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+
+    .bracket-span {
+      display: inline-block;
+      padding: 2px 5px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.22s ease;
+    }
+
+    .bracket-span.hl-round {
+      border-color: var(--orange);
+      background: rgba(255, 237, 213, 0.75);
+      box-shadow: 0 0 12px rgba(234, 88, 12, 0.28);
+    }
+
+    .bracket-span.hl-square {
+      border-color: var(--teal);
+      background: rgba(204, 251, 241, 0.65);
+      box-shadow: 0 0 12px rgba(15, 118, 110, 0.25);
+    }
+
+    .bracket-legend-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .bracket-btn {
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      background: #ffffff;
+      color: var(--navy);
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .bracket-btn.active-round {
+      border-color: var(--orange);
+      background: var(--orange-soft);
+      color: #9a3412;
+    }
+    .bracket-btn.active-square {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
+
+    .character-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 10px 14px;
+    }
+
+    .speech-bubble {
+      flex: 1;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* Câu hỏi trắc nghiệm tương tác */
+    .quiz-card-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.4;
+    }
+
+    .quiz-card-en {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .opt-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .opt-btn {
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-main);
+      font-size: 14.5px;
+      font-weight: 700;
+      padding: 11px 14px;
+      border-radius: 11px;
+      border: 2px solid var(--border);
+      background: #ffffff;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+    .opt-btn:hover:not(:disabled) {
+      border-color: var(--teal-bright);
+      background: #f0fdfa;
+    }
+    .opt-btn.selected {
+      border-color: var(--navy);
+      background: #e0f2fe;
+      box-shadow: 0 0 0 2px rgba(15, 41, 66, 0.18);
+    }
+    .opt-btn.correct {
+      border-color: var(--green);
+      background: var(--green-bg);
+      color: #14532d;
+    }
+    .opt-btn.wrong {
+      border-color: var(--red);
+      background: var(--red-bg);
+      color: #7f1d1d;
+    }
+    .opt-btn:disabled { cursor: default; }
+
+    .opt-key {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--navy);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Hộp phản hồi */
+    .fb-box {
+      background: #f1f5f9;
+      border: 2px solid #94a3b8;
+      border-left: 6px solid var(--teal);
+      border-radius: 11px;
+      padding: 9px 13px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.42;
+    }
+    .fb-box.ok {
+      background: var(--green-bg);
+      border-color: var(--green);
+      border-left-color: #15803d;
+      color: #14532d;
+    }
+    .fb-box.err {
+      background: var(--red-bg);
+      border-color: #ef4444;
+      border-left-color: var(--red);
+      color: #7f1d1d;
+    }
+
+    /* Bảng tổng hợp Slide 1 */
+    .summary-mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--teal-bright);
+    }
+    .summary-mini-table th {
+      background: var(--teal);
+      color: #ffffff;
+      padding: 9px 12px;
+      text-align: left;
+      width: 34%;
+    }
+    .summary-mini-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    /* ==================== SLIDE 2: SƠ ĐỒ 3 BƯỚC ==================== */
+    .flow-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .flow-step {
+      width: 100%;
+      max-width: 460px;
+      background: #ffffff;
+      border: 2.5px solid var(--orange);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 6px 18px rgba(234, 88, 12, 0.14);
+      animation: fadeSlide 0.35s ease;
+    }
+
+    .flow-step.unlocked {
+      display: flex;
+    }
+
+    .flow-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--orange), #f59e0b);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .flow-arrow {
+      display: none;
+      font-size: 20px;
+      color: var(--orange);
+      font-weight: 900;
+    }
+    .flow-arrow.lit { display: block; }
+
+    /* ==================== SLIDE 3: CÁCH GIẢI & ABBY ==================== */
+    .sol-step-card {
+      background: #ffffff;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 11px 15px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      animation: fadeSlide 0.32s ease;
+    }
+    .sol-step-card.shown { display: flex; }
+    .sol-step-card.current {
+      border-color: var(--orange);
+      background: #fffdf8;
+      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.12);
+    }
+
+    .sol-step-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--teal);
+      text-transform: uppercase;
+    }
+
+    .sol-math-line {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .term-chip {
+      padding: 2px 6px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1.5px dashed transparent;
+      transition: all 0.16s ease;
+    }
+    .term-chip:hover {
+      background: var(--yellow-soft);
+      border-color: var(--yellow-border);
+    }
+    .term-chip.active-term {
+      background: var(--orange-soft);
+      border-color: var(--orange);
+      color: #9a3412;
+    }
+
+    .abby-card {
+      background: #fffbeb;
+      border: 2.5px solid #f59e0b;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .abby-work-box {
+      background: #ffffff;
+      border: 2px dashed #ea580c;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #9a3412;
+      text-align: center;
+    }
+
+    /* ==================== SLIDE 4: VỞ HỌC SINH TỰ GIẢI (7 DÒNG) ==================== */
+    .notebook-wrap {
+      flex: 1;
+      background: #fff7ed;
+      border: 2.5px solid #fb923c;
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      position: relative;
+      box-shadow: inset 0 2px 10px rgba(15, 41, 66, 0.05);
+      min-height: 0;
+    }
+
+    .notebook-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1.5px dashed #cbd5e1;
+      padding-bottom: 4px;
+    }
+
+    .nb-prefix {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--navy);
+      min-width: 44px;
+    }
+
+    .nb-input {
+      flex: 1;
+      font-family: var(--font-main);
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f172a;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 4px 6px;
+      user-select: text;
+    }
+    .nb-input::placeholder {
+      color: #cbd5e1;
+      font-weight: normal;
+    }
+
+    .milestone-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .ms-item {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ms-item.ok {
+      border-color: var(--green);
+      background: var(--green-bg);
+      color: #14532d;
+    }
+    .ms-item.miss {
+      border-color: #f59e0b;
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    /* ==================== SLIDE 5: THẺ LẬT & KIỂM TRA NHANH ==================== */
+    .flip-cards-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      height: 158px;
+      flex-shrink: 0;
+    }
+
+    .flip-card {
+      perspective: 900px;
+      cursor: pointer;
+      display: none;
+      animation: fadeSlide 0.35s ease;
+    }
+    .flip-card.shown {
+      display: block;
+    }
+
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .flip-front {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%);
+      color: #ffffff;
+      border: 2.5px solid #99f6e4;
+      box-shadow: 0 6px 16px rgba(15, 41, 66, 0.16);
+    }
+
+    .flip-back {
+      background: #ffffff;
+      color: var(--navy);
+      border: 2.5px solid var(--orange);
+      transform: rotateY(180deg);
+      font-size: 12.5px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+    .mnemonic-banner {
+      background: linear-gradient(90deg, #fef3c7 0%, #ffedd5 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #9a3412;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .quick-quiz-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .qq-card {
+      background: #fff7ed;
+      border: 2px solid #fdba74;
+      border-radius: 13px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .qq-card.solved {
+      border-color: var(--green);
+      background: #f0fdf4;
+    }
+
+    .qq-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.35;
+    }
+
+    .qq-opts {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .qq-chip {
+      font-family: var(--font-main);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #94a3b8;
+      background: #ffffff;
+      color: var(--navy);
+      cursor: pointer;
+    }
+    .qq-chip:hover:not(:disabled) { border-color: var(--teal); background: #f0fdfa; }
+    .qq-chip.ok { background: var(--green); border-color: #15803d; color: #ffffff; }
+    .qq-chip.err { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+    /* ==================== NÚT BẤM & THANH ĐIỀU KHIỂN CỐ ĐỊNH ==================== */
+    .btn {
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      filter: grayscale(45%);
+      transform: none !important;
+    }
+
+    .btn-navy   { background: var(--navy); box-shadow: 0 3px 0 #081828; }
+    .btn-teal   { background: var(--teal); box-shadow: 0 3px 0 #0a524d; }
+    .btn-orange { background: var(--orange); box-shadow: 0 3px 0 var(--orange-hover); }
+    .btn-green  { background: var(--green); box-shadow: 0 3px 0 #15803d; }
+    .btn-slate  { background: #475569; box-shadow: 0 3px 0 #334155; }
+    .btn-amber  { background: #d97706; box-shadow: 0 3px 0 #b45309; }
+
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Thanh điều hướng cố định dưới cùng */
+    .bottom-nav {
+      height: 52px;
+      background: #ffffff;
+      border: 2.5px solid var(--border);
+      border-radius: 14px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .nav-dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-dot {
+      font-family: var(--font-main);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: 2px solid #cbd5e1;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .nav-dot.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #ffffff;
+    }
+    .nav-dot.done {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #ffffff;
+    }
+
+    /* Slide 3: Ô nhập từng bước & Bàn phím toán học */
+    .s3-step-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .s3-step-prefix {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--navy);
+      min-width: 42px;
+    }
+    .s3-step-input {
+      flex: 1;
+      font-family: var(--font-main);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--navy);
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 6px 10px;
+      outline: none;
+      user-select: text;
+      transition: all 0.16s ease;
+    }
+    .s3-step-input.active-input,
+    .s3-step-input:focus {
+      border-color: var(--orange);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+    }
+    .s3-step-input.ok-input {
+      border-color: var(--green);
+      background: var(--green-bg);
+      color: #14532d;
+    }
+    .s3-step-input.err-input {
+      border-color: var(--red);
+      background: var(--red-bg);
+      color: #7f1d1d;
+    }
+
+    .math-keypad {
+      background: #ffedd5;
+      border: 2px solid #fb923c;
+      border-radius: 13px;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .kp-btn {
+      font-family: var(--font-main);
+      font-size: 15.5px;
+      font-weight: 900;
+      height: 36px;
+      border-radius: 8px;
+      border: 2px solid #fdba74;
+      background: #ffffff;
+      color: var(--navy);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s ease;
+    }
+    .kp-btn:hover {
+      background: #fef3c7;
+      border-color: var(--orange);
+      transform: translateY(-1px);
+    }
+    .kp-btn:active {
+      transform: translateY(1px);
+    }
+    .kp-btn.kp-op {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0369a1;
+    }
+    .kp-btn.kp-del {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+      font-size: 13px;
+    }
+    .kp-btn.kp-clr {
+      background: #475569;
+      border-color: #334155;
+      color: #ffffff;
+      font-size: 12px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="viewport-wrap">
+  <div id="stage">
+    <canvas id="fx-canvas" width="1440" height="810"></canvas>
+
+<!-- KHUNG NỘI DUNG CHÍNH -->
+    <main class="main-stage">
+
+      <!-- ==================== SLIDE 1: ĐỌC ĐỀ VÀ TÌM HIỂU ĐỀ BÀI ==================== -->
+      <section class="slide active" id="slide-0">
+
+        <div class="problem-box">
+          <div class="problem-vi">Tính giá trị biểu thức A = 2x - [3y - (x + y)] với x = -2, y = 3.</div>
+          <div class="problem-en">Evaluate the expression A = 2x - [3y - (x + y)] for x = -2 and y = 3.</div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Khu vực 1: Biểu thức & lớp ngoặc -->
+          <div class="panel" style="justify-content:center;">
+            <div class="expr-showcase" style="padding:28px 16px; gap:18px;">
+              <div class="expr-big" style="font-size:36px;">
+                A = 2x &minus; <span class="bracket-span" id="s1-sq-wrap" onclick="highlightBracket('square')">[3y &minus; <span class="bracket-span" id="s1-rd-wrap" onclick="highlightBracket('round', event)">(x + y)</span>]</span>
+              </div>
+              <div class="bracket-legend-row">
+                <button class="bracket-btn" id="btn-hl-round" onclick="highlightBracket('round')">🟠 Ngoặc tròn ( )</button>
+                <button class="bracket-btn" id="btn-hl-square" onclick="highlightBracket('square')">🟢 Ngoặc vuông [ ]</button>
+              </div>
+              <div id="s1-bracket-note" style="font-size:13.5px; color:#0f766e; font-weight:700; min-height:20px;"></div>
+            </div>
+          </div>
+
+          <!-- Khu vực 2: 3 câu hỏi tìm hiểu đề lần lượt -->
+          <div class="panel panel-white">
+            <div id="s1-quiz-area" style="display:flex; flex-direction:column; gap:10px; flex:1;">
+
+              <div class="quiz-card-title" id="s1-q-title"></div>
+              <div class="quiz-card-en" id="s1-q-en"></div>
+              <div class="opt-list" id="s1-q-opts"></div>
+              <div class="fb-box" id="s1-fb">Hãy chọn 1 phương án rồi nhấn <b>Kiểm tra</b>.</div>
+            </div>
+
+            <!-- Khu vực cho học sinh làm thử sau khi hoàn thành phân tích đề -->
+            <div id="s1-summary-area" style="display:none; flex-direction:column; gap:10px; flex:1;">
+              <div style="font-size:16px; font-weight:900; color:#9a3412;">✏️ Khu vực làm thử</div>
+              <div class="notebook-wrap" style="padding:10px 16px; gap:8px;">
+                <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="s1-try-0" placeholder="..." /></div>
+                <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="s1-try-1" placeholder="..." /></div>
+                <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="s1-try-2" placeholder="..." /></div>
+                <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="s1-try-3" placeholder="..." /></div>
+                <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="s1-try-4" placeholder="..." /></div>
+              </div>
+            </div>
+
+            <div class="btn-row" style="justify-content:space-between;">
+              <div class="btn-row">
+                <button class="btn btn-teal" id="s1-btn-check" onclick="checkS1Question()">✓ Kiểm tra</button>
+                <button class="btn btn-slate" onclick="resetSlide1()">🔄 Làm lại</button>
+              </div>
+              <button class="btn btn-orange" id="s1-btn-continue" onclick="goToSlide(1)" disabled>Tiếp tục – Quyết định phương pháp ▶</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 2: QUYẾT ĐỊNH PHƯƠNG PHÁP ==================== -->
+      <section class="slide" id="slide-1">
+
+        <div class="problem-box">
+          <div class="problem-vi">Tính giá trị biểu thức A = 2x - [3y - (x + y)] với x = -2, y = 3.</div>
+          <div class="problem-en">Evaluate the expression A = 2x - [3y - (x + y)] for x = -2 and y = 3.</div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Cột trái: 3 câu hỏi dẫn dắt -->
+          <div class="panel panel-white">
+            <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
+
+              <div class="quiz-card-title" id="s2-q-title"></div>
+              <div class="quiz-card-en" id="s2-q-en"></div>
+              <div class="opt-list" id="s2-q-opts"></div>
+              <div class="fb-box" id="s2-fb">Chọn phương án đúng rồi nhấn <b>Kiểm tra</b> để mở khóa sơ đồ phương pháp!</div>
+            </div>
+
+            <div class="btn-row" style="justify-content:space-between;">
+              <div class="btn-row">
+                <button class="btn btn-teal" id="s2-btn-check" onclick="checkS2Question()">✓ Kiểm tra</button>
+                <button class="btn btn-slate" onclick="resetSlide2()">🔄 Làm lại</button>
+              </div>
+              <button class="btn btn-orange" id="s2-btn-confirm" onclick="goToSlide(2)" disabled>🔒 Xác nhận phương pháp ▶</button>
+            </div>
+          </div>
+
+          <!-- Cột phải: Sơ đồ 3 bước hiển thị khi nhấp chuột -->
+          <div class="panel clickable-area" onclick="revealNextS2DiagramStep(event)">
+            <div style="text-align:center; font-size:15px; font-weight:900; color:var(--navy);">
+              SƠ ĐỒ PHƯƠNG PHÁP 3 BƯỚC
+              <div style="font-size:11.5px; color:#64748b; font-weight:600; font-style:italic;">3-Step Solution Blueprint</div>
+            </div>
+
+            <div class="click-hint-box" id="s2-diagram-hint">
+              👆 Nhấp chuột vào đây để hiển thị từng bước trong sơ đồ (0 / 3)
+            </div>
+
+            <div class="flow-diagram">
+              <div class="flow-step" id="s2-step-0">
+                <div class="flow-num">1</div>
+                <div>
+                  <div style="font-size:15.5px; font-weight:900; color:var(--navy);">THAY THẾ SỐ</div>
+                  <div style="font-size:12.5px; color:#475569;">Thay giá trị của x và y vào đúng vị trí trong biểu thức.</div>
+                </div>
+              </div>
+              <div class="flow-arrow" id="s2-arr-0">⬇</div>
+              <div class="flow-step" id="s2-step-1">
+                <div class="flow-num">2</div>
+                <div>
+                  <div style="font-size:15.5px; font-weight:900; color:var(--navy);">ĐẶT NGOẶC VỚI SỐ NGUYÊN ÂM</div>
+                  <div style="font-size:12.5px; color:#475569;">Đặt số âm trong ngoặc đơn để giữ đúng dấu và phép nhân.</div>
+                </div>
+              </div>
+              <div class="flow-arrow" id="s2-arr-1">⬇</div>
+              <div class="flow-step" id="s2-step-2">
+                <div class="flow-num">3</div>
+                <div>
+                  <div style="font-size:15.5px; font-weight:900; color:var(--navy);">THỰC HIỆN THEO THỨ TỰ</div>
+                  <div style="font-size:12.5px; color:#475569;">Tính từ trong ra ngoài (ngoặc tròn → ngoặc vuông) và theo thứ tự ưu tiên.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-row" style="justify-content:center;" onclick="event.stopPropagation()">
+              <button class="btn btn-orange" id="s2-btn-reveal-step" onclick="revealNextS2DiagramStep(event)">➕ Hiện bước tiếp theo</button>
+              <button class="btn btn-slate" onclick="resetS2Diagram(event)">🔄 Ẩn sơ đồ</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 3: CÁCH GIẢI & PHÁT HIỆN LỖI SAI CỦA ABBY ==================== -->
+      <section class="slide" id="slide-2">
+
+        <div class="problem-box">
+          <div class="problem-vi">Tính giá trị biểu thức A = 2x - [3y - (x + y)] với x = -2, y = 3.</div>
+          <div class="problem-en">Evaluate the expression A = 2x - [3y - (x + y)] for x = -2 and y = 3.</div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Cột trái (HIỆN TRƯỚC): Tình huống phát hiện lỗi sai của Abby -->
+          <div class="abby-card">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <!-- SVG nhân vật Abby -->
+              <svg width="74" height="74" viewBox="0 0 100 100" style="flex-shrink:0;">
+                <ellipse cx="32" cy="24" rx="10" ry="22" fill="#fbcfe8" stroke="#db2777" stroke-width="2.5" transform="rotate(-14 32 24)"/>
+                <ellipse cx="68" cy="24" rx="10" ry="22" fill="#fbcfe8" stroke="#db2777" stroke-width="2.5" transform="rotate(14 68 24)"/>
+                <circle cx="50" cy="56" r="30" fill="#ffffff" stroke="#db2777" stroke-width="2.8"/>
+                <circle cx="39" cy="52" r="4.5" fill="#1e293b"/>
+                <circle cx="61" cy="52" r="4.5" fill="#1e293b"/>
+                <circle cx="40.5" cy="50.5" r="1.5" fill="#ffffff"/>
+                <circle cx="62.5" cy="50.5" r="1.5" fill="#ffffff"/>
+                <path d="M 43 66 Q 50 72 57 66" fill="none" stroke="#db2777" stroke-width="2.6" stroke-linecap="round"/>
+                <polygon points="62,28 74,20 76,34" fill="#ea580c"/>
+              </svg>
+              <div>
+                <div style="font-size:15.5px; font-weight:900; color:#9a3412;">🕵️ BƯỚC 1: PHÁT HIỆN LỖI SAI CỦA ABBY</div>
+                <div style="font-size:12.5px; color:#78350f;">Abby viết bài làm như sau:</div>
+              </div>
+            </div>
+
+            <div class="abby-work-box">A = 2-2 &minus; [33 &minus; (-2 + 3)]</div>
+
+            <div>
+              <div style="font-size:14.5px; font-weight:800; color:var(--navy); margin-bottom:6px;">
+                Abby đang làm đúng hay sai? Vì sao?
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button class="opt-btn" id="abby-opt-a" onclick="answerAbby('A')"><span class="opt-key">A</span> Abby làm đúng</button>
+                <button class="opt-btn" id="abby-opt-b" onclick="answerAbby('B')"><span class="opt-key">B</span> Abby làm sai</button>
+              </div>
+            </div>
+
+            <div class="fb-box" id="abby-fb" style="min-height:46px;">
+              Hãy chọn A hoặc B để kiểm tra bài làm của Abby trước khi xem cách giải đúng!
+            </div>
+
+            <div class="btn-row" style="justify-content:space-between;">
+              <button class="btn btn-orange" id="abby-btn-explain" onclick="toggleAbbyExplain()" disabled>👁 Xem lời giải thích</button>
+            </div>
+
+            <div id="abby-explain-box" style="display:none; background:#ffffff; border:2px solid #dc2626; border-radius:10px; padding:9px 12px; font-size:12.5px; line-height:1.45; color:#7f1d1d; font-weight:700;">
+              • 2x phải được thay bằng <b>2 . (-2)</b>, không phải 2 - 2.<br>
+              • 3y phải được thay bằng <b>3 . 3</b>, không phải 33.<br>
+              • Khi thay số vào biểu thức, cần giữ đúng phép nhân và đặt số nguyên âm trong ngoặc.
+            </div>
+          </div>
+
+          <!-- Cột phải (HIỆN SAU KHI LÀM XONG ABBY): Nhập từng bước giải bằng bàn phím toán học -->
+          <div class="panel panel-white clickable-area" id="s3-sol-panel" onclick="revealNextS3Step(event)" style="gap:8px; padding:12px 14px;">
+            <div style="display:flex; flex-direction:column; gap:7px; flex:1;">
+              <div class="click-hint-box" id="s3-sol-hint">
+                🔒 Hoàn thành phần phát hiện lỗi sai của Abby ở bên trái trước, sau đó nhấp chuột vào đây để mở khu vực nhập các bước giải!
+              </div>
+
+              <!-- Bước 1 -->
+              <div class="sol-step-card" id="s3-step-1" style="padding:8px 12px;" onclick="event.stopPropagation(); setActiveS3Input(1);">
+                <div class="sol-step-label">Bước 1 – Thay thế số (Substitution)</div>
+                <div class="s3-step-input-row">
+                  <span class="s3-step-prefix">A =</span>
+                  <input class="s3-step-input" id="s3-in-1" placeholder="Nhập biểu thức sau khi thay x = -2, y = 3..." onfocus="setActiveS3Input(1)" />
+                </div>
+              </div>
+
+              <!-- Bước 2 -->
+              <div class="sol-step-card" id="s3-step-2" style="padding:8px 12px;" onclick="event.stopPropagation(); setActiveS3Input(2);">
+                <div class="sol-step-label">Bước 2 – Thực hiện trong ngoặc tròn &amp; phép nhân</div>
+                <div class="s3-step-input-row">
+                  <span class="s3-step-prefix">A =</span>
+                  <input class="s3-step-input" id="s3-in-2" placeholder="Nhập biểu thức sau khi tính ngoặc tròn..." onfocus="setActiveS3Input(2)" />
+                </div>
+              </div>
+
+              <!-- Bước 3 -->
+              <div class="sol-step-card" id="s3-step-3" style="padding:8px 12px;" onclick="event.stopPropagation(); setActiveS3Input(3);">
+                <div class="sol-step-label">Bước 3 – Thực hiện trong ngoặc vuông &amp; Kết quả</div>
+                <div class="s3-step-input-row">
+                  <span class="s3-step-prefix">A =</span>
+                  <input class="s3-step-input" id="s3-in-3" placeholder="Nhập bước tính ngoặc vuông và kết quả..." onfocus="setActiveS3Input(3)" />
+                </div>
+              </div>
+
+              <!-- Bàn phím số & dấu toán học ngay dưới lời giải -->
+              <div class="math-keypad" id="s3-keypad" style="display:none;" onclick="event.stopPropagation()">
+                <button class="kp-btn" onclick="kpInsert('1')">1</button>
+                <button class="kp-btn" onclick="kpInsert('2')">2</button>
+                <button class="kp-btn" onclick="kpInsert('3')">3</button>
+                <button class="kp-btn" onclick="kpInsert('4')">4</button>
+                <button class="kp-btn" onclick="kpInsert('5')">5</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(' + ')">+</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(' - ')">&minus;</button>
+
+                <button class="kp-btn" onclick="kpInsert('6')">6</button>
+                <button class="kp-btn" onclick="kpInsert('7')">7</button>
+                <button class="kp-btn" onclick="kpInsert('8')">8</button>
+                <button class="kp-btn" onclick="kpInsert('9')">9</button>
+                <button class="kp-btn" onclick="kpInsert('0')">0</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(' . ')">&middot;</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(' = ')">=</button>
+
+                <button class="kp-btn kp-op" onclick="kpInsert('(')">(</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(')')">)</button>
+                <button class="kp-btn kp-op" onclick="kpInsert('[')">[</button>
+                <button class="kp-btn kp-op" onclick="kpInsert(']')">]</button>
+                <button class="kp-btn kp-op" onclick="kpInsert('-')">-âm</button>
+                <button class="kp-btn kp-del" onclick="kpBackspace()">⌫</button>
+                <button class="kp-btn kp-clr" onclick="kpClearActive()">Xóa</button>
+              </div>
+
+              <div class="fb-box" id="s3-term-fb" style="display:none; padding:7px 12px; font-size:13px;" onclick="event.stopPropagation()">
+                👆 Chọn một ô bước giải ở trên rồi dùng bàn phím số &amp; dấu để nhập phép tính!
+              </div>
+            </div>
+
+            <div class="btn-row" style="justify-content:space-between;" onclick="event.stopPropagation()">
+              <div class="btn-row">
+                <button class="btn btn-green" id="s3-btn-check" onclick="checkS3Inputs()" disabled style="padding:8px 13px; font-size:13px;">✓ Kiểm tra</button>
+                <button class="btn btn-slate" id="s3-btn-prev-step" onclick="stepS3(-1)" disabled style="padding:8px 12px; font-size:13px;">◀ Quay lại</button>
+              </div>
+              <span style="font-size:12.5px; font-weight:800; color:var(--navy);" id="s3-step-indicator">Bước: 0 / 3</span>
+              <button class="btn btn-teal" id="s3-btn-next-step" onclick="stepS3(1)" disabled style="padding:8px 13px; font-size:13px;">Bước tiếp theo ▶</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 4: HỌC SINH TỰ GIẢI BÀI ==================== -->
+      <section class="slide" id="slide-3">
+
+        <div class="problem-box">
+          <div class="problem-vi">Tính giá trị biểu thức A = 2x - [3y - (x + y)] với x = -2, y = 3.</div>
+          <div class="problem-en">Evaluate the expression A = 2x - [3y - (x + y)] for x = -2 and y = 3.</div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; gap:10px; min-height:0;">
+          <!-- Vở học sinh gồm 7 dòng trống rộng rãi -->
+          <div class="notebook-wrap">
+            <div style="font-size:13.5px; font-weight:800; color:#9a3412; margin-bottom:2px;">📓 Vở làm bài (Em hãy tự nhập từng bước lời giải vào các dòng bên dưới):</div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-0" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-1" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-2" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-3" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-4" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-5" placeholder="..." /></div>
+            <div class="notebook-line"><span class="nb-prefix">A =</span><input class="nb-input" id="nb-6" placeholder="..." /></div>
+          </div>
+
+          <!-- Đáp án ẩn dành cho giáo viên bật/tắt -->
+          <div id="s4-teacher-ans" style="display:none; background:#ffffff; border:2px solid #0f766e; border-radius:10px; padding:8px 14px; font-size:13.5px; line-height:1.45; color:#0f2942; font-weight:700;">
+            <b>Đáp án chuẩn (GV):</b> A = 2 . (-2) - [3 . 3 - (-2 + 3)] = (-4) - [9 - 1] = (-4) - 8 = <b>-12</b>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div class="fb-box" id="s4-fb" style="flex:1;">
+              Hãy tự viết lời giải vào vở rồi nhấn <b>✓ Kiểm tra bài làm</b>!
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-green" onclick="checkNotebook()">✓ Kiểm tra bài làm</button>
+              <button class="btn btn-amber" onclick="showS4Hint()">💡 Gợi ý</button>
+              <button class="btn btn-slate" onclick="resetNotebook()">🔄 Làm lại</button>
+              <button class="btn btn-navy" id="btn-gv-ans" onclick="toggleTeacherAnswer()">👁 Hiện đáp án (GV)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 5: ÔN TẬP PHƯƠNG PHÁP ==================== -->
+      <section class="slide" id="slide-4">
+
+        <!-- Khu vực 3 bước ôn tập: xuất hiện lần lượt khi GV nhấp chuột -->
+        <div class="panel clickable-area" style="padding:10px 14px; gap:8px; flex:0 0 auto;" onclick="revealNextS5Step(event)">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <span style="font-size:13.5px; font-weight:800; color:#9a3412;" id="s5-step-hint">👆 Nhấp chuột vào đây để hiện lần lượt Quy trình 3 bước (0 / 3)</span>
+            <div class="btn-row" onclick="event.stopPropagation()">
+              <button class="btn btn-orange" style="padding:6px 12px; font-size:12.5px;" id="s5-btn-reveal" onclick="revealNextS5Step(event)">➕ Hiện bước tiếp theo</button>
+              <button class="btn btn-slate" style="padding:6px 12px; font-size:12.5px;" onclick="resetS5Steps(event)">🔄 Ẩn lại</button>
+            </div>
+          </div>
+          <div class="flip-cards-row" id="s5-flip-row">
+            <div class="flip-card" id="s5-flip-0" onclick="event.stopPropagation(); this.classList.toggle('flipped'); SFX.click();">
+            <div class="flip-inner">
+              <div class="flip-face flip-front">
+                <div style="font-size:26px;">1️⃣</div>
+                <div style="font-size:16px; font-weight:900;">THAY THẾ SỐ</div>
+                <div style="font-size:11.5px; opacity:0.85;">👆 Nhấn vào thẻ để lật</div>
+              </div>
+              <div class="flip-face flip-back">
+                <div style="color:var(--teal); font-weight:900;">Bước 1: Thay thế số</div>
+                <div>Thay giá trị của các biến vào đúng vị trí trong biểu thức, giữ nguyên phép nhân.</div>
+                <div style="background:#f0fdfa; padding:4px 8px; border-radius:6px;">Ví dụ: 3y với y = 3 &rarr; 3 . 3</div>
+              </div>
+            </div>
+          </div>
+
+            <div class="flip-card" id="s5-flip-1" onclick="event.stopPropagation(); this.classList.toggle('flipped'); SFX.click();">
+            <div class="flip-inner">
+              <div class="flip-face flip-front">
+                <div style="font-size:26px;">2️⃣</div>
+                <div style="font-size:16px; font-weight:900;">ĐẶT NGOẶC VỚI SỐ NGUYÊN ÂM</div>
+                <div style="font-size:11.5px; opacity:0.85;">👆 Nhấn vào thẻ để lật</div>
+              </div>
+              <div class="flip-face flip-back">
+                <div style="color:var(--orange); font-weight:900;">Bước 2: Đặt ngoặc số âm</div>
+                <div>Khi thay số nguyên âm, luôn đặt trong dấu ngoặc đơn để tránh nhầm dấu phép tính.</div>
+                <div style="background:#fff7ed; padding:4px 8px; border-radius:6px;">Ví dụ: 2x với x = -2 &rarr; 2 . (-2)</div>
+              </div>
+            </div>
+          </div>
+
+            <div class="flip-card" id="s5-flip-2" onclick="event.stopPropagation(); this.classList.toggle('flipped'); SFX.click();">
+            <div class="flip-inner">
+              <div class="flip-face flip-front">
+                <div style="font-size:26px;">3️⃣</div>
+                <div style="font-size:16px; font-weight:900;">THỰC HIỆN THEO THỨ TỰ</div>
+                <div style="font-size:11.5px; opacity:0.85;">👆 Nhấn vào thẻ để lật</div>
+              </div>
+              <div class="flip-face flip-back">
+                <div style="color:var(--navy); font-weight:900;">Bước 3: Thứ tự phép tính</div>
+                <div>Ngoặc tròn ( ) &rarr; Ngoặc vuông [ ] &rarr; Ngoặc nhọn { }. Nhân, chia trước; cộng, trừ sau.</div>
+                <div style="background:#e0f2fe; padding:4px 8px; border-radius:6px;">Ví dụ: (-4) - [9 - 1] = -12</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+        <!-- Mẹo ghi nhớ -->
+        <div class="mnemonic-banner">
+          💡 Mẹo ghi nhớ thứ tự phép tính: “Người – Ngoặc &nbsp;&bull;&nbsp; Mua – Mũ &nbsp;&bull;&nbsp; Nên chọn – Nhân chia &nbsp;&bull;&nbsp; Cá tươi – Cộng trừ.”
+        </div>
+
+        <!-- Khu vực câu hỏi ôn tập: chỉ xuất hiện khi GV nhấp chuột, trả lời đúng sẽ biến mất -->
+        <div id="s5-quick-wrap" class="clickable-area" onclick="revealNextS5Quiz(event)" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0;">
+          <div id="s5-quiz-trigger" class="click-hint-box" style="width:100%; max-width:680px; padding:22px 24px; font-size:16px;">
+            👆 Nhấp chuột vào đây để hiện câu hỏi ôn tập
+          </div>
+          <div id="s5-single-q-card" class="qq-card" onclick="event.stopPropagation()" style="display:none; width:100%; max-width:920px; padding:18px 24px; gap:14px; box-shadow:0 6px 18px rgba(234,88,12,0.12);"></div>
+          <div class="fb-box ok" id="s5-finish-banner" onclick="event.stopPropagation()" style="display:none; width:100%; max-width:860px; justify-content:center; font-size:18px; padding:18px 24px; text-align:center;">
+            🏆 <b>Chúc mừng! Em đã hoàn thành nhiệm vụ 1 – Chân núi.</b> (Congratulations! Mission 1 completed!)
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH DƯỚI CÙNG -->
+    <footer class="bottom-nav">
+      <button class="btn btn-slate" id="nav-prev" onclick="changeSlide(-1)">◀ Trang trước</button>
+
+      <div class="nav-dots" id="nav-dots">
+        <button class="nav-dot active" id="dot-0" onclick="goToSlide(0)">1. Đọc đề</button>
+        <button class="nav-dot" id="dot-1" onclick="goToSlide(1)">2. Phương pháp</button>
+        <button class="nav-dot" id="dot-2" onclick="goToSlide(2)">3. Cách giải</button>
+        <button class="nav-dot" id="dot-3" onclick="goToSlide(3)">4. Tự giải</button>
+        <button class="nav-dot" id="dot-4" onclick="goToSlide(4)">5. Ôn tập</button>
+      </div>
+
+      <button class="btn btn-teal" id="nav-next" onclick="changeSlide(1)">Trang tiếp theo ▶</button>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ==========================================================================
+   1. ÂM THANH & PHÁO HOA NHẸ
+   ========================================================================== */
+const SFX = (() => {
+  let ctx = null;
+  function getCtx() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) ctx = new AC();
+    }
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function beep(f, d, t = 'triangle', v = 0.13, delay = 0) {
+    const c = getCtx(); if (!c) return;
+    const o = c.createOscillator(); const g = c.createGain();
+    o.type = t; o.frequency.setValueAtTime(f, c.currentTime + delay);
+    g.gain.setValueAtTime(v, c.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + d);
+    o.connect(g); g.connect(c.destination);
+    o.start(c.currentTime + delay); o.stop(c.currentTime + delay + d);
+  }
+  return {
+    click() { beep(640, 0.05, 'sine', 0.07, 0); },
+    ok() { beep(523.25, 0.12, 'triangle', 0.15, 0); beep(659.25, 0.12, 'triangle', 0.15, 0.1); beep(880, 0.22, 'triangle', 0.16, 0.2); },
+    err() { beep(220, 0.16, 'sawtooth', 0.1, 0); beep(175, 0.2, 'sawtooth', 0.1, 0.13); }
+  };
+})();
+
+let confetti = [];
+function burstConfetti() {
+  const colors = ['#0f766e', '#ea580c', '#eab308', '#38bdf8', '#16a34a'];
+  for (let i = 0; i < 80; i++) {
+    confetti.push({
+      x: 720 + (Math.random() - 0.5) * 480,
+      y: 220 + (Math.random() - 0.5) * 100,
+      vx: (Math.random() - 0.5) * 8,
+      vy: -3 - Math.random() * 5.5,
+      r: 4 + Math.random() * 4,
+      color: colors[i % colors.length],
+      life: 1
+    });
+  }
+}
+function initFXLoop() {
+  const c = document.getElementById('fx-canvas');
+  const ctx = c.getContext('2d');
+  function loop() {
+    ctx.clearRect(0, 0, 1440, 810);
+    for (let i = confetti.length - 1; i >= 0; i--) {
+      const p = confetti[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.015;
+      if (p.life <= 0) { confetti.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.r, p.r * 1.4);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ==========================================================================
+   2. TRẠNG THÁI CHUNG & ĐIỀU HƯỚNG 5 SLIDE
+   ========================================================================== */
+const TOTAL_SLIDES = 5;
+let currentSlide = 0;
+let s4CheckedOnce = false;
+
+function goToSlide(idx) {
+  if (idx < 0 || idx >= TOTAL_SLIDES) return;
+  // Slide 4 yêu cầu nhấn Kiểm tra ít nhất 1 lần trước khi sang Slide 5 bằng nút Trang tiếp theo
+  if (currentSlide === 3 && idx === 4 && !s4CheckedOnce) {
+    SFX.err();
+    const fb = document.getElementById('s4-fb');
+    fb.className = 'fb-box err';
+    fb.innerHTML = '⚠️ Em hãy nhập lời giải và nhấn <b>✓ Kiểm tra bài làm</b> trước khi chuyển sang phần Ôn tập nhé!';
+    return;
+  }
+  currentSlide = idx;
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    document.getElementById(`slide-${i}`).classList.toggle('active', i === currentSlide);
+    const dot = document.getElementById(`dot-${i}`);
+    if (dot) dot.classList.toggle('active', i === currentSlide);
+  }
+  document.getElementById('nav-prev').disabled = currentSlide === 0;
+  document.getElementById('nav-next').disabled = currentSlide === TOTAL_SLIDES - 1;
+}
+
+function changeSlide(delta) {
+  goToSlide(currentSlide + delta);
+}
+
+/* ==========================================================================
+   3. SLIDE 1 – LỚP NGOẶC & 3 CÂU HỎI TÌM HIỂU ĐỀ
+   ========================================================================== */
+function highlightBracket(type, evt) {
+  if (evt) evt.stopPropagation();
+  const rd = document.getElementById('s1-rd-wrap');
+  const sq = document.getElementById('s1-sq-wrap');
+  const bRd = document.getElementById('btn-hl-round');
+  const bSq = document.getElementById('btn-hl-square');
+  const note = document.getElementById('s1-bracket-note');
+
+  rd.classList.remove('hl-round');
+  sq.classList.remove('hl-square');
+  bRd.classList.remove('active-round');
+  bSq.classList.remove('active-square');
+
+  if (type === 'round') {
+    rd.classList.add('hl-round');
+    bRd.classList.add('active-round');
+    note.textContent = '🟠 Ngoặc tròn (x + y) nằm ở lớp trong cùng — ta sẽ ưu tiên tính trước!';
+  } else {
+    sq.classList.add('hl-square');
+    bSq.classList.add('active-square');
+    note.textContent = '🟢 Ngoặc vuông [3y - (x + y)] bao bên ngoài ngoặc tròn — tính sau khi đã xử lý ngoặc tròn!';
+  }
+  SFX.click();
+}
+
+const S1_QUESTIONS = [
+  {
+    q: 'Bài toán yêu cầu chúng ta làm gì?',
+    en: 'What does the problem ask us to do?',
+    opts: ['Tìm giá trị của x.', 'Tìm giá trị của y.', 'Tính giá trị biểu thức A.'],
+    ans: 2,
+    okMsg: 'Chính xác! Đề bài đã cho sẵn x và y, yêu cầu ta tính giá trị biểu thức A.',
+    errMsg: 'Chưa đúng! Đề bài đã cho biết x = -2 và y = 3, hãy đọc lại phần đầu câu đề bài nhé.'
+  },
+  {
+    q: 'Bài toán đã cho những dữ kiện nào?',
+    en: 'What values are given in the problem?',
+    opts: ['x = -2 và y = 3.', 'x = 2 và y = -3.', 'x = -2 và y = -3.'],
+    ans: 0,
+    okMsg: 'Chính xác! Chú ý dấu âm của x = -2 và số dương y = 3.',
+    errMsg: 'Chưa đúng! Hãy đối chiếu lại dấu của x và y trên thanh đề bài phía trên.'
+  },
+  {
+    q: 'Khi thay x = -2 vào biểu thức 2x, ta cần viết như thế nào?',
+    en: 'How should we substitute x = -2 into 2x?',
+    opts: ['2 - 2.', '2 . (-2).', '2 + 2.'],
+    ans: 1,
+    okMsg: 'Chính xác! 2x nghĩa là 2 nhân x, và số nguyên âm -2 phải đặt trong dấu ngoặc: 2 . (-2).',
+    errMsg: 'Chưa đúng! 2x là phép nhân 2 với x; nếu viết 2 - 2 sẽ bị biến thành phép trừ!'
+  }
+];
+
+let s1Idx = 0;
+let s1Picked = null;
+let s1Done = false;
+
+function renderSlide1Quiz() {
+  const quizArea = document.getElementById('s1-quiz-area');
+  const sumArea = document.getElementById('s1-summary-area');
+  const btnCheck = document.getElementById('s1-btn-check');
+  const btnCont = document.getElementById('s1-btn-continue');
+
+  if (s1Done) {
+    quizArea.style.display = 'none';
+    sumArea.style.display = 'flex';
+    btnCheck.disabled = true;
+    btnCont.disabled = false;
+    document.getElementById('dot-0').classList.add('done');
+    return;
+  }
+
+  quizArea.style.display = 'flex';
+  sumArea.style.display = 'none';
+  btnCheck.disabled = false;
+  btnCont.disabled = true;
+
+  const item = S1_QUESTIONS[s1Idx];
+  document.getElementById('s1-q-title').textContent = item.q;
+  document.getElementById('s1-q-en').textContent = item.en;
+
+  const keys = ['A', 'B', 'C'];
+  document.getElementById('s1-q-opts').innerHTML = item.opts.map((txt, i) => `
+    <button class="opt-btn ${s1Picked === i ? 'selected' : ''}" id="s1-opt-${i}" onclick="pickS1(${i})">
+      <span class="opt-key">${keys[i]}</span>
+      <span>${txt}</span>
+    </button>
+  `).join('');
+}
+
+function pickS1(i) {
+  s1Picked = i;
+  SFX.click();
+  renderSlide1Quiz();
+}
+
+function checkS1Question() {
+  const fb = document.getElementById('s1-fb');
+  if (s1Picked === null) {
+    SFX.err();
+    fb.className = 'fb-box err';
+    fb.textContent = '⚠️ Em hãy chọn một phương án A, B hoặc C trước khi kiểm tra!';
+    return;
+  }
+  const item = S1_QUESTIONS[s1Idx];
+  if (s1Picked === item.ans) {
+    SFX.ok();
+    document.getElementById(`s1-opt-${s1Picked}`).classList.add('correct');
+    fb.className = 'fb-box ok';
+    fb.innerHTML = `🎉 ${item.okMsg}`;
+    setTimeout(() => {
+      if (s1Idx < S1_QUESTIONS.length - 1) {
+        s1Idx++;
+        s1Picked = null;
+        fb.className = 'fb-box';
+        fb.innerHTML = 'Hãy chọn 1 phương án rồi nhấn <b>Kiểm tra</b>.';
+        renderSlide1Quiz();
+      } else {
+        s1Done = true;
+        renderSlide1Quiz();
+      }
+    }, 950);
+  } else {
+    SFX.err();
+    document.getElementById(`s1-opt-${s1Picked}`).classList.add('wrong');
+    fb.className = 'fb-box err';
+    fb.innerHTML = `❌ ${item.errMsg}`;
+  }
+}
+
+function resetSlide1() {
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById(`s1-try-${i}`);
+    if (el) el.value = '';
+  }
+  s1Idx = 0;
+  s1Picked = null;
+  s1Done = false;
+  document.getElementById('s1-fb').className = 'fb-box';
+  document.getElementById('s1-fb').innerHTML = 'Hãy chọn 1 phương án rồi nhấn <b>Kiểm tra</b>.';
+  renderSlide1Quiz();
+}
+
+/* ==========================================================================
+   4. SLIDE 2 – QUYẾT ĐỊNH PHƯƠNG PHÁP & SƠ ĐỒ 3 BƯỚC
+   ========================================================================== */
+const S2_QUESTIONS = [
+  {
+    q: 'Muốn tính giá trị biểu thức khi đã biết x và y, trước tiên ta cần làm gì?',
+    en: 'What is the very first step when x and y are given?',
+    opts: ['Thay giá trị của x và y vào biểu thức.', 'Chuyển x và y sang vế phải.', 'Xóa các dấu ngoặc.'],
+    ans: 0,
+    okMsg: 'Đúng rồi! Bước 1 là THAY THẾ SỐ vào đúng vị trí các biến.',
+    errMsg: 'Chưa đúng! Đây là bài tính giá trị biểu thức, không phải giải phương trình chuyển vế.'
+  },
+  {
+    q: 'Khi thay một số nguyên âm vào biểu thức, ta nên viết như thế nào?',
+    en: 'How should we write a negative integer when substituting?',
+    opts: ['Viết số âm không có ngoặc.', 'Đặt số nguyên âm trong dấu ngoặc.', 'Bỏ dấu âm.'],
+    ans: 1,
+    okMsg: 'Chính xác! Bước 2: ĐẶT NGOẶC VỚI SỐ NGUYÊN ÂM để tránh nhầm lẫn dấu.',
+    errMsg: 'Chưa đúng! Nếu không đặt ngoặc, dấu trừ của số âm dễ bị nhầm với phép trừ.'
+  },
+  {
+    q: 'Sau khi thay số vào biểu thức, ta thực hiện phép tính theo nguyên tắc nào?',
+    en: 'In what order should we calculate after substitution?',
+    opts: [
+      'Tính từ trái sang phải.',
+      'Thực hiện phép cộng trước.',
+      'Thực hiện theo thứ tự ưu tiên của phép tính và giải quyết các dấu ngoặc từ trong ra ngoài.'
+    ],
+    ans: 2,
+    okMsg: 'Tuyệt vời! Bước 3: THỰC HIỆN THEO THỨ TỰ từ ngoặc trong ra ngoài.',
+    errMsg: 'Chưa đúng! Trong biểu thức có nhiều dấu ngoặc và phép nhân/trừ, ta phải tuân thủ thứ tự ưu tiên.'
+  }
+];
+
+let s2Idx = 0;
+let s2Picked = null;
+let s2QuestionsDone = 0;
+let s2DiagramCount = 0;
+
+function renderSlide2() {
+  for (let i = 0; i < 3; i++) {
+    document.getElementById(`s2-step-${i}`).classList.toggle('unlocked', i < s2DiagramCount);
+    if (i < 2) document.getElementById(`s2-arr-${i}`).classList.toggle('lit', i < s2DiagramCount - 1);
+  }
+  const dHint = document.getElementById('s2-diagram-hint');
+  const dBtn = document.getElementById('s2-btn-reveal-step');
+  if (s2DiagramCount < 3) {
+    dHint.style.display = 'block';
+    dHint.textContent = `👆 Nhấp chuột vào đây để hiển thị từng bước trong sơ đồ (${s2DiagramCount} / 3)`;
+    dBtn.disabled = false;
+  } else {
+    dHint.style.display = 'none';
+    dBtn.disabled = true;
+  }
+
+  const allDone = s2QuestionsDone === 3;
+  const btnConfirm = document.getElementById('s2-btn-confirm');
+  btnConfirm.disabled = !allDone;
+  btnConfirm.textContent = allDone ? '✓ Xác nhận phương pháp ▶' : '🔒 Xác nhận phương pháp ▶';
+  if (allDone) document.getElementById('dot-1').classList.add('done');
+
+  const item = S2_QUESTIONS[s2Idx];
+  document.getElementById('s2-q-title').textContent = item.q;
+  document.getElementById('s2-q-en').textContent = item.en;
+
+  const keys = ['A', 'B', 'C'];
+  document.getElementById('s2-q-opts').innerHTML = item.opts.map((txt, i) => `
+    <button class="opt-btn ${s2Picked === i ? 'selected' : ''}" id="s2-opt-${i}" onclick="pickS2(${i})" ${allDone ? 'disabled' : ''}>
+      <span class="opt-key">${keys[i]}</span>
+      <span>${txt}</span>
+    </button>
+  `).join('');
+  document.getElementById('s2-btn-check').disabled = allDone;
+}
+
+function pickS2(i) {
+  if (s2QuestionsDone === 3) return;
+  s2Picked = i;
+  SFX.click();
+  renderSlide2();
+}
+
+function checkS2Question() {
+  const fb = document.getElementById('s2-fb');
+  if (s2Picked === null) {
+    SFX.err();
+    fb.className = 'fb-box err';
+    fb.textContent = '⚠️ Em hãy chọn một phương án trước khi bấm Kiểm tra!';
+    return;
+  }
+  const item = S2_QUESTIONS[s2Idx];
+  if (s2Picked === item.ans) {
+    SFX.ok();
+    s2QuestionsDone = Math.max(s2QuestionsDone, s2Idx + 1);
+    document.getElementById(`s2-opt-${s2Picked}`).classList.add('correct');
+    fb.className = 'fb-box ok';
+    fb.innerHTML = `🎉 ${item.okMsg}`;
+    if (s2Idx < 2) {
+      setTimeout(() => {
+        s2Idx++;
+        s2Picked = null;
+        fb.className = 'fb-box';
+        fb.innerHTML = 'Chọn phương án đúng rồi nhấn <b>Kiểm tra</b>!';
+        renderSlide2();
+      }, 950);
+    } else {
+      renderSlide2();
+    }
+  } else {
+    SFX.err();
+    document.getElementById(`s2-opt-${s2Picked}`).classList.add('wrong');
+    fb.className = 'fb-box err';
+    fb.innerHTML = `❌ ${item.errMsg}`;
+  }
+}
+
+function revealNextS2DiagramStep(evt) {
+  if (evt) evt.stopPropagation();
+  if (s2DiagramCount < 3) {
+    s2DiagramCount++;
+    SFX.click();
+    renderSlide2();
+  }
+}
+
+function resetS2Diagram(evt) {
+  if (evt) evt.stopPropagation();
+  s2DiagramCount = 0;
+  SFX.click();
+  renderSlide2();
+}
+
+function resetSlide2() {
+  s2Idx = 0;
+  s2Picked = null;
+  s2QuestionsDone = 0;
+  s2DiagramCount = 0;
+  document.getElementById('s2-fb').className = 'fb-box';
+  document.getElementById('s2-fb').innerHTML = 'Chọn phương án đúng rồi nhấn <b>Kiểm tra</b> để mở khóa sơ đồ phương pháp!';
+  renderSlide2();
+}
+
+/* ==========================================================================
+   5. SLIDE 3 – CÁCH GIẢI TỪNG BƯỚC & LỖI SAI CỦA ABBY
+   ========================================================================== */
+let s3Step = 0;
+let s3ActiveInput = 1;
+
+function setActiveS3Input(num) {
+  s3ActiveInput = num;
+  for (let i = 1; i <= 3; i++) {
+    const inp = document.getElementById(`s3-in-${i}`);
+    if (inp) inp.classList.toggle('active-input', i === s3ActiveInput);
+  }
+}
+
+function kpInsert(token) {
+  if (!abbyAnswered || s3Step === 0) return;
+  const inp = document.getElementById(`s3-in-${s3ActiveInput}`);
+  if (!inp) return;
+  inp.value += token;
+  inp.classList.remove('ok-input', 'err-input');
+  SFX.click();
+  inp.focus();
+}
+
+function kpBackspace() {
+  if (!abbyAnswered || s3Step === 0) return;
+  const inp = document.getElementById(`s3-in-${s3ActiveInput}`);
+  if (!inp) return;
+  inp.value = inp.value.trimEnd().slice(0, -1);
+  inp.classList.remove('ok-input', 'err-input');
+  SFX.click();
+  inp.focus();
+}
+
+function kpClearActive() {
+  if (!abbyAnswered || s3Step === 0) return;
+  const inp = document.getElementById(`s3-in-${s3ActiveInput}`);
+  if (!inp) return;
+  inp.value = '';
+  inp.classList.remove('ok-input', 'err-input');
+  SFX.click();
+  inp.focus();
+}
+
+function checkS3Inputs() {
+  const fb = document.getElementById('s3-term-fb');
+  const v1 = normMath(document.getElementById('s3-in-1').value);
+  const v2 = normMath(document.getElementById('s3-in-2').value);
+  const v3 = normMath(document.getElementById('s3-in-3').value);
+
+  const ok1 = /2\.?\(-2\)-\[3\.3-\(-2\+3\)\]/.test(v1);
+  const ok2 = /\(?-4\)?-\[9-1\]/.test(v2);
+  const ok3 = /\(?-4\)?-8/.test(v3) || /-12$/.test(v3);
+
+  const checks = [ok1, ok2, ok3];
+  let allShownOk = true;
+  for (let i = 1; i <= s3Step; i++) {
+    const inp = document.getElementById(`s3-in-${i}`);
+    inp.classList.remove('ok-input', 'err-input');
+    if (checks[i - 1]) {
+      inp.classList.add('ok-input');
+    } else {
+      inp.classList.add('err-input');
+      allShownOk = false;
+    }
+  }
+
+  if (allShownOk) {
+    SFX.ok();
+    fb.className = 'fb-box ok';
+    if (s3Step < 3) {
+      fb.innerHTML = `🎉 <b>Chính xác!</b> Bấm <b>Bước tiếp theo ▶</b> để nhập tiếp Bước ${s3Step + 1}.`;
+    } else {
+      fb.innerHTML = '🎉 <b>Xuất sắc!</b> Em đã nhập đúng cả 3 bước giải với kết quả cuối cùng <b>A = -12</b>!';
+      document.getElementById('dot-2').classList.add('done');
+    }
+  } else {
+    SFX.err();
+    fb.className = 'fb-box err';
+    fb.innerHTML = '❌ Ô viền đỏ chưa chính xác. Hãy kiểm tra lại dấu ngoặc số âm, phép nhân hoặc kết quả phép tính rồi nhập lại nhé!';
+  }
+}
+
+function revealNextS3Step(evt) {
+  if (evt) evt.stopPropagation();
+  if (!abbyAnswered) {
+    SFX.err();
+    return;
+  }
+  if (s3Step < 3) {
+    s3Step++;
+    s3ActiveInput = s3Step;
+    SFX.click();
+    renderSlide3();
+  }
+}
+
+function stepS3(delta) {
+  if (!abbyAnswered) return;
+  const next = s3Step + delta;
+  if (next < 0 || next > 3) return;
+  s3Step = next;
+  if (s3Step > 0) s3ActiveInput = s3Step;
+  SFX.click();
+  renderSlide3();
+}
+
+function renderSlide3() {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`s3-step-${i}`);
+    el.classList.toggle('shown', i <= s3Step);
+    el.classList.toggle('current', i === s3Step);
+  }
+  const hint = document.getElementById('s3-sol-hint');
+  const keypad = document.getElementById('s3-keypad');
+  const termFb = document.getElementById('s3-term-fb');
+  const btnCheck = document.getElementById('s3-btn-check');
+
+  if (!abbyAnswered) {
+    hint.style.display = 'block';
+    hint.textContent = '🔒 Hoàn thành phần phát hiện lỗi sai của Abby ở bên trái trước, sau đó nhấp chuột vào đây để mở khu vực nhập các bước giải!';
+    keypad.style.display = 'none';
+    termFb.style.display = 'none';
+    btnCheck.disabled = true;
+  } else if (s3Step === 0) {
+    hint.style.display = 'block';
+    hint.textContent = '👆 Nhấp chuột vào đây để mở Bước 1 và bàn phím nhập phép tính!';
+    keypad.style.display = 'none';
+    termFb.style.display = 'none';
+    btnCheck.disabled = true;
+  } else {
+    hint.style.display = 'none';
+    keypad.style.display = 'grid';
+    termFb.style.display = 'block';
+    btnCheck.disabled = false;
+    setActiveS3Input(s3ActiveInput);
+  }
+  document.getElementById('s3-step-indicator').textContent = `Bước: ${s3Step} / 3`;
+  document.getElementById('s3-btn-prev-step').disabled = !abbyAnswered || s3Step <= 0;
+  document.getElementById('s3-btn-next-step').disabled = !abbyAnswered || s3Step >= 3;
+}
+
+function showTermExplain(el, msg) {
+  document.querySelectorAll('.term-chip').forEach(c => c.classList.remove('active-term'));
+  el.classList.add('active-term');
+  const fb = document.getElementById('s3-term-fb');
+  fb.className = 'fb-box ok';
+  fb.innerHTML = `💡 <b>Giải thích:</b> ${msg}`;
+  SFX.click();
+}
+
+let abbyAnswered = false;
+function answerAbby(choice) {
+  const btnA = document.getElementById('abby-opt-a');
+  const btnB = document.getElementById('abby-opt-b');
+  const fb = document.getElementById('abby-fb');
+  btnA.classList.remove('correct', 'wrong');
+  btnB.classList.remove('correct', 'wrong');
+
+  abbyAnswered = true;
+  document.getElementById('abby-btn-explain').disabled = false;
+  renderSlide3();
+
+  if (choice === 'B') {
+    btnB.classList.add('correct');
+    fb.className = 'fb-box ok';
+    fb.innerHTML = '🎉 <b>Chính xác!</b> Abby đã làm sai. Nhấn <b>Xem lời giải thích</b> để kiểm tra từng lỗi sai.';
+    SFX.ok();
+  } else {
+    btnA.classList.add('wrong');
+    fb.className = 'fb-box err';
+    fb.innerHTML = '❌ Chưa đúng! Em hãy nhìn kỹ cách Abby thay 2x thành 2-2 và 3y thành 33 nhé!';
+    SFX.err();
+  }
+}
+
+function toggleAbbyExplain() {
+  const box = document.getElementById('abby-explain-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  SFX.click();
+}
+
+/* ==========================================================================
+   6. SLIDE 4 – VỞ HỌC SINH TỰ GIẢI (7 DÒNG) & NHẬN DIỆN BƯỚC
+   ========================================================================== */
+let s4HintLevel = 0;
+const S4_HINTS = [
+  '💡 Gợi ý 1: Thay x = -2 và y = 3 vào biểu thức A. Nhớ giữ dấu nhân và đặt -2 trong ngoặc: 2 . (-2) và 3 . 3.',
+  '💡 Gợi ý 2: Tính trong ngoặc tròn (-2 + 3) = 1 và các phép nhân 2 . (-2) = -4, 3 . 3 = 9.',
+  '💡 Gợi ý 3: Tính trong ngoặc vuông [9 - 1] = 8, sau đó lấy (-4) trừ đi 8 để tìm kết quả cuối cùng!'
+];
+
+function normMath(str) {
+  return str
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[·×*]/g, '.')
+    .replace(/[−–—]/g, '-');
+}
+
+function checkNotebook() {
+  s4CheckedOnce = true;
+  const lines = [];
+  for (let i = 0; i < 7; i++) {
+    const val = document.getElementById(`nb-${i}`).value.trim();
+    if (val) lines.push(normMath(val));
+  }
+  const joined = lines.join(' | ');
+  const fb = document.getElementById('s4-fb');
+
+  if (lines.length === 0) {
+    SFX.err();
+    fb.className = 'fb-box err';
+    fb.innerHTML = '⚠️ Vở bài làm đang trống! Em hãy nhập từng bước tính vào các dòng A = ... rồi kiểm tra lại nhé.';
+    return;
+  }
+
+  // Nhận diện 5 mốc chính
+  const hasSub = /2\.?\(-2\)/.test(joined) && /(3\.3)/.test(joined) && /-2\+3/.test(joined);
+  const hasMul = /-4/.test(joined) && /9/.test(joined);
+  const hasRound = /9-1/.test(joined) || /\(-4\)-\[9-1\]/.test(joined) || /-4-\[9-1\]/.test(joined);
+  const hasSquare = /\(-4\)-8/.test(joined) || /-4-8/.test(joined);
+  const lastLine = lines[lines.length - 1];
+  const hasFinal = lastLine === '-12' || lastLine === 'a=-12' || /=?-12$/.test(lastLine);
+
+  const checks = [hasSub, hasMul, hasRound, hasSquare, hasFinal];
+  const labels = [
+    '1. Thay x, y bằng giá trị đã cho',
+    '2. Tính các phép nhân (2.(-2) và 3.3)',
+    '3. Tính trong ngoặc tròn (-2 + 3)',
+    '4. Tính trong ngoặc vuông [9 - 1]',
+    '5. Tìm kết quả cuối cùng (A = -12)'
+  ];
+
+
+
+  if (hasFinal && hasSub) {
+    SFX.ok();
+    burstConfetti();
+    fb.className = 'fb-box ok';
+    fb.innerHTML = '🎉 <b>CHÍNH XÁC!</b> Em đã tự giải hoàn chỉnh bài toán với kết quả <b>A = -12</b>. Hãy chuyển sang Slide 5 để ôn tập!';
+    document.getElementById('dot-3').classList.add('done');
+  } else if (hasFinal && !hasSub) {
+    SFX.err();
+    fb.className = 'fb-box err';
+    fb.innerHTML = '⚠️ Kết quả cuối cùng <b>-12</b> đã đúng, nhưng em cần trình bày rõ bước thay số <b>2 . (-2) - [3 . 3 - (-2 + 3)]</b> trước nhé!';
+  } else {
+    SFX.err();
+    const missing = [];
+    if (!hasSub) missing.push('bước thay số (chú ý dấu ngoặc số âm và phép nhân)');
+    if (!hasRound) missing.push('bước tính trong ngoặc tròn');
+    if (!hasSquare) missing.push('bước tính trong ngoặc vuông');
+    if (!hasFinal) missing.push('kết quả cuối cùng');
+    fb.className = 'fb-box err';
+    fb.innerHTML = '❌ <b>Chưa chính xác!</b> Em hãy kiểm tra lại: ' + missing.join(', ') + '.';
+  }
+}
+
+function showS4Hint() {
+  const fb = document.getElementById('s4-fb');
+  fb.className = 'fb-box';
+  fb.innerHTML = S4_HINTS[s4HintLevel % S4_HINTS.length];
+  s4HintLevel++;
+  SFX.click();
+}
+
+function resetNotebook() {
+  for (let i = 0; i < 7; i++) document.getElementById(`nb-${i}`).value = '';
+
+  const fb = document.getElementById('s4-fb');
+  fb.className = 'fb-box';
+  fb.innerHTML = 'Đã xóa vở làm bài. Em hãy tự viết lại lời giải rồi bấm <b>✓ Kiểm tra bài làm</b>!';
+  SFX.click();
+}
+
+function toggleTeacherAnswer() {
+  const box = document.getElementById('s4-teacher-ans');
+  const btn = document.getElementById('btn-gv-ans');
+  const isOpen = box.style.display === 'block';
+  box.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '👁 Hiện đáp án (GV)' : '🙈 Ẩn đáp án (GV)';
+  SFX.click();
+}
+
+/* ==========================================================================
+   7. SLIDE 5 – KIỂM TRA NHANH 4 CÂU CUỐI BÀI
+   ========================================================================== */
+const S5_QUIZ = [
+  {
+    q: 'Khi thay x = -5 vào 3x, ta viết như thế nào?',
+    opts: ['3 - 5', '3 . (-5)', '35'],
+    ans: 1
+  },
+  {
+    q: 'Khi thay số nguyên âm vào biểu thức, vì sao cần đặt trong ngoặc?',
+    opts: ['Cho đẹp hơn', 'Để thể hiện đúng số nguyên âm và tránh nhầm lẫn dấu phép tính', 'Vì bắt buộc với mọi số'],
+    ans: 1
+  },
+  {
+    q: 'Trong biểu thức có nhiều lớp ngoặc, ta ưu tiên tính ở đâu trước?',
+    opts: ['Ngoặc vuông trước', 'Trong ngoặc tròn trước, sau đó đến các lớp ngoặc bên ngoài', 'Tính từ trái sang phải'],
+    ans: 1
+  },
+  {
+    q: 'Với A = 2x - [3y - (x + y)], x = -2, y = 3, kết quả là bao nhiêu?',
+    opts: ['12', '-4', '-12'],
+    ans: 2
+  }
+];
+
+let s5RevealSteps = 0;
+
+function renderSlide5Steps() {
+  for (let i = 0; i < 3; i++) {
+    const card = document.getElementById(`s5-flip-${i}`);
+    if (card) card.classList.toggle('shown', i < s5RevealSteps);
+  }
+  const hint = document.getElementById('s5-step-hint');
+  const btn = document.getElementById('s5-btn-reveal');
+  if (s5RevealSteps < 3) {
+    hint.textContent = `👆 Nhấp chuột vào đây để hiện lần lượt Quy trình 3 bước (${s5RevealSteps} / 3)`;
+    btn.disabled = false;
+  } else {
+    hint.textContent = '✅ Đã hiện đủ 3 bước! Nhấp vào từng thẻ để lật xem giải thích & ví dụ.';
+    btn.disabled = true;
+  }
+}
+
+function revealNextS5Step(evt) {
+  if (evt) evt.stopPropagation();
+  if (s5RevealSteps < 3) {
+    s5RevealSteps++;
+    SFX.click();
+    renderSlide5Steps();
+  }
+}
+
+function resetS5Steps(evt) {
+  if (evt) evt.stopPropagation();
+  s5RevealSteps = 0;
+  for (let i = 0; i < 3; i++) {
+    const card = document.getElementById(`s5-flip-${i}`);
+    if (card) card.classList.remove('flipped');
+  }
+  SFX.click();
+  renderSlide5Steps();
+}
+
+let s5CurrentQ = 0;
+let s5QuizVisible = false;
+let s5AllDone = false;
+
+function revealNextS5Quiz(evt) {
+  if (evt) evt.stopPropagation();
+  if (s5AllDone || s5QuizVisible) return;
+  s5QuizVisible = true;
+  SFX.click();
+  renderSlide5Quiz();
+}
+
+function renderSlide5Quiz() {
+  const trigger = document.getElementById('s5-quiz-trigger');
+  const card = document.getElementById('s5-single-q-card');
+  const finish = document.getElementById('s5-finish-banner');
+  if (!card || !finish || !trigger) return;
+
+  if (s5AllDone) {
+    trigger.style.display = 'none';
+    card.style.display = 'none';
+    finish.style.display = 'flex';
+    return;
+  }
+
+  finish.style.display = 'none';
+  if (!s5QuizVisible) {
+    trigger.style.display = 'block';
+    card.style.display = 'none';
+    return;
+  }
+
+  trigger.style.display = 'none';
+  card.style.display = 'flex';
+  card.classList.remove('solved');
+
+  const item = S5_QUIZ[s5CurrentQ];
+  const keys = ['A', 'B', 'C'];
+  card.innerHTML = `
+    <div style="font-size:18px; font-weight:800; color:var(--navy); line-height:1.4;">${item.q}</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      ${item.opts.map((opt, oIdx) => `
+        <button class="opt-btn" id="qq-${s5CurrentQ}-${oIdx}" onclick="answerS5(${s5CurrentQ}, ${oIdx})">
+          <span class="opt-key">${keys[oIdx]}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function answerS5(qIdx, oIdx) {
+  if (s5AllDone || !s5QuizVisible || qIdx !== s5CurrentQ) return;
+  const item = S5_QUIZ[qIdx];
+  const btn = document.getElementById(`qq-${qIdx}-${oIdx}`);
+  if (oIdx === item.ans) {
+    btn.classList.add('correct');
+    SFX.ok();
+    const card = document.getElementById('s5-single-q-card');
+    card.classList.add('solved');
+    setTimeout(() => {
+      if (s5CurrentQ < S5_QUIZ.length - 1) {
+        s5CurrentQ++;
+        s5QuizVisible = false; // ẩn đi, chờ GV nhấp chuột để hiện câu tiếp theo
+        renderSlide5Quiz();
+      } else {
+        s5AllDone = true;
+        s5QuizVisible = false;
+        renderSlide5Quiz();
+        burstConfetti();
+        document.getElementById('dot-4').classList.add('done');
+      }
+    }, 650);
+  } else {
+    btn.classList.add('wrong');
+    SFX.err();
+  }
+}
+
+/* ==========================================================================
+   8. CO GIÃN 16:9 & KHỞI TẠO
+   ========================================================================== */
+function fitStage() {
+  const st = document.getElementById('stage');
+  const scale = Math.min((window.innerWidth - 10) / 1440, (window.innerHeight - 10) / 810);
+  st.style.transform = `scale(${Math.max(0.2, scale)})`;
+}
+window.addEventListener('resize', fitStage);
+
+window.addEventListener('load', () => {
+  fitStage();
+  initFXLoop();
+  renderSlide1Quiz();
+  renderSlide2();
+  renderSlide3();
+  renderSlide5Quiz();
+  goToSlide(0);
+});
+</script>
+</body>
+</html>
