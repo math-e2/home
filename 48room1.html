@@ -1407,10 +1407,11 @@
                 </div>
               </div>
 
-              <!-- Hình c: Hình 6 ô vuông (Tâm O(100,100) là tâm của cấu trúc hình ghép) -->
+              <!-- Hình c: Hình 6 ô vuông (Không có tâm đối xứng -> Không hiện điểm O, chỉ hiện thông báo riêng khi kiểm tra) -->
               <div class="s6-card" id="s6-card-2" onclick="handleS6CardClick(event, 2)">
                 <span class="s6-card-letter">c)</span>
                 <div class="hdcn-status-badge" id="s6-badge-2"></div>
+                <div class="s6-nonsym-notice" id="s6-nonsym-notice-2">Hình không có tâm đối xứng</div>
                 <svg width="172" height="138" viewBox="0 0 200 200" id="s6-svg-2" style="cursor: pointer;" onclick="handleS6SvgClick(event, 2)">
                   <g class="hdcn-ghost-group" id="s6-ghost-2">
                     <rect x="28" y="28" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
@@ -1427,20 +1428,6 @@
                     <rect x="124" y="76" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
                     <rect x="124" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
                     <rect x="76" y="124" width="48" height="48" fill="#bbf7d0" stroke="#0f172a" stroke-width="3" />
-                  </g>
-                  <!-- Hai đường chéo của ô vuông trung tâm giao nhau tại tâm O(100,100) của cấu trúc ghép -->
-                  <g class="s6-sym-lines" id="s6-lines-2">
-                    <line x1="28" y1="28" x2="172" y2="172" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
-                    <line x1="124" y1="28" x2="76" y2="172" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="4,3" />
-                  </g>
-                  <!-- Điểm tâm đối xứng O(100,100) chính giữa ô vuông trung tâm -->
-                  <g class="s6-ans-o-group" id="s6-ans-o-2">
-                    <circle cx="100" cy="100" r="14" fill="rgba(234, 88, 12, 0.24)" />
-                    <circle cx="100" cy="100" r="6.8" fill="#dc2626" stroke="#ffffff" stroke-width="2.2" />
-                    <g class="s6-ans-o-label" id="s6-ans-lbl-2">
-                      <rect x="108" y="76" width="24" height="20" rx="5" fill="#ea580c" />
-                      <text x="120" y="91" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ffffff">O</text>
-                    </g>
                   </g>
                   <g id="s6-user-pt-2" style="display: none; pointer-events: none;">
                     <circle id="s6-user-ring-2" cx="100" cy="100" r="12" fill="rgba(2, 132, 199, 0.22)" />
@@ -2839,7 +2826,7 @@
   /* ==========================================================================
      5. CÂU 2 (SLIDE 6 GỐC): 6 HÌNH GHÉP & ĐA GIÁC
      ========================================================================== */
-  const S6_IS_SYM = [true, true, true, true, false, true];
+  const S6_IS_SYM = [true, true, false, true, false, true];
   const S6_TITLES = [
     'a) Hai đường tròn',
     'b) Chong chóng',
@@ -2904,7 +2891,7 @@
 
   function rotateS6Shapes() {
     s6Rotated = !s6Rotated;
-    for (let i = 0; i < 6; i++) s6IndRotated[i] = S6_IS_SYM[i] ? s6Rotated : false;
+    for (let i = 0; i < 6; i++) s6IndRotated[i] = s6Rotated;
     renderSlide6();
   }
 
@@ -2921,7 +2908,7 @@
       return;
     }
 
-    // Kiểm tra: chọn đúng các hình có tâm đối xứng (a, b, c, d, f) và không chọn hình e
+    // Kiểm tra: chọn đúng các hình có tâm đối xứng (a, b, d, f) và không chọn hình c, e
     const selectionMatch = s6State.every((s, i) => s.selected === S6_IS_SYM[i]);
     // Nếu có đặt điểm dự đoán trên hình có tâm đối xứng, kiểm tra điểm đó nằm gần tâm (100,100) trong bán kính 36px
     let offCenterNames = [];
@@ -2942,7 +2929,7 @@
       clearS6Timers();
       s6Checked = true;
       renderSlide6();
-      const symIndices = [0, 1, 2, 3, 5];
+      const symIndices = [0, 1, 3, 5];
       symIndices.forEach((shapeIdx, order) => {
         const baseDelay = order * 180;
         s6RevealTimers.push(setTimeout(() => {
@@ -2962,13 +2949,13 @@
 
       if (fb) {
         fb.className = 'hdcn-feedback-box fb-success';
-        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[1].score)} điểm)!</b> Các hình <b>a, b, c, d, f</b> có tâm đối xứng <b>O</b>; hình <b>e) Hình thang cân</b> không có tâm đối xứng. Bấm <b>CÂU TIẾP THEO ▶</b>!`;
+        fb.innerHTML = `🎉 <b>Chính xác (+${formatScoreVN(qStats[1].score)} điểm)!</b> Các hình <b>a, b, d, f</b> có tâm đối xứng <b>O</b>; hình <b>c) Hình 6 ô vuông</b> và hình <b>e) Hình thang cân</b> không có tâm đối xứng. Bấm <b>CÂU TIẾP THEO ▶</b>!`;
       }
     } else {
       if (fb) {
         fb.className = 'hdcn-feedback-box fb-warn';
         if (!selectionMatch) {
-          fb.innerHTML = '❌ <b>Chưa chính xác!</b> Hãy kiểm tra kỹ lại xem hình nào quay 180° quanh tâm sẽ trùng khít (lưu ý hình thang cân có hai đáy không bằng nhau).';
+          fb.innerHTML = '❌ <b>Chưa chính xác!</b> Hãy kiểm tra kỹ lại xem hình nào quay 180° quanh tâm sẽ trùng khít (bấm <b>↻ QUAY 180°</b> để kiểm chứng, lưu ý hình 6 ô vuông và hình thang cân).';
         } else {
           fb.innerHTML = `❌ <b>Vị trí tâm O chưa chính xác ở:</b> ${offCenterNames.join(', ')}. Hãy chấm lại điểm O vào chính giữa hình rồi bấm <b>✓ KIỂM TRA</b>!`;
         }
@@ -3395,3 +3382,4 @@
 </script>
 </body>
 </html>
+
