@@ -4196,16 +4196,15 @@ END $$;`;
         try {
           const frame = document.querySelector('#preview-modal iframe') || document.querySelector('#student-room-view iframe');
           let targetEl = null;
-          let targetWin = window;
           let frameDoc = null;
+          let frameWin = window;
+
           if (frame) {
             try {
               frameDoc = frame.contentDocument;
+              frameWin = frame.contentWindow || window;
               if (frameDoc && frameDoc.body && frameDoc.body.childElementCount > 0) {
-                // Capture the active slide or stage cleanly without outer scale transform issues
-                const activeSlide = frameDoc.querySelector('.slide-view.active, #stage-16-9, main') || frameDoc.body;
-                targetEl = activeSlide;
-                targetWin = frame.contentWindow || window;
+                targetEl = frameDoc.querySelector('.slide-view.active, #stage-16-9, main') || frameDoc.body;
               }
             } catch {}
           }
@@ -4213,32 +4212,55 @@ END $$;`;
             targetEl = document.getElementById('student-room-view') || document.body;
           }
 
-          if (typeof window.html2canvas === 'function' && targetEl) {
-            const w = Math.max(Math.min(targetEl.scrollWidth || targetEl.clientWidth || 1280, 1280), 640);
-            const h = Math.max(Math.min(targetEl.scrollHeight || targetEl.clientHeight || 720, 810), 360);
-            const scale = 0.85;
+          const h2c = (frameWin && typeof frameWin.html2canvas === 'function')
+            ? frameWin.html2canvas
+            : window.html2canvas;
+
+          if (typeof h2c === 'function' && targetEl) {
+            const rect = targetEl.getBoundingClientRect();
+            const w = Math.max(Math.round(rect.width || targetEl.scrollWidth || targetEl.clientWidth || 1280), 640);
+            const h = Math.max(Math.round(rect.height || targetEl.scrollHeight || targetEl.clientHeight || 720), 360);
+            // Tăng độ nét: 1.25 trên máy tính, 1.0 trên mobile/tablet
+            const scale = isMobileOrTablet() ? 1.0 : 1.25;
+
+            // Lưu lại toàn bộ canvas gốc trước khi clone để chép pixel sang bản clone
+            const sourceCanvases = Array.from(targetEl.querySelectorAll('canvas'));
 
             let dataUrl = null;
             try {
-              const rendered = await window.html2canvas(targetEl, {
+              const rendered = await h2c(targetEl, {
                 scale,
                 useCORS: true,
-                allowTaint: true,
+                allowTaint: false,
                 logging: false,
                 backgroundColor: '#FFFFFF',
                 width: w,
                 height: h,
-                windowWidth: Math.max(w, 1280),
-                windowHeight: Math.max(h, 720),
-                onclone: (clonedDoc) => {
-                  const clonedStage = clonedDoc.getElementById('stage-16-9');
-                  if (clonedStage) {
-                    clonedStage.style.transform = 'none';
-                    clonedStage.style.boxShadow = 'none';
-                  }
+                windowWidth: w,
+                windowHeight: h,
+                scrollX: 0,
+                scrollY: 0,
+                onclone: (clonedDoc, clonedEl) => {
+                  // 1. Chép pixel từ tất cả <canvas> gốc (bảng vẽ, hình học) sang bản clone
+                  const clonedCanvases = Array.from((clonedEl || clonedDoc).querySelectorAll('canvas'));
+                  sourceCanvases.forEach((srcCanvas, idx) => {
+                    const dstCanvas = clonedCanvases[idx];
+                    if (!dstCanvas || !srcCanvas.width || !srcCanvas.height) return;
+                    try {
+                      dstCanvas.width = srcCanvas.width;
+                      dstCanvas.height = srcCanvas.height;
+                      const ctx = dstCanvas.getContext('2d');
+                      if (ctx) ctx.drawImage(srcCanvas, 0, 0);
+                    } catch {}
+                  });
+
+                  // 2. Đảm bảo phần tử không bị ẩn bởi animation/opacity trong lúc chụp
+                  const styleFix = clonedDoc.createElement('style');
+                  styleFix.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
+                  clonedDoc.head.appendChild(styleFix);
                 }
               });
-              dataUrl = rendered.toDataURL('image/jpeg', 0.8);
+              dataUrl = rendered.toDataURL('image/jpeg', 0.88);
             } catch {}
 
             if (dataUrl && !isLowDetailCanvas(dataUrl)) {
@@ -6068,4 +6090,3 @@ END $$;`;
 </body>
 
 </html>
-Processed and analyzed in code
