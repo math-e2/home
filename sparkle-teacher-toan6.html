@@ -1762,7 +1762,11 @@ END $$;`;
 
       function applyScreenSessionRecord(s) {
         if (!s || !s.room_id || !s.student_id) return;
-        let p = AppState.state.participants.find((x) => x.roomId === s.room_id && x.studentId === s.student_id && x.status !== 'removed');
+        const roomObj = AppState.state.practiceRooms[s.room_id];
+        if (roomObj && roomObj.status === 'closed') return;
+        const existingAny = AppState.state.participants.find((x) => x.roomId === s.room_id && x.studentId === s.student_id);
+        if (existingAny && existingAny.status === 'removed') return;
+        let p = existingAny;
         const sig = s.signaling_data || {};
         if (!p && sig.studentName) {
           p = {
@@ -2070,7 +2074,11 @@ END $$;`;
             StudentRoomManager.handleTeacherSyncRequest(payload?.roomId);
           }
         } else if (eventType === 'STUDENT_LIVE_PROGRESS') {
-          let p = AppState.state.participants.find((x) => x.roomId === payload.roomId && x.studentId === payload.studentId && x.status !== 'removed');
+          const roomObj = AppState.state.practiceRooms[payload.roomId];
+          if (roomObj && roomObj.status === 'closed') return;
+          const existingAny = AppState.state.participants.find((x) => x.roomId === payload.roomId && x.studentId === payload.studentId);
+          if (existingAny && existingAny.status === 'removed') return;
+          let p = existingAny;
           if (!p && payload.roomId && payload.studentId) {
             p = {
               id: `${payload.roomId}__${payload.studentId}`,
@@ -3524,13 +3532,60 @@ END $$;`;
         }
       }
 
+      function parseScoreFromLiveFields(liveFields) {
+        if (!liveFields || typeof liveFields !== 'object') return null;
+        const txt = String(liveFields['Điểm / Tiến độ HTML'] || Object.values(liveFields).join(' ') || '');
+        const m = txt.match(/(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/);
+        if (!m) return null;
+        const val = parseFloat(m[1].replace(',', '.'));
+        return isNaN(val) ? null : val;
+      }
+
       async function setRoomStatus(newStatus) {
         const room = getActiveRoom();
         if (!room) return;
         if (!room.roomCode) { await createOrResetRoom(); return; }
         room.status = newStatus;
         if (newStatus === 'open') room.openedAt = new Date().toISOString();
-        if (newStatus === 'closed') room.closedAt = new Date().toISOString();
+        if (newStatus === 'closed') {
+          room.closedAt = new Date().toISOString();
+          closeStudentMonitor();
+          const activeParts = AppState.getRoomParticipants(room.id, false);
+          const roomExs = AppState.getRoomExercises(room.id) || [];
+          const defaultExId = roomExs[0]?.id || null;
+
+          for (const p of activeParts) {
+            const existingSubs = AppState.getRoomSubmissions(room.id, p.studentId);
+            if (existingSubs.length === 0 && defaultExId) {
+              const liveScore = parseScoreFromLiveFields(p.liveFields);
+              AppState.addSubmission({
+                id: `sub_${room.id}__${p.studentId}__${defaultExId}`,
+                roomId: room.id,
+                studentId: p.studentId,
+                exerciseId: defaultExId,
+                answerData: {
+                  text: liveScore !== null
+                    ? `Tự động lưu điểm khi đóng phòng (${liveScore} điểm)`
+                    : 'Tự động lưu trạng thái khi giáo viên đóng phòng',
+                  source: 'auto_close_room',
+                },
+                autoScore: liveScore !== null ? liveScore : 0,
+                teacherScore: null,
+                teacherFeedback: '',
+                submittedAt: new Date().toISOString(),
+                gradedAt: null,
+                gradedBy: null,
+                status: 'submitted',
+              });
+            }
+            p.status = 'removed';
+            p.screenStatus = 'ended';
+            p.latestCanvasUrl = '';
+            p.removedAt = new Date().toISOString();
+            AppState.upsertParticipant(p);
+            await SupabaseEngine.deleteRecord('screen_sessions', `${room.id}__${p.studentId}__live`);
+          }
+        }
         const res = await AppState.saveRoom(room);
         SupabaseEngine.broadcast('ROOM_STATUS_CHANGED', {
           roomId: room.id,
@@ -3540,7 +3595,12 @@ END $$;`;
         });
         renderRoomView();
         if (!res || !res.error) {
-          Toast.show(newStatus === 'open' ? `Phòng ${room.roomCode} đã MỞ & đồng bộ lên Supabase!` : 'Phòng luyện tập đã ĐÓNG. Học sinh đã bị khóa thao tác.', 'info');
+          Toast.show(
+            newStatus === 'open'
+              ? `Phòng ${room.roomCode} đã MỞ & đồng bộ lên Supabase!`
+              : 'Đã ĐÓNG phòng, ngắt kết nối toàn bộ học sinh và lưu điểm vào Bảng điểm!',
+            'info'
+          );
         }
       }
 
@@ -3779,7 +3839,8 @@ END $$;`;
         }
 
         if (activeTab === 'scoreboard') {
-          const rows = participants.map((p) => {
+          const allRoomParticipants = AppState.getRoomParticipants(room.id, true);
+          const rows = allRoomParticipants.map((p) => {
             const pSubs = submissions.filter((s) => s.studentId === p.studentId);
             const totalTeacher = pSubs.reduce((acc, s) => acc + (typeof s.teacherScore === 'number' ? s.teacherScore : (typeof s.autoScore === 'number' ? s.autoScore : 0)), 0);
             return { p, count: pSubs.length, score: totalTeacher };
@@ -3986,13 +4047,17 @@ END $$;`;
       function removeStudent(studentId) {
         const room = getActiveRoom();
         if (!room) return;
-        ModalManager.openConfirmModal('Xóa học sinh khỏi phòng', 'Học sinh này sẽ bị ngắt kết nối khỏi Practice Room hiện tại (không xóa hồ sơ toàn hệ thống).', () => {
+        ModalManager.openConfirmModal('Xóa học sinh khỏi phòng', 'Học sinh này sẽ bị ngắt kết nối khỏi Practice Room hiện tại (điểm đã nộp vẫn được giữ trong Bảng điểm).', async () => {
           const p = AppState.state.participants.find((x) => x.roomId === room.id && x.studentId === studentId && x.status !== 'removed');
           if (p) {
             p.status = 'removed';
+            p.screenStatus = 'ended';
+            p.latestCanvasUrl = '';
             p.removedAt = new Date().toISOString();
             AppState.upsertParticipant(p);
+            await SupabaseEngine.deleteRecord('screen_sessions', `${room.id}__${studentId}__live`);
             SupabaseEngine.broadcast('STUDENT_REMOVED', { roomId: room.id, studentId });
+            if (monitoringStudentId === studentId) closeStudentMonitor();
             if (window.SparkleSupabaseRBAC) window.SparkleSupabaseRBAC.logActivity('remove_student', 'practice_room', room.id, { studentId });
             Toast.show('Đã xóa học sinh khỏi phòng.', 'info');
             renderRoomView();
@@ -4011,7 +4076,7 @@ END $$;`;
       function exportScoreboardCSV() {
         const room = getActiveRoom();
         if (!room) return;
-        const participants = AppState.getRoomParticipants(room.id);
+        const participants = AppState.getRoomParticipants(room.id, true);
         const submissions = AppState.getRoomSubmissions(room.id);
         const lines = ['"STT","Học sinh","Trạng thái","Số bài nộp","Tổng điểm"'];
         participants.forEach((p, idx) => {
@@ -6396,4 +6461,3 @@ END $$;`;
 
 </html>
 Processed and analyzed in code
-Analyzing call stack overflow during session closure
