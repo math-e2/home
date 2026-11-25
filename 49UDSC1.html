@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài 49 (Slide 30–31): Vẽ Hình Có Trục Đối Xứng Trên Lưới Ô Vuông</title>
+  <style>
+    :root {
+      --cream-bg: #fdfbf7;
+      --teal-dark: #0f766e;
+      --teal-main: #14b8a6;
+      --teal-soft: #ccfbf1;
+      --purple-dark: #5b21b6;
+      --purple-main: #7c3aed;
+      --purple-soft: #ede9fe;
+      --yellow-soft: #fef3c7;
+      --yellow-border: #f59e0b;
+      --orange-accent: #ea580c;
+      --red-axis: #dc2626;
+      --green-ok: #16a34a;
+      --navy-text: #1e293b;
+      --muted-text: #475569;
+      --white: #ffffff;
+      --font-main: Verdana, "Segoe UI", Tahoma, Geneva, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #134e4a 0%, #3b0764 100%);
+      font-family: var(--font-main);
+      color: var(--navy-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #viewport-wrap {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Khung trình chiếu 16:9 */
+    #stage {
+      width: 1440px;
+      height: 810px;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(204, 251, 241, 0.85) 0%, transparent 32%),
+        radial-gradient(circle at 92% 88%, rgba(237, 233, 254, 0.88) 0%, transparent 36%),
+        radial-gradient(circle at 88% 12%, rgba(254, 243, 199, 0.8) 0%, transparent 28%),
+        var(--cream-bg);
+      border-radius: 22px;
+      border: 6px solid #ffffff;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 22px 14px 22px;
+      gap: 10px;
+      transform-origin: center center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 1. Thanh tiêu đề phía trên */
+    .top-header {
+      height: 54px;
+      background: linear-gradient(90deg, #0f766e 0%, #14b8a6 52%, #7c3aed 100%);
+      border-radius: 16px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #ffffff;
+      box-shadow: 0 6px 18px rgba(15, 118, 110, 0.25);
+      flex-shrink: 0;
+    }
+
+    .lesson-title-top {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .top-slide-chip {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1.5px solid rgba(255, 255, 255, 0.55);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 5px 15px;
+      border-radius: 999px;
+    }
+
+    /* 2. Khu vực nội dung chính ở giữa */
+    .main-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.94);
+      border: 3px solid #cbd5e1;
+      border-radius: 22px;
+      padding: 16px 22px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      animation: fadeSlide 0.3s ease;
+    }
+    .slide.active { display: flex; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2.5px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .slide-tag {
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 800;
+      padding: 6px 15px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .slide-tag.teal { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+    .slide-tag.gold { background: linear-gradient(135deg, #d97706, #ea580c); }
+
+    .slide-title {
+      flex: 1;
+      font-size: 23px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.25;
+    }
+
+    .slide-body-2col {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .slide-body-wide-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.85fr 1fr;
+      gap: 18px;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    /* Hộp chứa SVG lưới ô vuông */
+    .grid-stage-box {
+      background: #fdfcf7;
+      border: 3px solid #99f6e4;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      position: relative;
+      box-shadow: inset 0 2px 10px rgba(15, 118, 110, 0.08);
+      min-height: 0;
+    }
+
+    .grid-stage-box svg {
+      max-width: 100%;
+      max-height: 100%;
+      touch-action: none;
+    }
+
+    /* Hộp nội dung & câu hỏi bên phải */
+    .info-panel {
+      background: #f8fafc;
+      border: 2.5px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .info-panel.clickable-reveal {
+      cursor: pointer;
+    }
+
+    .prompt-banner {
+      background: var(--yellow-soft);
+      border: 2.5px solid var(--yellow-border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1.42;
+    }
+
+    .feedback-bar {
+      background: #f1f5f9;
+      border: 2px solid #94a3b8;
+      border-left: 7px solid #0f766e;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.4;
+    }
+    .feedback-bar.ok {
+      background: #dcfce7;
+      border-color: #16a34a;
+      border-left-color: #15803d;
+      color: #14532d;
+    }
+    .feedback-bar.err {
+      background: #fef2f2;
+      border-color: #ef4444;
+      border-left-color: #dc2626;
+      color: #7f1d1d;
+    }
+    .feedback-bar.info {
+      background: #ede9fe;
+      border-color: #7c3aed;
+      border-left-color: #5b21b6;
+      color: #3b0764;
+    }
+
+    /* Nút bấm lớn thân thiện cảm ứng */
+    .btn {
+      font-family: var(--font-main);
+      font-size: 14.5px;
+      font-weight: 800;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.42; cursor: not-allowed; filter: grayscale(40%); transform: none !important; }
+
+    .btn-teal   { background: #0f766e; box-shadow: 0 3px 0 #115e59; }
+    .btn-purple { background: #7c3aed; box-shadow: 0 3px 0 #5b21b6; }
+    .btn-orange { background: #ea580c; box-shadow: 0 3px 0 #c2410c; }
+    .btn-green  { background: #16a34a; box-shadow: 0 3px 0 #15803d; }
+    .btn-slate  { background: #475569; box-shadow: 0 3px 0 #334155; }
+    .btn-amber  { background: #d97706; box-shadow: 0 3px 0 #b45309; }
+
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      background: #ede9fe;
+      color: #3b0764;
+      border: 2px solid #a78bfa;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* Slide 1 & Slide 8 choice buttons */
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-main);
+      font-size: 16.5px;
+      font-weight: 700;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 3px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.18s ease;
+    }
+    .choice-btn:hover { border-color: #14b8a6; background: #f0fdfa; }
+    .choice-btn.correct { border-color: #16a34a; background: #dcfce7; color: #14532d; }
+    .choice-btn.wrong { border-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
+    .choice-letter {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: #7c3aed;
+      color: #ffffff;
+      font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Click-to-reveal items (Slide 2 & Slide 6) */
+    .reveal-item {
+      display: none !important;
+      animation: popReveal 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .reveal-item.shown {
+      display: block !important;
+    }
+    .check-sum-item.reveal-item.shown {
+      display: flex !important;
+    }
+    @keyframes popReveal {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .click-prompt-box {
+      border: 2.5px dashed #a78bfa;
+      background: #faf5ff;
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #5b21b6;
+    }
+
+    /* Slide 2 guiding question cards */
+    .guide-q-card {
+      background: #ffffff;
+      border: 2.5px solid #c4b5fd;
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .guide-q-card:hover { border-color: #7c3aed; background: #faf5ff; }
+    .guide-q-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #3b0764;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .guide-q-ans {
+      display: none;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1.5px dashed #d8b4fe;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #0f766e;
+      line-height: 1.45;
+    }
+    .guide-q-card.open .guide-q-ans { display: block; }
+
+    /* Slide 3: 4 interactive step cards */
+    .step-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step-card {
+      background: #ffffff;
+      border: 3px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.22s ease;
+    }
+    .step-card.dimmed { opacity: 0.45; }
+    .step-card.active-step {
+      opacity: 1;
+      border-color: #ea580c;
+      background: #fff7ed;
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.18);
+      transform: translateX(4px);
+    }
+    .step-card.done-step {
+      opacity: 1;
+      border-color: #16a34a;
+      background: #f0fdf4;
+    }
+    .step-badge {
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: #0f766e;
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .step-card.active-step .step-badge { background: #ea580c; }
+    .step-card.done-step .step-badge { background: #16a34a; }
+
+    /* Slide 4 & 7: Interactive Mode Tabs */
+    .mode-pills {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .mode-pill {
+      font-family: var(--font-main);
+      font-size: 13.5px;
+      font-weight: 800;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 2.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.16s ease;
+    }
+    .mode-pill.active {
+      border-color: #7c3aed;
+      background: #ede9fe;
+      color: #3b0764;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    }
+    .mode-pill.completed {
+      border-color: #16a34a;
+      background: #dcfce7;
+      color: #14532d;
+    }
+
+    /* Count selector buttons on Slide 4 */
+    .count-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .count-chip {
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 2px solid #94a3b8;
+      background: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+    }
+    .count-chip.active {
+      background: #0f766e;
+      border-color: #0f766e;
+      color: #ffffff;
+    }
+
+    /* Slide 5 & 6 Memory bullets */
+    .memory-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .memory-item {
+      background: #ffffff;
+      border: 2px solid #99f6e4;
+      border-left: 7px solid #0f766e;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.42;
+    }
+
+    /* Slide 7 Point selector buttons */
+    .pt-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .pt-sel-btn {
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 10px 8px;
+      border-radius: 12px;
+      border: 2.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+      text-align: center;
+    }
+    .pt-sel-btn.active {
+      border-color: #ea580c;
+      background: #ffedd5;
+      color: #9a3412;
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.22);
+    }
+    .pt-sel-btn.placed {
+      border-color: #0f766e;
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    /* Slide 8 (Tổng kết) Checklist */
+    .check-summary-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .check-sum-item {
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: #14532d;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 4. Thanh điều hướng dưới cùng */
+    .bottom-nav {
+      height: 54px;
+      background: #ffffff;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .nav-progress-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      max-width: 680px;
+    }
+
+    .nav-dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-dot {
+      width: 36px;
+      height: 28px;
+      border-radius: 9px;
+      border: 2px solid #cbd5e1;
+      background: #f1f5f9;
+      color: #475569;
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .nav-dot:hover {
+      border-color: #7c3aed;
+      background: #ede9fe;
+    }
+    .nav-dot.active {
+      background: #7c3aed;
+      border-color: #5b21b6;
+      color: #ffffff;
+      transform: scale(1.08);
+    }
+
+    .nav-slide-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    /* Fold animation on Slide 1 */
+    .fold-right-half {
+      transform-box: view-box;
+      transform-origin: 200px 200px;
+      transition: transform 0.9s cubic-bezier(0.34, 1.08, 0.64, 1), opacity 0.4s ease;
+    }
+
+    /* Confetti canvas */
+    #fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 75;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewport-wrap">
+  <div id="stage">
+    <canvas id="fx-canvas" width="1440" height="810"></canvas>
+
+    <!-- 1. THANH TIÊU ĐỀ PHÍA TRÊN (ĐÃ BỎ TITLE SPARKLE & HỆ THỐNG ĐIỂM) -->
+    <header class="top-header">
+      <span class="lesson-title-top">Bài 49: Vẽ hình có trục đối xứng trên lưới ô vuông</span>
+      <span class="top-slide-chip" id="top-slide-chip">Slide 1 / 8</span>
+    </header>
+
+    <!-- 2. KHU VỰC NỘI DUNG CHÍNH -->
+    <main class="main-card">
+
+      <!-- ==================== SLIDE 1: KHỞI ĐỘNG ==================== -->
+      <section class="slide active" id="slide-0">
+        <div class="slide-heading-row">
+          <span class="slide-tag">SLIDE 1 • KHỞI ĐỘNG</span>
+          <h1 class="slide-title">EM CÓ THỂ HOÀN THIỆN NỬA CÒN LẠI CỦA HÌNH KHÔNG?</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="grid-stage-box">
+            <svg id="svg-s1" width="460" height="460" viewBox="0 0 400 400"></svg>
+          </div>
+
+          <div class="info-panel">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="prompt-banner">
+                Quan sát nửa hình bên trái trục đối xứng <b>d</b> (màu đỏ).<br>
+                <b>Câu hỏi:</b> Nếu gấp hình theo đường thẳng <b>d</b> thì điều gì xảy ra?
+              </div>
+
+              <button class="choice-btn" id="s1-opt-a" onclick="answerSlide1('A')">
+                <span class="choice-letter">A</span>
+                <span>Hai phần chồng khít lên nhau.</span>
+              </button>
+
+              <button class="choice-btn" id="s1-opt-b" onclick="answerSlide1('B')">
+                <span class="choice-letter">B</span>
+                <span>Hai phần không chồng khít lên nhau.</span>
+              </button>
+            </div>
+
+            <div class="feedback-bar info" id="s1-feedback">
+              👉 Em hãy chọn phương án <b>A</b> hoặc <b>B</b> để kiểm tra tính chất của trục đối xứng <b>d</b>!
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-teal" id="s1-fold-btn" onclick="toggleSlide1Fold()">📖 Minh họa gấp theo trục d</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 2: PHÂN TÍCH NHIỆM VỤ 1 (BỎ ĐỀ BÀI MÀU VÀNG, CLICK HIỆN CÂU HỎI) ==================== -->
+      <section class="slide" id="slide-1">
+        <div class="slide-heading-row">
+          <span class="slide-tag teal">SLIDE 2 • PHÂN TÍCH</span>
+          <h1 class="slide-title">NHIỆM VỤ 1 – HOÀN THIỆN NỬA CÒN LẠI CỦA HÌNH</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="grid-stage-box">
+            <svg id="svg-s2" width="460" height="460" viewBox="0 0 400 400"></svg>
+          </div>
+
+          <div class="info-panel clickable-reveal" id="s2-reveal-panel" onclick="revealNextS2Question(event)">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="click-prompt-box" id="s2-click-hint">
+                👆 Nhấp chuột vào đây để lần lượt hiện các câu hỏi dẫn dắt (0 / 3)
+              </div>
+
+              <div class="guide-q-card reveal-item" id="s2-q-0" onclick="toggleGuideCard(event, this)">
+                <div class="guide-q-title">
+                  <span>1. Đường thẳng d đóng vai trò gì?</span>
+                  <span>▼</span>
+                </div>
+                <div class="guide-q-ans">
+                  💡 Đường thẳng <b>d</b> là <b>trục đối xứng thẳng đứng</b> của hình. Khi gấp theo <b>d</b>, nửa bên trái và nửa bên phải phải chồng khít lên nhau.
+                </div>
+              </div>
+
+              <div class="guide-q-card reveal-item" id="s2-q-1" onclick="toggleGuideCard(event, this)">
+                <div class="guide-q-title">
+                  <span>2. Muốn vẽ nửa còn lại, chúng ta cần xác định những điểm nào?</span>
+                  <span>▼</span>
+                </div>
+                <div class="guide-q-ans">
+                  💡 Ta cần xác định <b>các đỉnh gấp khúc của nửa hình đã cho</b> (nằm bên trái trục d) rồi tìm <b>các điểm đối xứng</b> tương ứng ở phía bên phải trục d. Hai đỉnh nằm ngay trên trục d giữ nguyên vị trí.
+                </div>
+              </div>
+
+              <div class="guide-q-card reveal-item" id="s2-q-2" onclick="toggleGuideCard(event, this)">
+                <div class="guide-q-title">
+                  <span>3. Khoảng cách từ một điểm đến trục d và điểm đối xứng của nó có quan hệ như thế nào?</span>
+                  <span>▼</span>
+                </div>
+                <div class="guide-q-ans">
+                  💡 Hai điểm đối xứng nhau qua trục <b>d</b> nằm ở <b>hai phía khác nhau</b> của trục d, nằm trên cùng một đường <b>vuông góc với trục d</b> và có <b>khoảng cách (số ô vuông) đến trục d bằng nhau</b>.
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-row" onclick="event.stopPropagation()">
+              <button class="btn btn-purple" id="s2-next-q-btn" onclick="revealNextS2Question(event)">➕ Hiện câu hỏi tiếp theo</button>
+              <button class="btn btn-slate" onclick="resetS2Questions(event)">🔄 Ẩn lại</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 3: HƯỚNG DẪN 4 BƯỚC ==================== -->
+      <section class="slide" id="slide-2">
+        <div class="slide-heading-row">
+          <span class="slide-tag gold">SLIDE 3 • HƯỚNG DẪN 4 BƯỚC</span>
+          <h1 class="slide-title">CÁCH VẼ HÌNH CÓ TRỤC ĐỐI XỨNG</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="grid-stage-box">
+            <svg id="svg-s3" width="460" height="460" viewBox="0 0 400 400"></svg>
+          </div>
+
+          <div class="info-panel">
+            <div class="step-cards-list">
+              <div class="step-card active-step" id="s3-card-1" onclick="setSlide3Step(1)">
+                <span class="step-badge">BƯỚC 1</span>
+                <div>
+                  <div style="font-size:15.5px; font-weight:800;">XÁC ĐỊNH ĐỈNH</div>
+                  <div style="font-size:13px; color:#475569;">Đánh dấu các đỉnh của nửa hình bên trái trục d.</div>
+                </div>
+              </div>
+
+              <div class="step-card dimmed" id="s3-card-2" onclick="setSlide3Step(2)">
+                <span class="step-badge">BƯỚC 2</span>
+                <div>
+                  <div style="font-size:15.5px; font-weight:800;">ĐẾM SỐ Ô VUÔNG ĐẾN TRỤC d</div>
+                  <div style="font-size:13px; color:#475569;">Đo khoảng cách theo hàng ngang (vuông góc với d) từ mỗi đỉnh đến trục d.</div>
+                </div>
+              </div>
+
+              <div class="step-card dimmed" id="s3-card-3" onclick="setSlide3Step(3)">
+                <span class="step-badge">BƯỚC 3</span>
+                <div>
+                  <div style="font-size:15.5px; font-weight:800;">VẼ ĐIỂM ĐỐI XỨNG</div>
+                  <div style="font-size:13px; color:#475569;">Lấy điểm đối xứng sang phía bên phải trục d với đúng số ô vuông vừa đếm.</div>
+                </div>
+              </div>
+
+              <div class="step-card dimmed" id="s3-card-4" onclick="setSlide3Step(4)">
+                <span class="step-badge">BƯỚC 4</span>
+                <div>
+                  <div style="font-size:15.5px; font-weight:800;">NỐI CÁC ĐIỂM</div>
+                  <div style="font-size:13px; color:#475569;">Nối lần lượt các điểm đối xứng theo đúng thứ tự đường bao của hình.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="feedback-bar info" id="s3-feedback">
+              👉 Nhấn vào từng thẻ <b>Bước 1 → Bước 4</b> hoặc bấm nút <b>XEM LẠI 4 BƯỚC</b> để quan sát minh họa!
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-purple" onclick="playSlide3AllSteps()">▶ XEM LẠI 4 BƯỚC</button>
+              <button class="btn btn-slate" onclick="setSlide3Step(0)">🔄 Đặt lại</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 4: THỰC HÀNH CÓ HƯỚNG DẪN ==================== -->
+      <section class="slide" id="slide-3">
+        <div class="slide-heading-row">
+          <span class="slide-tag teal">SLIDE 4 • CÙNG THỰC HIỆN</span>
+          <h1 class="slide-title">CÙNG THỰC HIỆN TỪNG BƯỚC</h1>
+        </div>
+
+        <div class="slide-body-wide-grid">
+          <div class="grid-stage-box">
+            <svg id="svg-s4" width="520" height="520" viewBox="0 0 400 400" style="cursor:pointer;"></svg>
+          </div>
+
+          <div class="info-panel">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="font-size:14px; font-weight:800; color:#5b21b6;">Chọn bước đang thao tác:</div>
+              <div class="mode-pills">
+                <button class="mode-pill active" id="s4-mode-1" onclick="setS4Mode(1)">1. Chọn 3 đỉnh trái</button>
+                <button class="mode-pill" id="s4-mode-2" onclick="setS4Mode(2)">2. Đếm ô đến trục d</button>
+                <button class="mode-pill" id="s4-mode-3" onclick="setS4Mode(3)">3. Đặt điểm đối xứng</button>
+                <button class="mode-pill" id="s4-mode-4" onclick="setS4Mode(4)">4. Nối đường bao</button>
+              </div>
+
+              <div id="s4-step-controls" style="background:#ffffff; border:2px solid #cbd5e1; border-radius:14px; padding:12px; font-size:14px; line-height:1.45;"></div>
+            </div>
+
+            <div class="feedback-bar info" id="s4-feedback">
+              <b>Bước 1:</b> Nhấp trực tiếp vào <b>3 đỉnh gấp khúc bên trái trục d</b> trên lưới để đánh dấu!
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-slate" onclick="s4Undo()">↩ HOÀN TÁC</button>
+              <button class="btn btn-amber" onclick="s4ClearLines()">🧹 XÓA NÉT VẼ</button>
+              <button class="btn btn-green" onclick="s4CheckAll()">✓ KIỂM TRA</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 5: KẾT LUẬN KIẾN THỨC ==================== -->
+      <section class="slide" id="slide-4">
+        <div class="slide-heading-row">
+          <span class="slide-tag">SLIDE 5 • GHI NHỚ</span>
+          <h1 class="slide-title">EM CẦN GHI NHỚ</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="grid-stage-box">
+            <svg id="svg-s5" width="460" height="460" viewBox="0 0 400 400" style="cursor:grab;"></svg>
+            <div style="font-size:13px; font-weight:700; color:#0f766e; margin-top:4px;">
+              👆 Kéo điểm <b>A</b> trên lưới để thấy điểm đối xứng <b>A′</b> luôn cách đều trục <b>d</b>!
+            </div>
+          </div>
+
+          <div class="info-panel clickable-reveal" id="s5-reveal-panel" onclick="revealNextS5Item(event)">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="prompt-banner" onclick="event.stopPropagation()">
+                📌 <b>Quy tắc vẽ hình đối xứng qua đường thẳng d:</b>
+              </div>
+
+              <div class="click-prompt-box" id="s5-click-hint">
+                👆 Nhấp chuột vào đây để lần lượt hiện các quy tắc ghi nhớ (0 / 4)
+              </div>
+
+              <div class="memory-list">
+                <div class="memory-item reveal-item" id="s5-item-0">1. Mỗi đỉnh và điểm đối xứng của nó nằm ở <b>hai phía của trục d</b>.</div>
+                <div class="memory-item reveal-item" id="s5-item-1">2. Đoạn thẳng nối hai điểm <b>vuông góc với trục d</b>.</div>
+                <div class="memory-item reveal-item" id="s5-item-2">3. Hai điểm <b>cách đều trục d</b> (số ô vuông bằng nhau).</div>
+                <div class="memory-item reveal-item" id="s5-item-3">4. <b>Nối các điểm đối xứng</b> theo đúng thứ tự để hoàn thiện hình.</div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;" onclick="event.stopPropagation()">
+              <div class="feedback-bar ok" id="s5-dist-readout">
+                📏 Hiện tại: Khoảng cách từ <b>A</b> đến trục d = <b>2 ô</b> • Khoảng cách từ <b>A′</b> đến trục d = <b>2 ô</b>.
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-purple" id="s5-next-btn" onclick="revealNextS5Item(event)">➕ Hiện ý tiếp theo</button>
+                <button class="btn btn-slate" onclick="resetS5Items(event)">🔄 Ẩn lại</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 6: GIAO NHIỆM VỤ 2 (CÁC BƯỚC HIỆN RA KHI NHẤP CHUỘT) ==================== -->
+      <section class="slide" id="slide-5">
+        <div class="slide-heading-row">
+          <span class="slide-tag gold">SLIDE 6 • THỬ THÁCH 2</span>
+          <h1 class="slide-title">THỬ THÁCH 2 – HOÀN THIỆN CHIẾC LÁ</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="grid-stage-box">
+            <svg id="svg-s6" width="460" height="460" viewBox="0 0 400 400"></svg>
+          </div>
+
+          <div class="info-panel clickable-reveal" id="s6-reveal-panel" onclick="revealNextS6Step(event)">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="prompt-banner" onclick="event.stopPropagation()">
+                🍃 <b>Đề bài:</b> "Cho nửa hình chiếc lá và trục d thẳng đứng trên lưới ô vuông. Vẽ nửa còn lại."
+              </div>
+
+              <div class="click-prompt-box" id="s6-click-hint">
+                👆 Nhấp chuột vào đây để lần lượt hiện các bước thực hiện (0 / 4)
+              </div>
+
+              <div class="memory-list">
+                <div class="memory-item reveal-item" id="s6-step-0">
+                  <b>Bước 1 – Xác định đỉnh:</b> Quan sát các đỉnh đã cho bên trái trục <b>d</b> gồm <b>A, B, C</b> (và 2 đỉnh đầu – cuối nằm trên trục <b>d</b>).
+                </div>
+                <div class="memory-item reveal-item" id="s6-step-1">
+                  <b>Bước 2 – Đếm số ô vuông đến trục d:</b> Đếm khoảng cách theo hàng ngang từ mỗi điểm <b>A, B, C</b> tới trục <b>d</b>.
+                </div>
+                <div class="memory-item reveal-item" id="s6-step-2">
+                  <b>Bước 3 – Vẽ điểm đối xứng:</b> Xác định chính xác vị trí các điểm đối xứng <b>A′, B′, C′</b> sang phía bên phải trục <b>d</b> trên giao điểm lưới.
+                </div>
+                <div class="memory-item reveal-item" id="s6-step-3">
+                  <b>Bước 4 – Nối các điểm:</b> Nối lần lượt các đỉnh theo đúng thứ tự đường bao để hoàn thiện nửa chiếc lá còn thiếu.
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-row" onclick="event.stopPropagation()">
+              <button class="btn btn-purple" id="s6-next-step-btn" onclick="revealNextS6Step(event)">➕ Hiện bước tiếp theo</button>
+              <button class="btn btn-slate" onclick="resetS6Steps(event)">🔄 Ẩn lại</button>
+              <button class="btn btn-orange" onclick="goToSlide(6)">✏️ VẼ CHIẾC LÁ ▶</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 7: THỰC HÀNH TRỰC TIẾP TRÊN LƯỚI (CÓ NÚT LÀM LẠI & KIỂM TRA) ==================== -->
+      <section class="slide" id="slide-6">
+        <div class="slide-heading-row">
+          <span class="slide-tag teal">SLIDE 7 • THỰC HÀNH TRỰC TIẾP</span>
+          <h1 class="slide-title">VẼ NỬA CHIẾC LÁ ĐỐI XỨNG QUA TRỤC d</h1>
+          <span class="status-chip" id="s7-status-pill">Đã đặt: 0/3 điểm • Nét nối: 0/4</span>
+        </div>
+
+        <div class="slide-body-wide-grid">
+          <div class="grid-stage-box">
+            <svg id="svg-s7" width="540" height="540" viewBox="0 0 400 400" style="cursor:crosshair;"></svg>
+          </div>
+
+          <div class="info-panel">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="font-size:14.5px; font-weight:800; color:#0f766e;">1. Chọn điểm cần đặt đối xứng (click lưới hoặc kéo thả):</div>
+              <div class="pt-selector-grid">
+                <button class="pt-sel-btn active" id="s7-sel-A" onclick="selectLeafTarget('A')">Đặt A′<br><span style="font-size:11.5px; font-weight:600;">(đối xứng A)</span></button>
+                <button class="pt-sel-btn" id="s7-sel-B" onclick="selectLeafTarget('B')">Đặt B′<br><span style="font-size:11.5px; font-weight:600;">(đối xứng B)</span></button>
+                <button class="pt-sel-btn" id="s7-sel-C" onclick="selectLeafTarget('C')">Đặt C′<br><span style="font-size:11.5px; font-weight:600;">(đối xứng C)</span></button>
+              </div>
+
+              <div style="font-size:14.5px; font-weight:800; color:#5b21b6; margin-top:4px;">2. Sau khi đặt đủ A′, B′, C′, chọn chế độ nối hình:</div>
+              <button class="mode-pill" id="s7-mode-connect" onclick="selectLeafTarget('CONNECT')">
+                ✏️ Nối các điểm tạo đường bao chiếc lá (bấm lần lượt 5 đỉnh từ trên xuống hoặc dưới lên)
+              </button>
+            </div>
+
+            <div class="feedback-bar info" id="s7-feedback">
+              👉 Đang chọn đặt <b>A′</b> (đối xứng với <b>A</b> qua trục d). Nhấp vào giao điểm lưới bên phải trục d! Có thể kéo thả điểm để chỉnh lại.
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-slate" onclick="leafUndo()">↩ HOÀN TÁC</button>
+              <button class="btn btn-amber" onclick="leafResetAll()">🔄 LÀM LẠI</button>
+              <button class="btn btn-purple" onclick="leafShowHint()">💡 GỢI Ý</button>
+              <button class="btn btn-green" id="s7-check-btn" onclick="checkLeafResult()" disabled>✓ KIỂM TRA</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 8: TỔNG KẾT BÀI HỌC (HIỂN THỊ THEO NHẤP CHUỘT) ==================== -->
+      <section class="slide" id="slide-7">
+        <div class="slide-heading-row">
+          <span class="slide-tag">SLIDE 8 • TỔNG KẾT BÀI HỌC</span>
+          <h1 class="slide-title">EM ĐÃ LÀM ĐƯỢC GÌ?</h1>
+        </div>
+
+        <div class="slide-body-2col">
+          <div class="info-panel clickable-reveal" id="s8-reveal-panel" style="background:#f0fdfa; border-color:#99f6e4;" onclick="revealNextS8Item(event)">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="font-size:18px; font-weight:900; color:#0f766e;">🎯 KIẾN THỨC &amp; KỸ NĂNG TRỌNG TÂM:</div>
+
+              <div class="click-prompt-box" id="s8-click-hint" style="border-color:#14b8a6; background:#ffffff; color:#0f766e;">
+                👆 Nhấp chuột vào đây để lần lượt hiện từng mục tổng kết (0 / 5)
+              </div>
+
+              <div class="check-summary-list">
+                <div class="check-sum-item reveal-item" id="s8-item-0"><span>✅</span> Xác định đúng trục đối xứng d.</div>
+                <div class="check-sum-item reveal-item" id="s8-item-1"><span>✅</span> Xác định các đỉnh của hình trên lưới ô vuông.</div>
+                <div class="check-sum-item reveal-item" id="s8-item-2"><span>✅</span> Đếm chính xác khoảng cách theo ô vuông.</div>
+                <div class="check-sum-item reveal-item" id="s8-item-3"><span>✅</span> Tìm điểm đối xứng vuông góc và cách đều trục d.</div>
+                <div class="check-sum-item reveal-item" id="s8-item-4"><span>✅</span> Nối các điểm theo đúng thứ tự để hoàn thiện hình đối xứng.</div>
+              </div>
+            </div>
+
+            <div class="btn-row" onclick="event.stopPropagation()">
+              <button class="btn btn-teal" id="s8-next-btn" onclick="revealNextS8Item(event)">➕ Hiện mục tiếp theo</button>
+              <button class="btn btn-slate" onclick="resetS8Items(event)">🔄 Ẩn lại</button>
+            </div>
+          </div>
+
+          <div class="info-panel clickable-reveal" id="s8-quiz-panel" onclick="revealS8Quiz(event)">
+            <div id="s8-quiz-cover" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center;">
+              <div style="font-size:48px;">❓</div>
+              <div class="click-prompt-box" style="width:100%;">
+                👆 Nhấp chuột vào đây để hiện <b>Câu hỏi củng cố nhanh</b>
+              </div>
+            </div>
+
+            <div id="s8-quiz-content" style="display:none; flex-direction:column; justify-content:space-between; gap:12px; flex:1;" onclick="event.stopPropagation()">
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div class="prompt-banner">
+                  ❓ <b>Câu hỏi củng cố nhanh:</b><br>
+                  Nếu điểm <b>A</b> cách trục <b>d</b> 3 ô vuông thì điểm <b>A′</b> phải cách trục <b>d</b> bao nhiêu ô vuông?
+                </div>
+
+                <button class="choice-btn" id="s8-opt-0" onclick="answerSlide8(0)"><span class="choice-letter">A</span><span>1 ô.</span></button>
+                <button class="choice-btn" id="s8-opt-1" onclick="answerSlide8(1)"><span class="choice-letter">B</span><span>2 ô.</span></button>
+                <button class="choice-btn" id="s8-opt-2" onclick="answerSlide8(2)"><span class="choice-letter">C</span><span>3 ô.</span></button>
+                <button class="choice-btn" id="s8-opt-3" onclick="answerSlide8(3)"><span class="choice-letter">D</span><span>6 ô.</span></button>
+              </div>
+
+              <div class="feedback-bar info" id="s8-feedback">
+                👉 Chọn 1 phương án đúng để tổng kết bài học!
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 4. THANH ĐIỀU HƯỚNG DƯỚI CÙNG (TỰ DO CHUYỂN SLIDE, KHÔNG KHÓA) -->
+    <footer class="bottom-nav">
+      <button class="btn btn-slate" id="btn-prev" onclick="changeSlide(-1)">◀ Trước</button>
+
+      <div class="nav-progress-wrap">
+        <div class="nav-dots" id="nav-dots"></div>
+        <div class="nav-slide-label" id="nav-slide-label">Slide 1 / 8</div>
+      </div>
+
+      <button class="btn btn-teal" id="btn-next" onclick="changeSlide(1)">Tiếp theo ▶</button>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ==========================================================================
+   1. TỌA ĐỘ CHUẨN TỪ SLIDE 30–31 POWERPOINT BÀI 49 (LƯỚI 8×8, TRỤC d TẠI x = 4)
+   ========================================================================== */
+const GRID_N = 8;
+const AXIS_X = 4;
+const PAD = 36;
+const CELL = 41;
+const TOTAL_SLIDES = 8;
+
+function gx(col) { return PAD + col * CELL; }
+function gy(row) { return PAD + row * CELL; }
+
+const LEAF_TOP = { x: 4, y: 1 };
+const LEAF_BOT = { x: 4, y: 7 };
+const LEFT_VERTICES = [
+  { key: 'C', x: 3, y: 2, dist: 1, symX: 5, symY: 2 },
+  { key: 'B', x: 2, y: 4, dist: 2, symX: 6, symY: 4 },
+  { key: 'A', x: 3, y: 6, dist: 1, symX: 5, symY: 6 }
+];
+const LEFT_PATH_PTS = [LEAF_TOP, LEFT_VERTICES[0], LEFT_VERTICES[1], LEFT_VERTICES[2], LEAF_BOT];
+const RIGHT_PATH_PTS = [
+  LEAF_TOP,
+  { x: 5, y: 2, key: "C'" },
+  { x: 6, y: 4, key: "B'" },
+  { x: 5, y: 6, key: "A'" },
+  LEAF_BOT
+];
+
+/* ==========================================================================
+   2. TRẠNG THÁI BÀI GIẢNG (KHÔNG HỆ THỐNG CHẤM ĐIỂM, MỞ TỰ DO CÁC SLIDE)
+   ========================================================================== */
+const STORE_KEY = 'sparkle_bai49_s30_31_hoc_v3';
+
+let app = {
+  slide: 0,
+  // Slide 1
+  s1Answered: false,
+  s1Folded: false,
+  // Slide 2 click-to-reveal questions (0..3)
+  s2RevealCount: 0,
+  // Slide 3
+  s3Step: 1,
+  // Slide 4
+  s4Mode: 1,
+  s4MarkedVerts: [],
+  s4ActiveCountKey: 'C',
+  s4Counts: { C: null, B: null, A: null },
+  s4SymPts: [],
+  s4Edges: [],
+  s4ConnectFrom: null,
+  s4Errors: [],
+  s4DoneSteps: { 1: false, 2: false, 3: false, 4: false },
+  // Slide 5
+  s5Ax: 2,
+  s5Ay: 4,
+  s5RevealCount: 0,
+  // Slide 8
+  s8RevealCount: 0,
+  s8QuizShown: false,
+  // Slide 6 click-to-reveal steps (0..4)
+  s6RevealCount: 0,
+  // Slide 7 (Chiếc lá)
+  leafTarget: 'A',
+  leafPlaced: { A: null, B: null, C: null },
+  leafEdges: [],
+  leafConnectFrom: null,
+  leafWrongKeys: [],
+  leafHintOn: false,
+  leafPassed: false
+};
+
+function saveApp() {
+  try { sessionStorage.setItem(STORE_KEY, JSON.stringify(app)); } catch {}
+}
+function loadApp() {
+  try {
+    const raw = sessionStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved) app = Object.assign(app, saved);
+  } catch {}
+}
+
+/* ==========================================================================
+   3. ÂM THANH & PHÁO HOA
+   ========================================================================== */
+const SFX = (() => {
+  let ctx = null;
+  function getCtx() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) ctx = new AC();
+    }
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function beep(f, d, t = 'triangle', v = 0.14, delay = 0) {
+    const c = getCtx(); if (!c) return;
+    const o = c.createOscillator(); const g = c.createGain();
+    o.type = t; o.frequency.setValueAtTime(f, c.currentTime + delay);
+    g.gain.setValueAtTime(v, c.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + d);
+    o.connect(g); g.connect(c.destination);
+    o.start(c.currentTime + delay); o.stop(c.currentTime + delay + d);
+  }
+  return {
+    click() { beep(620, 0.06, 'sine', 0.08, 0); },
+    ok() { beep(523, 0.12, 'triangle', 0.16, 0); beep(659, 0.12, 'triangle', 0.16, 0.1); beep(880, 0.24, 'triangle', 0.18, 0.2); },
+    err() { beep(220, 0.16, 'sawtooth', 0.1, 0); beep(170, 0.22, 'sawtooth', 0.1, 0.14); }
+  };
+})();
+
+let confetti = [];
+function burstConfetti() {
+  const colors = ['#14b8a6', '#7c3aed', '#f59e0b', '#ec4899', '#22c55e', '#38bdf8'];
+  for (let i = 0; i < 85; i++) {
+    confetti.push({
+      x: 720 + (Math.random() - 0.5) * 400,
+      y: 260 + (Math.random() - 0.5) * 120,
+      vx: (Math.random() - 0.5) * 9,
+      vy: -3 - Math.random() * 6,
+      r: 4 + Math.random() * 4,
+      color: colors[i % colors.length],
+      life: 1
+    });
+  }
+}
+function initFXLoop() {
+  const c = document.getElementById('fx-canvas');
+  const ctx = c.getContext('2d');
+  function loop() {
+    ctx.clearRect(0, 0, 1440, 810);
+    for (let i = confetti.length - 1; i >= 0; i--) {
+      const p = confetti[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.22; p.life -= 0.014;
+      if (p.life <= 0) { confetti.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.r, p.r * 1.4);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ==========================================================================
+   4. HÀM VẼ LƯỚI Ô VUÔNG & TRỤC d CHUẨN SVG
+   ========================================================================== */
+function buildBaseGridSVG(showCoords = true) {
+  let s = `<rect x="${PAD}" y="${PAD}" width="${GRID_N * CELL}" height="${GRID_N * CELL}" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>`;
+  for (let i = 0; i <= GRID_N; i++) {
+    const x = gx(i);
+    const y = gy(i);
+    s += `<line x1="${x}" y1="${PAD}" x2="${x}" y2="${gy(GRID_N)}" stroke="${i === AXIS_X ? '#fecaca' : '#cbd5e1'}" stroke-width="${i === AXIS_X ? 1.5 : 1.3}"/>`;
+    s += `<line x1="${PAD}" y1="${y}" x2="${gx(GRID_N)}" y2="${y}" stroke="#cbd5e1" stroke-width="1.3"/>`;
+    if (showCoords) {
+      s += `<text x="${x}" y="${PAD - 10}" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">${i}</text>`;
+      s += `<text x="${PAD - 14}" y="${y + 4}" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">${i}</text>`;
+    }
+  }
+  s += `<line x1="${gx(AXIS_X)}" y1="${PAD - 16}" x2="${gx(AXIS_X)}" y2="${gy(GRID_N) + 18}" stroke="#dc2626" stroke-width="4" stroke-dasharray="10,6"/>`;
+  s += `<rect x="${gx(AXIS_X) + 8}" y="${PAD - 24}" width="24" height="22" rx="6" fill="#dc2626"/>`;
+  s += `<text x="${gx(AXIS_X) + 20}" y="${PAD - 8}" text-anchor="middle" font-size="14" font-weight="bold" font-style="italic" fill="#ffffff">d</text>`;
+  return s;
+}
+
+function buildLeftHalfSVG(showLabels = false, fillOpacity = 0.25) {
+  const ptsStr = LEFT_PATH_PTS.map(p => `${gx(p.x)},${gy(p.y)}`).join(' ');
+  let s = `<polygon points="${ptsStr}" fill="rgba(20, 184, 166, ${fillOpacity})" stroke="none"/>`;
+  s += `<polyline points="${ptsStr}" fill="none" stroke="#0f766e" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if (showLabels) {
+    LEFT_VERTICES.forEach(v => {
+      s += `<circle cx="${gx(v.x)}" cy="${gy(v.y)}" r="6.5" fill="#0f766e" stroke="#ffffff" stroke-width="2"/>`;
+      s += `<text x="${gx(v.x) - 18}" y="${gy(v.y) + 6}" text-anchor="middle" font-size="17" font-weight="900" fill="#0f172a">${v.key}</text>`;
+    });
+    s += `<circle cx="${gx(LEAF_TOP.x)}" cy="${gy(LEAF_TOP.y)}" r="5" fill="#0f766e" stroke="#ffffff" stroke-width="1.5"/>`;
+    s += `<circle cx="${gx(LEAF_BOT.x)}" cy="${gy(LEAF_BOT.y)}" r="5" fill="#0f766e" stroke="#ffffff" stroke-width="1.5"/>`;
+  }
+  return s;
+}
+
+function svgPointToGrid(svgEl, clientX, clientY) {
+  const pt = svgEl.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const local = pt.matrixTransform(svgEl.getScreenCTM().inverse());
+  const col = Math.round((local.x - PAD) / CELL);
+  const row = Math.round((local.y - PAD) / CELL);
+  return {
+    x: Math.max(0, Math.min(GRID_N, col)),
+    y: Math.max(0, Math.min(GRID_N, row))
+  };
+}
+
+/* ==========================================================================
+   5. RENDER SLIDE 1, 2, 3
+   ========================================================================== */
+// SLIDE 1
+function renderSlide1() {
+  const svg = document.getElementById('svg-s1');
+  const rightStr = RIGHT_PATH_PTS.map(p => `${gx(p.x)},${gy(p.y)}`).join(' ');
+  const foldTransform = app.s1Folded ? 'scaleX(-1)' : 'scaleX(1)';
+  const rightVisible = app.s1Answered ? 1 : 0;
+
+  svg.innerHTML = `
+    ${buildBaseGridSVG(false)}
+    ${buildLeftHalfSVG(false, 0.28)}
+    <g class="fold-right-half" style="transform:${foldTransform}; opacity:${rightVisible};">
+      <polygon points="${rightStr}" fill="rgba(124, 58, 237, 0.25)" stroke="#7c3aed" stroke-width="4" stroke-linejoin="round"/>
+    </g>
+  `;
+}
+
+function answerSlide1(choice) {
+  const btnA = document.getElementById('s1-opt-a');
+  const btnB = document.getElementById('s1-opt-b');
+  const fb = document.getElementById('s1-feedback');
+  btnA.classList.remove('correct', 'wrong');
+  btnB.classList.remove('correct', 'wrong');
+
+  if (choice === 'A') {
+    app.s1Answered = true;
+    app.s1Folded = true;
+    btnA.classList.add('correct');
+    fb.className = 'feedback-bar ok';
+    fb.innerHTML = '🎉 <b>CHÍNH XÁC!</b> Khi gấp hình theo trục đối xứng <b>d</b>, hai nửa hình chồng khít hoàn toàn lên nhau!';
+    SFX.ok();
+    renderSlide1();
+    setTimeout(() => { app.s1Folded = false; renderSlide1(); }, 1200);
+  } else {
+    btnB.classList.add('wrong');
+    fb.className = 'feedback-bar err';
+    fb.innerHTML = '💡 <b>Gợi ý:</b> Hãy quan sát vị trí các điểm đối xứng — chúng luôn cách đều trục <b>d</b> nên khi gấp theo <b>d</b> sẽ chồng khít lên nhau. Hãy thử chọn lại!';
+    SFX.err();
+  }
+  saveApp();
+}
+
+function toggleSlide1Fold() {
+  app.s1Answered = true;
+  app.s1Folded = !app.s1Folded;
+  SFX.click();
+  renderSlide1();
+}
+
+// SLIDE 2: Click hiện từng câu hỏi
+function renderSlide2() {
+  document.getElementById('svg-s2').innerHTML = buildBaseGridSVG(true) + buildLeftHalfSVG(false, 0.25);
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`s2-q-${i}`);
+    if (el) el.classList.toggle('shown', i < app.s2RevealCount);
+  }
+  const hint = document.getElementById('s2-click-hint');
+  const btn = document.getElementById('s2-next-q-btn');
+  if (app.s2RevealCount < 3) {
+    hint.style.display = 'block';
+    hint.textContent = `👆 Nhấp chuột vào khung này để hiện câu hỏi tiếp theo (${app.s2RevealCount} / 3)`;
+    btn.disabled = false;
+  } else {
+    hint.style.display = 'none';
+    btn.disabled = true;
+  }
+}
+
+function revealNextS2Question(evt) {
+  if (evt) evt.stopPropagation();
+  if (app.s2RevealCount < 3) {
+    app.s2RevealCount++;
+    SFX.click();
+    renderSlide2();
+    saveApp();
+  }
+}
+
+function resetS2Questions(evt) {
+  if (evt) evt.stopPropagation();
+  app.s2RevealCount = 0;
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`s2-q-${i}`);
+    if (el) el.classList.remove('open');
+  }
+  SFX.click();
+  renderSlide2();
+  saveApp();
+}
+
+function toggleGuideCard(evt, el) {
+  evt.stopPropagation();
+  el.classList.toggle('open');
+  SFX.click();
+}
+
+// SLIDE 3
+let s3Timer = null;
+function setSlide3Step(step) {
+  if (s3Timer) { clearInterval(s3Timer); s3Timer = null; }
+  app.s3Step = step;
+  renderSlide3();
+  SFX.click();
+  saveApp();
+}
+
+function playSlide3AllSteps() {
+  if (s3Timer) clearInterval(s3Timer);
+  app.s3Step = 1;
+  renderSlide3();
+  s3Timer = setInterval(() => {
+    if (app.s3Step < 4) {
+      app.s3Step++;
+      renderSlide3();
+      SFX.click();
+    } else {
+      clearInterval(s3Timer);
+      s3Timer = null;
+    }
+  }, 1300);
+}
+
+function renderSlide3() {
+  for (let i = 1; i <= 4; i++) {
+    const card = document.getElementById(`s3-card-${i}`);
+    card.classList.remove('active-step', 'done-step', 'dimmed');
+    if (app.s3Step === 0) card.classList.add('dimmed');
+    else if (i === app.s3Step) card.classList.add('active-step');
+    else if (i < app.s3Step) card.classList.add('done-step');
+    else card.classList.add('dimmed');
+  }
+
+  let extra = '';
+  if (app.s3Step >= 1) {
+    LEFT_PATH_PTS.forEach(p => {
+      extra += `<circle cx="${gx(p.x)}" cy="${gy(p.y)}" r="7.5" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>`;
+    });
+  }
+  if (app.s3Step >= 2) {
+    LEFT_VERTICES.forEach(v => {
+      extra += `<line x1="${gx(v.x)}" y1="${gy(v.y)}" x2="${gx(AXIS_X)}" y2="${gy(v.y)}" stroke="#ea580c" stroke-width="3" stroke-dasharray="5,4"/>`;
+      const mx = (gx(v.x) + gx(AXIS_X)) / 2;
+      extra += `<rect x="${mx - 18}" y="${gy(v.y) - 22}" width="36" height="18" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>`;
+      extra += `<text x="${mx}" y="${gy(v.y) - 9}" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#92400e">${v.dist} ô</text>`;
+    });
+  }
+  if (app.s3Step >= 3) {
+    LEFT_VERTICES.forEach(v => {
+      extra += `<line x1="${gx(AXIS_X)}" y1="${gy(v.y)}" x2="${gx(v.symX)}" y2="${gy(v.symY)}" stroke="#7c3aed" stroke-width="3" stroke-dasharray="5,4"/>`;
+      const mx = (gx(AXIS_X) + gx(v.symX)) / 2;
+      extra += `<rect x="${mx - 18}" y="${gy(v.y) - 22}" width="36" height="18" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>`;
+      extra += `<text x="${mx}" y="${gy(v.y) - 9}" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5b21b6">${v.dist} ô</text>`;
+      extra += `<circle cx="${gx(v.symX)}" cy="${gy(v.symY)}" r="7.5" fill="#7c3aed" stroke="#ffffff" stroke-width="2.5"/>`;
+    });
+  }
+  if (app.s3Step >= 4) {
+    const rStr = RIGHT_PATH_PTS.map(p => `${gx(p.x)},${gy(p.y)}`).join(' ');
+    extra += `<polygon points="${rStr}" fill="rgba(124, 58, 237, 0.22)" stroke="none"/>`;
+    extra += `<polyline points="${rStr}" fill="none" stroke="#7c3aed" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+
+  document.getElementById('svg-s3').innerHTML = buildBaseGridSVG(true) + buildLeftHalfSVG(false, 0.22) + extra;
+
+  const msgs = [
+    'Nhấn vào từng thẻ Bước 1 → Bước 4 để xem minh họa trực quan.',
+    '<b>Bước 1:</b> Đánh dấu tất cả các đỉnh của nửa hình bên trái trục d.',
+    '<b>Bước 2:</b> Đếm số ô vuông theo chiều ngang từ mỗi đỉnh đến trục d (1 ô, 2 ô, 1 ô).',
+    '<b>Bước 3:</b> Lấy đúng số ô vuông sang phía bên phải trục d để vẽ các điểm đối xứng.',
+    '<b>Bước 4:</b> Nối lần lượt các điểm theo đúng thứ tự đường bao để hoàn thiện hình!'
+  ];
+  document.getElementById('s3-feedback').innerHTML = msgs[app.s3Step];
+}
+
+/* ==========================================================================
+   6. SLIDE 4: THỰC HÀNH CÓ HƯỚNG DẪN (KHÔNG CHẤM ĐIỂM)
+   ========================================================================== */
+function setS4Mode(m) {
+  app.s4Mode = m;
+  app.s4ConnectFrom = null;
+  renderSlide4();
+  SFX.click();
+}
+
+function s4SelectCountKey(k) {
+  app.s4ActiveCountKey = k;
+  renderSlide4();
+}
+
+function s4SetCountVal(val) {
+  app.s4Counts[app.s4ActiveCountKey] = val;
+  SFX.click();
+  renderSlide4();
+}
+
+function s4HandleGridClick(evt) {
+  const svg = document.getElementById('svg-s4');
+  const pt = svgPointToGrid(svg, evt.clientX, evt.clientY);
+  app.s4Errors = [];
+
+  if (app.s4Mode === 1) {
+    const found = LEFT_VERTICES.find(v => v.x === pt.x && v.y === pt.y);
+    if (found) {
+      if (!app.s4MarkedVerts.includes(found.key)) {
+        app.s4MarkedVerts.push(found.key);
+        SFX.click();
+      }
+      if (app.s4MarkedVerts.length === 3) {
+        document.getElementById('s4-feedback').className = 'feedback-bar ok';
+        document.getElementById('s4-feedback').innerHTML = '✓ Đã đánh dấu đủ 3 đỉnh bên trái! Em hãy chuyển sang <b>Bước 2: Đếm ô đến trục d</b>.';
+      }
+    } else {
+      SFX.err();
+      document.getElementById('s4-feedback').className = 'feedback-bar err';
+      document.getElementById('s4-feedback').innerHTML = '⚠️ Hãy nhấp đúng vào 3 đỉnh gấp khúc nằm bên trái trục d!';
+    }
+  } else if (app.s4Mode === 2) {
+    const found = LEFT_VERTICES.find(v => v.x === pt.x && v.y === pt.y);
+    if (found) {
+      app.s4ActiveCountKey = found.key;
+      SFX.click();
+    }
+  } else if (app.s4Mode === 3) {
+    if (pt.x <= AXIS_X) {
+      SFX.err();
+      document.getElementById('s4-feedback').className = 'feedback-bar err';
+      document.getElementById('s4-feedback').innerHTML = '⚠️ Điểm đối xứng phải nằm ở <b>phía bên phải trục d</b>!';
+      return;
+    }
+    const existingIdx = app.s4SymPts.findIndex(p => p.x === pt.x && p.y === pt.y);
+    if (existingIdx >= 0) {
+      app.s4SymPts.splice(existingIdx, 1);
+    } else if (app.s4SymPts.length < 3) {
+      app.s4SymPts.push({ x: pt.x, y: pt.y });
+      SFX.click();
+    } else {
+      document.getElementById('s4-feedback').className = 'feedback-bar info';
+      document.getElementById('s4-feedback').innerHTML = 'Em đã đặt đủ 3 điểm đối xứng! Nhấp vào điểm cũ để bỏ chọn hoặc chuyển sang <b>Bước 4: Nối đường bao</b>.';
+    }
+  } else if (app.s4Mode === 4) {
+    const nodes = [LEAF_TOP, LEAF_BOT, ...app.s4SymPts];
+    const hit = nodes.find(n => n.x === pt.x && n.y === pt.y);
+    if (!hit) { SFX.err(); return; }
+    if (!app.s4ConnectFrom) {
+      app.s4ConnectFrom = hit;
+      SFX.click();
+    } else if (app.s4ConnectFrom.x === hit.x && app.s4ConnectFrom.y === hit.y) {
+      app.s4ConnectFrom = null;
+    } else {
+      const exists = app.s4Edges.some(e =>
+        (e[0].x === app.s4ConnectFrom.x && e[0].y === app.s4ConnectFrom.y && e[1].x === hit.x && e[1].y === hit.y) ||
+        (e[1].x === app.s4ConnectFrom.x && e[1].y === app.s4ConnectFrom.y && e[0].x === hit.x && e[0].y === hit.y)
+      );
+      if (!exists) {
+        app.s4Edges.push([app.s4ConnectFrom, hit]);
+        SFX.click();
+      }
+      app.s4ConnectFrom = hit;
+    }
+  }
+  renderSlide4();
+  saveApp();
+}
+
+function s4Undo() {
+  if (app.s4Mode === 4 && app.s4Edges.length > 0) {
+    app.s4Edges.pop();
+    app.s4ConnectFrom = null;
+  } else if (app.s4Mode === 3 && app.s4SymPts.length > 0) {
+    app.s4SymPts.pop();
+  } else if (app.s4Mode === 1 && app.s4MarkedVerts.length > 0) {
+    app.s4MarkedVerts.pop();
+  }
+  app.s4Errors = [];
+  SFX.click();
+  renderSlide4();
+  saveApp();
+}
+
+function s4ClearLines() {
+  app.s4Edges = [];
+  app.s4ConnectFrom = null;
+  app.s4Errors = [];
+  SFX.click();
+  renderSlide4();
+  saveApp();
+}
+
+function s4CheckAll() {
+  const fb = document.getElementById('s4-feedback');
+  app.s4Errors = [];
+
+  const okVerts = app.s4MarkedVerts.length === 3;
+  const okCounts = LEFT_VERTICES.every(v => app.s4Counts[v.key] === v.dist);
+  const expectedSyms = LEFT_VERTICES.map(v => ({ x: v.symX, y: v.symY }));
+  const okSym = app.s4SymPts.length === 3 && expectedSyms.every(exp => app.s4SymPts.some(p => p.x === exp.x && p.y === exp.y));
+  if (!okSym) {
+    app.s4SymPts.forEach(p => {
+      if (!expectedSyms.some(exp => exp.x === p.x && exp.y === p.y)) app.s4Errors.push(p);
+    });
+  }
+  const expectedEdges = [
+    [RIGHT_PATH_PTS[0], RIGHT_PATH_PTS[1]],
+    [RIGHT_PATH_PTS[1], RIGHT_PATH_PTS[2]],
+    [RIGHT_PATH_PTS[2], RIGHT_PATH_PTS[3]],
+    [RIGHT_PATH_PTS[3], RIGHT_PATH_PTS[4]]
+  ];
+  const hasEdge = (a, b) => app.s4Edges.some(e =>
+    (e[0].x === a.x && e[0].y === a.y && e[1].x === b.x && e[1].y === b.y) ||
+    (e[1].x === a.x && e[1].y === a.y && e[0].x === b.x && e[0].y === b.y)
+  );
+  const okConnect = app.s4Edges.length === 4 && expectedEdges.every(([a, b]) => hasEdge(a, b));
+
+  app.s4DoneSteps = { 1: okVerts, 2: okCounts, 3: okSym, 4: okConnect };
+
+  if (okVerts && okCounts && okSym && okConnect) {
+    fb.className = 'feedback-bar ok';
+    fb.innerHTML = '🎉 <b>CHÍNH XÁC! Em đã hoàn thiện hình đối xứng.</b>';
+    SFX.ok();
+    burstConfetti();
+  } else {
+    SFX.err();
+    const hints = [];
+    if (!okVerts) hints.push('Bước 1: Đánh dấu đủ 3 đỉnh bên trái trục d');
+    if (!okCounts) hints.push('Bước 2: Kiểm tra lại số ô vuông từ mỗi đỉnh đến trục d');
+    if (!okSym) hints.push('Bước 3: Các điểm màu đỏ chưa đúng vị trí đối xứng, hãy đếm lại số ô vuông');
+    if (!okConnect) hints.push('Bước 4: Nối đủ 4 đoạn thẳng theo đúng thứ tự đường bao từ đỉnh trên đến đỉnh dưới');
+    fb.className = 'feedback-bar err';
+    fb.innerHTML = '❌ <b>Chưa hoàn chỉnh:</b> ' + hints.join(' • ') + '.';
+  }
+  renderSlide4();
+  saveApp();
+}
+
+function renderSlide4() {
+  for (let m = 1; m <= 4; m++) {
+    const b = document.getElementById(`s4-mode-${m}`);
+    b.classList.toggle('active', app.s4Mode === m);
+    b.classList.toggle('completed', !!app.s4DoneSteps[m]);
+  }
+
+  const ctrl = document.getElementById('s4-step-controls');
+  if (app.s4Mode === 1) {
+    ctrl.innerHTML = `<b>Bước 1 – Xác định đỉnh:</b> Nhấp vào <b>3 đỉnh gấp khúc</b> bên trái trục d trên lưới. Đã chọn: <b>${app.s4MarkedVerts.length} / 3 đỉnh</b>.`;
+  } else if (app.s4Mode === 2) {
+    const vNames = { C: 'Đỉnh trên (hàng 2)', B: 'Đỉnh giữa (hàng 4)', A: 'Đỉnh dưới (hàng 6)' };
+    ctrl.innerHTML = `
+      <div style="margin-bottom:8px;"><b>Bước 2 – Đếm số ô vuông đến trục d:</b></div>
+      <div class="count-row" style="margin-bottom:8px;">
+        ${['C', 'B', 'A'].map(k => `<button class="count-chip ${app.s4ActiveCountKey === k ? 'active' : ''}" onclick="s4SelectCountKey('${k}')">${k === 'C' ? 'Đỉnh 1' : k === 'B' ? 'Đỉnh 2' : 'Đỉnh 3'} (${app.s4Counts[k] ?? '?'} ô)</button>`).join('')}
+      </div>
+      <div style="font-size:13px; margin-bottom:6px; color:#475569;">Chọn số ô vuông cho <b>${vNames[app.s4ActiveCountKey]}</b>:</div>
+      <div class="count-row">
+        ${[1, 2, 3, 4].map(n => `<button class="count-chip ${app.s4Counts[app.s4ActiveCountKey] === n ? 'active' : ''}" onclick="s4SetCountVal(${n})">${n} ô</button>`).join('')}
+      </div>
+    `;
+  } else if (app.s4Mode === 3) {
+    ctrl.innerHTML = `<b>Bước 3 – Đặt điểm đối xứng:</b> Nhấp vào các giao điểm ở <b>bên phải trục d</b> sao cho cùng hàng và cách đều trục d. Đã đặt: <b>${app.s4SymPts.length} / 3 điểm</b>.`;
+  } else {
+    ctrl.innerHTML = `<b>Bước 4 – Nối đường bao:</b> Nhấp lần lượt các điểm từ đỉnh trên trên trục d → 3 điểm đối xứng → đỉnh dưới trên trục d để tạo đường bao. Đã nối: <b>${app.s4Edges.length} / 4 đoạn</b>.`;
+  }
+
+  let extra = '';
+  LEFT_VERTICES.forEach(v => {
+    const marked = app.s4MarkedVerts.includes(v.key);
+    if (marked) {
+      extra += `<circle cx="${gx(v.x)}" cy="${gy(v.y)}" r="8" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>`;
+    }
+    if (app.s4Mode === 2 && app.s4ActiveCountKey === v.key) {
+      extra += `<circle cx="${gx(v.x)}" cy="${gy(v.y)}" r="13" fill="none" stroke="#7c3aed" stroke-width="3"/>`;
+      extra += `<line x1="${gx(v.x)}" y1="${gy(v.y)}" x2="${gx(AXIS_X)}" y2="${gy(v.y)}" stroke="#7c3aed" stroke-width="3" stroke-dasharray="5,4"/>`;
+    }
+    if (app.s4Counts[v.key] !== null) {
+      const mx = (gx(v.x) + gx(AXIS_X)) / 2;
+      extra += `<rect x="${mx - 17}" y="${gy(v.y) - 21}" width="34" height="17" rx="5" fill="#fef3c7" stroke="#f59e0b"/>`;
+      extra += `<text x="${mx}" y="${gy(v.y) - 9}" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">${app.s4Counts[v.key]} ô</text>`;
+    }
+  });
+
+  extra += `<circle cx="${gx(LEAF_TOP.x)}" cy="${gy(LEAF_TOP.y)}" r="6.5" fill="#0f766e" stroke="#ffffff" stroke-width="2"/>`;
+  extra += `<circle cx="${gx(LEAF_BOT.x)}" cy="${gy(LEAF_BOT.y)}" r="6.5" fill="#0f766e" stroke="#ffffff" stroke-width="2"/>`;
+
+  app.s4Edges.forEach(([a, b]) => {
+    extra += `<line x1="${gx(a.x)}" y1="${gy(a.y)}" x2="${gx(b.x)}" y2="${gy(b.y)}" stroke="#7c3aed" stroke-width="4.5" stroke-linecap="round"/>`;
+  });
+
+  app.s4SymPts.forEach(p => {
+    const isErr = app.s4Errors.some(e => e.x === p.x && e.y === p.y);
+    extra += `<circle cx="${gx(p.x)}" cy="${gy(p.y)}" r="8" fill="${isErr ? '#dc2626' : '#7c3aed'}" stroke="#ffffff" stroke-width="2.5"/>`;
+    if (isErr) {
+      extra += `<circle cx="${gx(p.x)}" cy="${gy(p.y)}" r="14" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="4,3"/>`;
+    }
+  });
+
+  if (app.s4ConnectFrom) {
+    extra += `<circle cx="${gx(app.s4ConnectFrom.x)}" cy="${gy(app.s4ConnectFrom.y)}" r="13" fill="none" stroke="#ea580c" stroke-width="3"/>`;
+  }
+
+  document.getElementById('svg-s4').innerHTML = buildBaseGridSVG(true) + buildLeftHalfSVG(false, 0.22) + extra;
+}
+
+/* ==========================================================================
+   7. SLIDE 5: KẾT LUẬN KIẾN THỨC (KÉO ĐIỂM A – QUAN SÁT A')
+   ========================================================================== */
+let s5Dragging = false;
+function renderSlide5() {
+  const ax = app.s5Ax, ay = app.s5Ay;
+  const dist = Math.abs(AXIS_X - ax);
+  const symX = 2 * AXIS_X - ax;
+  const mxL = (gx(ax) + gx(AXIS_X)) / 2;
+  const mxR = (gx(AXIS_X) + gx(symX)) / 2;
+
+  const extra = `
+    <line x1="${gx(ax)}" y1="${gy(ay)}" x2="${gx(symX)}" y2="${gy(ay)}" stroke="#0f766e" stroke-width="3.2" stroke-dasharray="6,4"/>
+    <rect x="${gx(AXIS_X) - 10}" y="${gy(ay) - 10}" width="10" height="10" fill="none" stroke="#dc2626" stroke-width="2"/>
+    <rect x="${mxL - 20}" y="${gy(ay) - 26}" width="40" height="20" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="${mxL}" y="${gy(ay) - 12}" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">${dist} ô</text>
+    <rect x="${mxR - 20}" y="${gy(ay) - 26}" width="40" height="20" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="${mxR}" y="${gy(ay) - 12}" text-anchor="middle" font-size="12" font-weight="bold" fill="#5b21b6">${dist} ô</text>
+    <circle cx="${gx(ax)}" cy="${gy(ay)}" r="10" fill="#0f766e" stroke="#ffffff" stroke-width="3"/>
+    <text x="${gx(ax)}" y="${gy(ay) + 26}" text-anchor="middle" font-size="17" font-weight="900" fill="#0f766e">A</text>
+    <circle cx="${gx(symX)}" cy="${gy(ay)}" r="10" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+    <text x="${gx(symX)}" y="${gy(ay) + 26}" text-anchor="middle" font-size="17" font-weight="900" fill="#7c3aed">A′</text>
+  `;
+  document.getElementById('svg-s5').innerHTML = buildBaseGridSVG(true) + extra;
+  document.getElementById('s5-dist-readout').innerHTML =
+    `📏 Hiện tại: Khoảng cách từ <b>A</b> đến trục d = <b>${dist} ô</b> • Khoảng cách từ <b>A′</b> đến trục d = <b>${dist} ô</b> (vuông góc với d).`;
+
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`s5-item-${i}`);
+    if (el) el.classList.toggle('shown', i < app.s5RevealCount);
+  }
+  const hint = document.getElementById('s5-click-hint');
+  const btn = document.getElementById('s5-next-btn');
+  if (app.s5RevealCount < 4) {
+    hint.style.display = 'block';
+    hint.textContent = `👆 Nhấp chuột vào khung này để hiện quy tắc tiếp theo (${app.s5RevealCount} / 4)`;
+    btn.disabled = false;
+  } else {
+    hint.style.display = 'none';
+    btn.disabled = true;
+  }
+}
+
+function revealNextS5Item(evt) {
+  if (evt) evt.stopPropagation();
+  if (app.s5RevealCount < 4) {
+    app.s5RevealCount++;
+    SFX.click();
+    renderSlide5();
+    saveApp();
+  }
+}
+
+function resetS5Items(evt) {
+  if (evt) evt.stopPropagation();
+  app.s5RevealCount = 0;
+  SFX.click();
+  renderSlide5();
+  saveApp();
+}
+
+/* ==========================================================================
+   8. SLIDE 6 (CLICK HIỆN TỪNG BƯỚC) & SLIDE 7 (CHIẾC LÁ CÓ LÀM LẠI & KIỂM TRA)
+   ========================================================================== */
+function renderSlide6() {
+  document.getElementById('svg-s6').innerHTML = buildBaseGridSVG(true) + buildLeftHalfSVG(true, 0.28);
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`s6-step-${i}`);
+    if (el) el.classList.toggle('shown', i < app.s6RevealCount);
+  }
+  const hint = document.getElementById('s6-click-hint');
+  const btn = document.getElementById('s6-next-step-btn');
+  if (app.s6RevealCount < 4) {
+    hint.style.display = 'block';
+    hint.textContent = `👆 Nhấp chuột vào khung này để hiện bước tiếp theo (${app.s6RevealCount} / 4)`;
+    btn.disabled = false;
+  } else {
+    hint.style.display = 'none';
+    btn.disabled = true;
+  }
+}
+
+function revealNextS6Step(evt) {
+  if (evt) evt.stopPropagation();
+  if (app.s6RevealCount < 4) {
+    app.s6RevealCount++;
+    SFX.click();
+    renderSlide6();
+    saveApp();
+  }
+}
+
+function resetS6Steps(evt) {
+  if (evt) evt.stopPropagation();
+  app.s6RevealCount = 0;
+  SFX.click();
+  renderSlide6();
+  saveApp();
+}
+
+// SLIDE 7: Chiếc lá
+function selectLeafTarget(t) {
+  app.leafTarget = t;
+  app.leafConnectFrom = null;
+  SFX.click();
+  renderSlide7();
+}
+
+function getLeafNodeCoords(id) {
+  if (id === 'TOP') return LEAF_TOP;
+  if (id === 'BOT') return LEAF_BOT;
+  return app.leafPlaced[id];
+}
+
+let leafDragKey = null;
+
+function leafHandlePointerDown(evt) {
+  const svg = document.getElementById('svg-s7');
+  const pt = svgPointToGrid(svg, evt.clientX, evt.clientY);
+
+  const hitKey = ['A', 'B', 'C'].find(k => app.leafPlaced[k] && app.leafPlaced[k].x === pt.x && app.leafPlaced[k].y === pt.y);
+
+  if (app.leafTarget === 'CONNECT') {
+    const allIds = ['TOP', 'C', 'B', 'A', 'BOT'].filter(id => getLeafNodeCoords(id));
+    const hitId = allIds.find(id => {
+      const c = getLeafNodeCoords(id);
+      return c.x === pt.x && c.y === pt.y;
+    });
+    if (!hitId) { SFX.err(); return; }
+    if (!app.leafConnectFrom) {
+      app.leafConnectFrom = hitId;
+      SFX.click();
+    } else if (app.leafConnectFrom === hitId) {
+      app.leafConnectFrom = null;
+    } else {
+      const exists = app.leafEdges.some(e =>
+        (e.from === app.leafConnectFrom && e.to === hitId) ||
+        (e.to === app.leafConnectFrom && e.from === hitId)
+      );
+      if (!exists) {
+        app.leafEdges.push({ from: app.leafConnectFrom, to: hitId });
+        app.leafPassed = false;
+        SFX.click();
+      }
+      app.leafConnectFrom = hitId;
+    }
+    renderSlide7();
+    saveApp();
+    return;
+  }
+
+  if (hitKey) {
+    leafDragKey = hitKey;
+    app.leafWrongKeys = [];
+    app.leafPassed = false;
+    return;
+  }
+
+  if (['A', 'B', 'C'].includes(app.leafTarget)) {
+    if (pt.x <= AXIS_X) {
+      SFX.err();
+      document.getElementById('s7-feedback').className = 'feedback-bar err';
+      document.getElementById('s7-feedback').innerHTML = `⚠️ Điểm <b>${app.leafTarget}′</b> phải nằm ở <b>phía bên phải trục d</b>!`;
+      return;
+    }
+    app.leafPlaced[app.leafTarget] = { x: pt.x, y: pt.y };
+    app.leafWrongKeys = [];
+    app.leafPassed = false;
+    SFX.click();
+    const nextUnplaced = ['A', 'B', 'C'].find(k => !app.leafPlaced[k]);
+    if (nextUnplaced) app.leafTarget = nextUnplaced;
+    else app.leafTarget = 'CONNECT';
+    renderSlide7();
+    saveApp();
+  }
+}
+
+function leafUndo() {
+  if (app.leafEdges.length > 0) {
+    app.leafEdges.pop();
+    app.leafConnectFrom = null;
+  } else {
+    const rev = ['C', 'B', 'A'].find(k => app.leafPlaced[k]);
+    if (rev) app.leafPlaced[rev] = null;
+  }
+  app.leafWrongKeys = [];
+  app.leafPassed = false;
+  SFX.click();
+  renderSlide7();
+  saveApp();
+}
+
+function leafResetAll() {
+  app.leafPlaced = { A: null, B: null, C: null };
+  app.leafEdges = [];
+  app.leafConnectFrom = null;
+  app.leafWrongKeys = [];
+  app.leafHintOn = false;
+  app.leafPassed = false;
+  app.leafTarget = 'A';
+  SFX.click();
+  const fb = document.getElementById('s7-feedback');
+  fb.className = 'feedback-bar info';
+  fb.innerHTML = '👉 Đã làm lại! Hãy đặt điểm <b>A′</b> (đối xứng với <b>A</b> qua trục d) trên giao điểm lưới bên phải trục d.';
+  renderSlide7();
+  saveApp();
+}
+
+function leafShowHint() {
+  app.leafHintOn = !app.leafHintOn;
+  SFX.click();
+  renderSlide7();
+}
+
+function checkLeafResult() {
+  const fb = document.getElementById('s7-feedback');
+  app.leafWrongKeys = [];
+
+  const checkPt = (key) => {
+    const v = LEFT_VERTICES.find(item => item.key === key);
+    const p = app.leafPlaced[key];
+    return p && p.x === v.symX && p.y === v.symY;
+  };
+
+  const okA = checkPt('A');
+  const okB = checkPt('B');
+  const okC = checkPt('C');
+  if (!okA) app.leafWrongKeys.push('A');
+  if (!okB) app.leafWrongKeys.push('B');
+  if (!okC) app.leafWrongKeys.push('C');
+
+  const reqEdges = [['TOP', 'C'], ['C', 'B'], ['B', 'A'], ['A', 'BOT']];
+  const hasE = (u, v) => app.leafEdges.some(e => (e.from === u && e.to === v) || (e.to === u && e.from === v));
+  const okConnect = app.leafEdges.length === 4 && reqEdges.every(([u, v]) => hasE(u, v));
+
+  if (okA && okB && okC && okConnect) {
+    app.leafPassed = true;
+    fb.className = 'feedback-bar ok';
+    fb.innerHTML = '🎉 <b>TUYỆT VỜI! EM ĐÃ VẼ ĐÚNG HÌNH CHIẾC LÁ ĐỐI XỨNG.</b>';
+    SFX.ok();
+    burstConfetti();
+  } else {
+    app.leafPassed = false;
+    SFX.err();
+    const msgs = [];
+    if (!okA) msgs.push('Hãy đếm lại số ô vuông từ điểm A đến trục d');
+    if (!okB) msgs.push('Hãy đếm lại số ô vuông từ điểm B đến trục d');
+    if (!okC) msgs.push('Hãy đếm lại số ô vuông từ điểm C đến trục d');
+    if (!okConnect) msgs.push('Kiểm tra lại thứ tự nối các điểm (Đỉnh trên – C′ – B′ – A′ – Đỉnh dưới)');
+    fb.className = 'feedback-bar err';
+    fb.innerHTML = '❌ <b>Chưa chính xác:</b> ' + msgs.join(' • ') + '. Em có thể kéo thả điểm màu đỏ để sửa ngay!';
+  }
+
+  renderSlide7(true);
+  saveApp();
+}
+
+function renderSlide7(keepFeedback = false) {
+  const placedCount = ['A', 'B', 'C'].filter(k => app.leafPlaced[k]).length;
+  const edgesCount = app.leafEdges.length;
+
+  document.getElementById('s7-status-pill').textContent = `Đã đặt: ${placedCount}/3 điểm • Nét nối: ${edgesCount}/4`;
+  ['A', 'B', 'C'].forEach(k => {
+    const btn = document.getElementById(`s7-sel-${k}`);
+    btn.classList.toggle('active', app.leafTarget === k);
+    btn.classList.toggle('placed', !!app.leafPlaced[k]);
+  });
+  document.getElementById('s7-mode-connect').classList.toggle('active', app.leafTarget === 'CONNECT');
+  document.getElementById('s7-check-btn').disabled = !(placedCount === 3 && edgesCount >= 4);
+
+  if (!keepFeedback && !app.leafPassed && app.leafWrongKeys.length === 0) {
+    const fb7 = document.getElementById('s7-feedback');
+    if (['A', 'B', 'C'].includes(app.leafTarget)) {
+      fb7.className = 'feedback-bar info';
+      fb7.innerHTML = `👉 Đang chọn đặt <b>${app.leafTarget}′</b> (đối xứng với <b>${app.leafTarget}</b> qua trục d). Nhấp vào giao điểm lưới bên phải trục d!`;
+    } else {
+      fb7.className = 'feedback-bar ok';
+      fb7.innerHTML = '✏️ Đang ở chế độ <b>Nối đường bao</b>: Nhấp lần lượt các đỉnh từ trên xuống (Đỉnh trên → C′ → B′ → A′ → Đỉnh dưới) rồi bấm <b>✓ KIỂM TRA</b>!';
+    }
+  }
+
+  let extra = '';
+  if (['A', 'B', 'C'].includes(app.leafTarget)) {
+    const v = LEFT_VERTICES.find(item => item.key === app.leafTarget);
+    extra += `<circle cx="${gx(v.x)}" cy="${gy(v.y)}" r="12" fill="none" stroke="#ea580c" stroke-width="3"/>`;
+    extra += `<line x1="${gx(v.x)}" y1="${gy(v.y)}" x2="${gx(AXIS_X)}" y2="${gy(v.y)}" stroke="#ea580c" stroke-width="3" stroke-dasharray="5,4"/>`;
+  }
+  if (app.leafHintOn) {
+    LEFT_VERTICES.forEach(v => {
+      extra += `<line x1="${gx(v.x)}" y1="${gy(v.y)}" x2="${gx(AXIS_X)}" y2="${gy(v.y)}" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="5,4"/>`;
+      const mx = (gx(v.x) + gx(AXIS_X)) / 2;
+      extra += `<rect x="${mx - 16}" y="${gy(v.y) - 20}" width="32" height="16" rx="5" fill="#fef3c7" stroke="#f59e0b"/>`;
+      extra += `<text x="${mx}" y="${gy(v.y) - 8}" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#92400e">${v.dist} ô</text>`;
+    });
+  }
+
+  if (app.leafPassed) {
+    const rStr = RIGHT_PATH_PTS.map(p => `${gx(p.x)},${gy(p.y)}`).join(' ');
+    extra += `<polygon points="${rStr}" fill="rgba(34, 197, 94, 0.30)" stroke="none"/>`;
+  }
+
+  app.leafEdges.forEach(e => {
+    const a = getLeafNodeCoords(e.from);
+    const b = getLeafNodeCoords(e.to);
+    if (a && b) {
+      extra += `<line x1="${gx(a.x)}" y1="${gy(a.y)}" x2="${gx(b.x)}" y2="${gy(b.y)}" stroke="${app.leafPassed ? '#16a34a' : '#7c3aed'}" stroke-width="4.5" stroke-linecap="round"/>`;
+    }
+  });
+
+  ['A', 'B', 'C'].forEach(k => {
+    const p = app.leafPlaced[k];
+    if (!p) return;
+    const isWrong = app.leafWrongKeys.includes(k);
+    const col = isWrong ? '#dc2626' : (app.leafPassed ? '#16a34a' : '#7c3aed');
+    extra += `<circle cx="${gx(p.x)}" cy="${gy(p.y)}" r="8.5" fill="${col}" stroke="#ffffff" stroke-width="2.5" style="cursor:grab;"/>`;
+    if (isWrong) {
+      extra += `<circle cx="${gx(p.x)}" cy="${gy(p.y)}" r="14" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="4,3"/>`;
+    }
+    extra += `<text x="${gx(p.x) + 19}" y="${gy(p.y) + 6}" text-anchor="middle" font-size="17" font-weight="900" fill="${col}">${k}′</text>`;
+  });
+
+  if (app.leafConnectFrom) {
+    const c = getLeafNodeCoords(app.leafConnectFrom);
+    if (c) extra += `<circle cx="${gx(c.x)}" cy="${gy(c.y)}" r="13" fill="none" stroke="#ea580c" stroke-width="3"/>`;
+  }
+
+  document.getElementById('svg-s7').innerHTML = buildBaseGridSVG(true) + buildLeftHalfSVG(true, 0.26) + extra;
+}
+
+/* ==========================================================================
+   9. SLIDE 8: TỔNG KẾT & CÂU HỎI CỦNG CỐ NHANH (HIỂN THỊ THEO NHẤP CHUỘT)
+   ========================================================================== */
+function renderSlide8() {
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById(`s8-item-${i}`);
+    if (el) el.classList.toggle('shown', i < app.s8RevealCount);
+  }
+  const hint = document.getElementById('s8-click-hint');
+  const btn = document.getElementById('s8-next-btn');
+  if (app.s8RevealCount < 5) {
+    hint.style.display = 'block';
+    hint.textContent = `👆 Nhấp chuột vào khung này để hiện mục tiếp theo (${app.s8RevealCount} / 5)`;
+    btn.disabled = false;
+  } else {
+    hint.style.display = 'none';
+    btn.disabled = true;
+  }
+  const cover = document.getElementById('s8-quiz-cover');
+  const content = document.getElementById('s8-quiz-content');
+  if (cover && content) {
+    cover.style.display = app.s8QuizShown ? 'none' : 'flex';
+    content.style.display = app.s8QuizShown ? 'flex' : 'none';
+  }
+}
+
+function revealNextS8Item(evt) {
+  if (evt) evt.stopPropagation();
+  if (app.s8RevealCount < 5) {
+    app.s8RevealCount++;
+    SFX.click();
+    renderSlide8();
+    saveApp();
+  }
+}
+
+function resetS8Items(evt) {
+  if (evt) evt.stopPropagation();
+  app.s8RevealCount = 0;
+  app.s8QuizShown = false;
+  for (let i = 0; i < 4; i++) {
+    const b = document.getElementById(`s8-opt-${i}`);
+    if (b) b.classList.remove('correct', 'wrong');
+  }
+  const fb = document.getElementById('s8-feedback');
+  if (fb) {
+    fb.className = 'feedback-bar info';
+    fb.innerHTML = '👉 Chọn 1 phương án đúng để tổng kết bài học!';
+  }
+  SFX.click();
+  renderSlide8();
+  saveApp();
+}
+
+function revealS8Quiz(evt) {
+  if (evt) evt.stopPropagation();
+  if (!app.s8QuizShown) {
+    app.s8QuizShown = true;
+    SFX.click();
+    renderSlide8();
+    saveApp();
+  }
+}
+
+function answerSlide8(idx) {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`s8-opt-${i}`).classList.remove('correct', 'wrong');
+  }
+  const fb = document.getElementById('s8-feedback');
+  if (idx === 2) {
+    document.getElementById('s8-opt-2').classList.add('correct');
+    fb.className = 'feedback-bar ok';
+    fb.innerHTML = '🎉 <b>CHÍNH XÁC!</b> Hai điểm đối xứng nhau qua trục d luôn cách đều trục d nên A′ cũng cách trục d đúng <b>3 ô vuông</b>. Chúc mừng em đã hoàn thành bài học!';
+    SFX.ok();
+    burstConfetti();
+  } else {
+    document.getElementById(`s8-opt-${idx}`).classList.add('wrong');
+    fb.className = 'feedback-bar err';
+    fb.innerHTML = '❌ Chưa chính xác! Hãy nhớ: hai điểm đối xứng nhau qua trục d có khoảng cách đến trục d <b>bằng nhau</b>.';
+    SFX.err();
+  }
+}
+
+/* ==========================================================================
+   10. ĐIỀU HƯỚNG 8 SLIDE TỰ DO (KHÔNG KHÓA)
+   ========================================================================== */
+function goToSlide(idx) {
+  if (idx < 0 || idx >= TOTAL_SLIDES) return;
+  app.slide = idx;
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    document.getElementById(`slide-${i}`).classList.toggle('active', i === app.slide);
+  }
+  updateNavUI();
+  saveApp();
+}
+
+function changeSlide(delta) {
+  goToSlide(app.slide + delta);
+}
+
+function updateNavUI() {
+  document.getElementById('top-slide-chip').textContent = `Slide ${app.slide + 1} / ${TOTAL_SLIDES}`;
+  document.getElementById('nav-slide-label').textContent = `Slide ${app.slide + 1} / ${TOTAL_SLIDES}`;
+  document.getElementById('btn-prev').disabled = app.slide === 0;
+  document.getElementById('btn-next').disabled = app.slide === TOTAL_SLIDES - 1;
+
+  const dotsEl = document.getElementById('nav-dots');
+  dotsEl.innerHTML = Array.from({ length: TOTAL_SLIDES }, (_, i) =>
+    `<button class="nav-dot ${i === app.slide ? 'active' : ''}" onclick="goToSlide(${i})">${i + 1}</button>`
+  ).join('');
+}
+
+/* ==========================================================================
+   11. SỰ KIỆN CHUỘT / CẢM ỨNG & CO GIÃN 16:9
+   ========================================================================== */
+function fitStage() {
+  const st = document.getElementById('stage');
+  const scale = Math.min((window.innerWidth - 10) / 1440, (window.innerHeight - 10) / 810);
+  st.style.transform = `scale(${Math.max(0.2, scale)})`;
+}
+window.addEventListener('resize', fitStage);
+
+window.addEventListener('load', () => {
+  loadApp();
+  if (app.slide >= TOTAL_SLIDES) app.slide = 0;
+  fitStage();
+  initFXLoop();
+
+  document.getElementById('svg-s4').addEventListener('pointerdown', s4HandleGridClick);
+
+  const svg5 = document.getElementById('svg-s5');
+  svg5.addEventListener('pointerdown', (e) => {
+    s5Dragging = true;
+    const pt = svgPointToGrid(svg5, e.clientX, e.clientY);
+    if (pt.x < AXIS_X && pt.x >= 1 && pt.y >= 1 && pt.y <= 7) {
+      app.s5Ax = pt.x; app.s5Ay = pt.y; renderSlide5();
+    }
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (s5Dragging) {
+      const pt = svgPointToGrid(svg5, e.clientX, e.clientY);
+      if (pt.x < AXIS_X && pt.x >= 1 && pt.y >= 1 && pt.y <= 7) {
+        app.s5Ax = pt.x; app.s5Ay = pt.y; renderSlide5();
+      }
+    }
+    if (leafDragKey) {
+      const svgEl = document.getElementById('svg-s7');
+      const pt = svgPointToGrid(svgEl, e.clientX, e.clientY);
+      if (pt.x > AXIS_X && pt.x <= GRID_N && pt.y >= 0 && pt.y <= GRID_N) {
+        app.leafPlaced[leafDragKey] = { x: pt.x, y: pt.y };
+        renderSlide7();
+      }
+    }
+  });
+  window.addEventListener('pointerup', () => {
+    if (s5Dragging) { s5Dragging = false; saveApp(); }
+    if (leafDragKey) { leafDragKey = null; saveApp(); }
+  });
+
+  document.getElementById('svg-s7').addEventListener('pointerdown', leafHandlePointerDown);
+
+  renderSlide1();
+  renderSlide2();
+  renderSlide3();
+  renderSlide4();
+  renderSlide5();
+  renderSlide6();
+  renderSlide7();
+  renderSlide8();
+  goToSlide(app.slide || 0);
+});
+</script>
+</body>
+</html>
