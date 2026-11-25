@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toán 6 - Dạng 3: Ghép Thẻ Số Đối Xứng</title>
+    <style>
+        /* ==================== RESET & BASE STYLES ==================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #0b192c;
+            font-family: Verdana, Geneva, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Khung trình chiếu chuẩn 16:9 cố định 1600x900 và tự động co giãn mượt mà */
+        #stage-wrapper {
+            width: 1600px;
+            height: 900px;
+            background: linear-gradient(135deg, #f4f9ff 0%, #e3f2fd 60%, #fffdf2 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform-origin: center center;
+        }
+
+        /* Trang trí nền toán học nhẹ nhàng */
+        .bg-decor {
+            position: absolute;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.35;
+        }
+        .bg-circle-1 {
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #bbdefb 0%, transparent 70%);
+            top: -120px;
+            right: -100px;
+        }
+        .bg-circle-2 {
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff59d 0%, transparent 70%);
+            bottom: -150px;
+            left: -120px;
+        }
+
+        /* ==================== SLIDE CONTAINER ==================== */
+        .slides-viewport {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 810px;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 26px 44px 18px 44px;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* ==================== HEADER & BADGES ==================== */
+        .slide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            border-bottom: 3px solid #bbdefb;
+            padding-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .slide-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0d47a1;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 0 #ffffff;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 17px;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+        .badge-info {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 2px solid #1e88e5;
+        }
+        .badge-success {
+            background: #e8f5e9;
+            color: #1b5e20;
+            border: 2px solid #43a047;
+        }
+        .badge-discovery {
+            background: #fff8e1;
+            color: #e65100;
+            border: 2px solid #ff8f00;
+        }
+
+        /* ==================== THẺ SỐ TRÒ CHƠI (SVG SYMMETRIC CARDS) ==================== */
+        .number-card {
+            width: 104px;
+            height: 136px;
+            background: #ffffff;
+            border-radius: 18px;
+            border: 4px solid #1e88e5;
+            box-shadow: 0 8px 0 #0d47a1, 0 12px 20px rgba(13, 71, 161, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s, box-shadow 0.25s, background 0.25s;
+            user-select: none;
+        }
+
+        .number-card::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 11px;
+            border: 1.5px dashed rgba(30, 136, 229, 0.35);
+            pointer-events: none;
+        }
+
+        .number-card:hover {
+            transform: translateY(-6px) scale(1.04);
+        }
+
+        .number-card.selected {
+            background: #fffde7;
+            border-color: #ff8f00;
+            box-shadow: 0 8px 0 #e65100, 0 0 24px rgba(255, 143, 0, 0.6);
+            transform: translateY(-10px) scale(1.08);
+        }
+
+        .number-card.self-sym {
+            background: #e3f2fd;
+            border-color: #1565c0;
+            box-shadow: 0 8px 0 #0d47a1, 0 0 22px rgba(30, 136, 229, 0.55);
+        }
+
+        .number-card.pair-sym {
+            background: #fff8e1;
+            border-color: #ff8f00;
+            box-shadow: 0 8px 0 #e65100, 0 0 22px rgba(255, 143, 0, 0.5);
+        }
+
+        /* Phân biệt màu nền nhẹ nhàng trên Slide 1 */
+        .card-tone-0 { background: linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%); }
+        .card-tone-1 { background: linear-gradient(180deg, #ffffff 0%, #f1f8e9 100%); }
+        .card-tone-6 { background: linear-gradient(180deg, #ffffff 0%, #fff8e1 100%); }
+        .card-tone-8 { background: linear-gradient(180deg, #ffffff 0%, #f3e5f5 100%); }
+        .card-tone-9 { background: linear-gradient(180deg, #ffffff 0%, #fbe9e7 100%); }
+
+        .number-card.sm {
+            width: 78px;
+            height: 102px;
+            border-radius: 14px;
+            border-width: 3px;
+            box-shadow: 0 5px 0 #0d47a1, 0 8px 14px rgba(13, 71, 161, 0.18);
+        }
+
+        .number-card.md {
+            width: 90px;
+            height: 118px;
+            border-radius: 16px;
+        }
+
+        .digit-svg {
+            width: 78%;
+            height: 78%;
+            display: block;
+        }
+
+        /* Hiệu ứng Zoom xuất hiện lần lượt */
+        @keyframes zoomPop {
+            0% { opacity: 0; transform: scale(0.3); }
+            70% { opacity: 1; transform: scale(1.08); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .zoom-in {
+            animation: zoomPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* ==================== SLIDE 1 STYLES ==================== */
+        .problem-box {
+            background: linear-gradient(135deg, #ffffff 0%, #fffde7 100%);
+            border: 3px solid #ff8f00;
+            border-left: 12px solid #ff8f00;
+            border-radius: 20px;
+            padding: 26px 34px;
+            box-shadow: 0 8px 24px rgba(255, 143, 0, 0.14);
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+
+        .problem-text {
+            font-size: 27px;
+            line-height: 1.5;
+            color: #0d47a1;
+            font-weight: bold;
+        }
+
+        .problem-text span.hl {
+            color: #d84315;
+            background: #fff59d;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .s1-body {
+            display: grid;
+            grid-template-columns: 640px 1fr;
+            gap: 28px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .s1-cards-panel {
+            background: #ffffff;
+            border-radius: 22px;
+            border: 3px solid #bbdefb;
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 22px rgba(13, 71, 161, 0.08);
+        }
+
+        .s1-cards-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            flex-wrap: nowrap;
+        }
+
+        .s1-questions-panel {
+            background: #ffffff;
+            border-radius: 22px;
+            border: 3px solid #bbdefb;
+            padding: 26px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 18px;
+            box-shadow: 0 8px 22px rgba(13, 71, 161, 0.08);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .s1-questions-panel:hover {
+            border-color: #64b5f6;
+            box-shadow: 0 10px 26px rgba(30, 136, 229, 0.14);
+        }
+
+        /* Tóm tắt các câu trả lời đã mở trên Slide 1 */
+        .s1-done-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .done-item {
+            background: #e8f5e9;
+            border: 2px solid #66bb6a;
+            border-left: 10px solid #2e7d32;
+            padding: 16px 22px;
+            border-radius: 14px;
+            font-size: 21px;
+            line-height: 1.45;
+            color: #1b5e20;
+            font-weight: bold;
+            animation: zoomPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .active-question-card {
+            flex: 1;
+            background: linear-gradient(180deg, #f8fbff 0%, #e3f2fd 100%);
+            border: 3px solid #1e88e5;
+            border-radius: 18px;
+            padding: 28px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 16px;
+            transition: opacity 0.28s ease, transform 0.28s ease;
+        }
+
+        .active-question-card.fade-out {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .s1-live-question-text {
+            font-size: 28px;
+            color: #0d47a1;
+            font-weight: bold;
+            line-height: 1.45;
+            animation: zoomPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .q-header-title {
+            font-size: 23px;
+            color: #0d47a1;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hint-box {
+            background: #fffde7;
+            border: 2px dashed #ffb300;
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 18px;
+            color: #5d4037;
+            line-height: 1.5;
+            animation: zoomPop 0.3s ease;
+        }
+
+        .hint-box ul {
+            margin-left: 22px;
+        }
+
+        .answer-box {
+            background: #e8f5e9;
+            border: 2px solid #43a047;
+            border-left: 10px solid #2e7d32;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 19px;
+            font-weight: bold;
+            color: #1b5e20;
+            line-height: 1.45;
+            animation: zoomPop 0.35s ease;
+        }
+
+        /* Hộp thoại kết thúc Slide 1 */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(13, 71, 161, 0.55);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .cta-dialog {
+            width: 780px;
+            background: #fffde7;
+            border: 5px solid #ff8f00;
+            border-radius: 26px;
+            padding: 36px 44px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            animation: zoomPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .cta-title {
+            font-size: 34px;
+            font-weight: bold;
+            color: #e65100;
+            margin-bottom: 16px;
+        }
+
+        .cta-desc {
+            font-size: 22px;
+            color: #0d47a1;
+            line-height: 1.5;
+            margin-bottom: 26px;
+            font-weight: bold;
+        }
+
+        .cta-btn {
+            background: linear-gradient(180deg, #ff9800 0%, #e65100 100%);
+            color: #ffffff;
+            border: none;
+            padding: 16px 36px;
+            font-size: 22px;
+            font-weight: bold;
+            font-family: Verdana, sans-serif;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #bf360c, 0 10px 20px rgba(230, 81, 0, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+        }
+
+        /* ==================== SLIDE 2 STYLES ==================== */
+        .s2-layout {
+            display: grid;
+            grid-template-columns: 440px 1fr;
+            gap: 24px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .s2-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .s2-cards-bank {
+            background: #ffffff;
+            border-radius: 18px;
+            border: 2px solid #bbdefb;
+            padding: 16px;
+            box-shadow: 0 6px 16px rgba(13, 71, 161, 0.07);
+        }
+
+        .s2-bank-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .s2-rules-board {
+            flex: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #fffde7 100%);
+            border-radius: 18px;
+            border: 3px solid #ffb300;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 6px 16px rgba(255, 143, 0, 0.1);
+        }
+
+        .rule-slot {
+            background: #f5f5f5;
+            border: 2px dashed #bdbdbd;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 16px;
+            color: #757575;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 52px;
+            transition: all 0.3s;
+        }
+
+        .rule-slot.unlocked {
+            background: #e8f5e9;
+            border: 2px solid #43a047;
+            color: #1b5e20;
+            font-weight: bold;
+        }
+
+        .s2-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .s2-question-stage {
+            background: #ffffff;
+            border-radius: 18px;
+            border: 3px solid #1e88e5;
+            padding: 18px 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 156px;
+            gap: 10px;
+            box-shadow: 0 6px 16px rgba(13, 71, 161, 0.09);
+            cursor: pointer;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .s2-question-stage:hover {
+            border-color: #ff8f00;
+            box-shadow: 0 8px 22px rgba(255, 143, 0, 0.16);
+        }
+
+        .s2-single-item {
+            transition: opacity 0.32s ease, transform 0.32s ease;
+        }
+
+        .s2-single-item.fade-out {
+            opacity: 0;
+            transform: scale(0.96);
+        }
+
+        .s2-sim-stage {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 3px solid #1e88e5;
+            padding: 18px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(30, 136, 229, 0.08);
+            overflow: hidden;
+        }
+
+        .sim-canvas-area {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            position: relative;
+        }
+
+        .rotatable-group {
+            transition: transform 1.05s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            transform-origin: center center;
+        }
+
+        .rotated-180 {
+            transform: rotate(180deg);
+        }
+
+        /* Hiệu ứng rung báo lỗi số 0 đứng đầu */
+        @keyframes shakeInvalid {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-12px); }
+            40%, 80% { transform: translateX(12px); }
+        }
+
+        .shake-error {
+            animation: shakeInvalid 0.55s ease;
+        }
+
+        /* ==================== SLIDE 3 STYLES ==================== */
+        .s3-stepper {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-tab {
+            flex: 1;
+            padding: 11px 14px;
+            background: #ffffff;
+            border: 2px solid #90caf9;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1565c0;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s;
+        }
+
+        .step-tab.active {
+            background: #1e88e5;
+            color: #ffffff;
+            border-color: #0d47a1;
+            box-shadow: 0 5px 14px rgba(30, 136, 229, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .step-tab.completed {
+            background: #e8f5e9;
+            color: #1b5e20;
+            border-color: #43a047;
+        }
+
+        .s3-content-box {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 22px;
+            border: 3px solid #bbdefb;
+            padding: 22px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 8px 24px rgba(13, 71, 161, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slot-placeholder {
+            width: 90px;
+            height: 118px;
+            border-radius: 16px;
+            border: 4px dashed #ff8f00;
+            background: #fffde7;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff8f00;
+        }
+
+        .formed-number-badge {
+            background: linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%);
+            border: 3px solid #1e88e5;
+            border-radius: 20px;
+            padding: 14px 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 0 #0d47a1, 0 10px 20px rgba(13, 71, 161, 0.15);
+        }
+
+        .verify-selector-btn {
+            padding: 10px 24px;
+            font-size: 22px;
+            font-weight: bold;
+            font-family: Verdana, sans-serif;
+            border-radius: 12px;
+            border: 3px solid #1e88e5;
+            background: #ffffff;
+            color: #0d47a1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .verify-selector-btn.active {
+            background: #ff8f00;
+            color: #ffffff;
+            border-color: #e65100;
+            box-shadow: 0 4px 0 #bf360c;
+            transform: translateY(-2px);
+        }
+
+        /* ==================== BOTTOM CONTROL BAR ==================== */
+        .control-bar {
+            height: 90px;
+            background: #0d47a1;
+            padding: 0 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            border-top: 4px solid #ff8f00;
+            flex-shrink: 0;
+        }
+
+        .nav-group, .action-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ctrl-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: Verdana, sans-serif;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.15s, background 0.2s, opacity 0.2s;
+        }
+
+        .ctrl-btn:active {
+            transform: translateY(2px);
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-nav {
+            background: #1e88e5;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #092c66;
+        }
+        .btn-nav:hover:not(:disabled) {
+            background: #42a5f5;
+        }
+
+        .slide-counter {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .btn-step {
+            background: #ffca28;
+            color: #0d47a1;
+            box-shadow: 0 4px 0 #c79100;
+        }
+        .btn-step:hover:not(:disabled) {
+            background: #ffd54f;
+        }
+
+        .btn-hint {
+            background: #ff8f00;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #c56000;
+        }
+        .btn-hint:hover:not(:disabled) {
+            background: #ffa000;
+        }
+
+        .btn-answer {
+            background: #43a047;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #1b5e20;
+        }
+        .btn-answer:hover:not(:disabled) {
+            background: #66bb6a;
+        }
+
+        .btn-reset {
+            background: #eceff1;
+            color: #263238;
+            box-shadow: 0 4px 0 #90a4ae;
+        }
+        .btn-reset:hover {
+            background: #ffffff;
+        }
+
+        .btn-fullscreen {
+            background: #3949ab;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #1a237e;
+        }
+    </style>
+</head>
+<body>
+
+<div id="stage-wrapper">
+    <!-- Hình trang trí nền -->
+    <div class="bg-decor bg-circle-1"></div>
+    <div class="bg-decor bg-circle-2"></div>
+
+    <!-- KHU VỰC 3 SLIDE -->
+    <div class="slides-viewport">
+
+        <!-- =========================================================
+             SLIDE 1: KHÁM PHÁ ĐỀ BÀI
+             ========================================================= -->
+        <section class="slide active" id="slide-1">
+            <!-- Khu vực 1: Đề bài -->
+            <div class="problem-box">
+                <div class="problem-text">
+                    Có các thẻ số <span class="hl">0, 1, 6, 8, 9</span>. Hãy ghép thành các <span class="hl">số có 3 chữ số khác nhau</span> sao cho hình ảnh của số đó <span class="hl">có tâm đối xứng</span>.
+                </div>
+            </div>
+
+            <div class="s1-body">
+                <!-- Khu vực 2: Các thẻ số -->
+                <div class="s1-cards-panel">
+                    <div class="s1-cards-row" id="s1-cards-container">
+                        <!-- Được render bằng JS với SVG đối xứng chuẩn -->
+                    </div>
+                </div>
+
+                <!-- Khu vực 3: Câu hỏi dẫn dắt -->
+                <div class="s1-questions-panel" id="s1-interactive-area" onclick="advanceSlide1Step()">
+                    <!-- Danh sách các câu trả lời đã xuất hiện -->
+                    <div class="s1-done-summary" id="s1-done-list"></div>
+
+                    <!-- Khung hiển thị câu hỏi hiện tại -->
+                    <div id="s1-active-q-wrapper" style="flex: 1; display: flex; flex-direction: column;"></div>
+                </div>
+            </div>
+
+            <!-- 4. Hộp thoại kết thúc Slide 1 -->
+            <div class="modal-overlay" id="s1-end-modal">
+                <div class="cta-dialog">
+                    <div class="cta-title">🌟 EM HÃY THỬ NHÉ!</div>
+                    <div class="cta-desc">
+                        "Em hãy quan sát các thẻ số và tự tìm cách ghép những số thỏa mãn yêu cầu."
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 16px;">
+                        <button class="ctrl-btn btn-reset" onclick="closeSlide1Modal()" style="font-size: 18px; padding: 14px 24px;">
+                            Xem lại Slide 1
+                        </button>
+                        <button class="cta-btn" onclick="goToSlide(2)">
+                            BẮT ĐẦU KHÁM PHÁ →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========================================================
+             SLIDE 2: KHÁM PHÁ QUY LUẬT BẰNG CÂU HỎI DẪN DẮT
+             ========================================================= -->
+        <section class="slide" id="slide-2">
+            <div class="slide-header">
+                <div class="title-group">
+                    <span class="badge badge-success">🌱 Mục tiêu: Học sinh tự tìm ra cách giải</span>
+                    <h1 class="slide-title">EM HÃY SUY NGHĨ VÀ TÌM QUY LUẬT!</h1>
+                </div>
+            </div>
+
+            <div class="s2-layout">
+                <!-- Cột trái: Các thẻ số & Bảng tổng hợp quy luật -->
+                <div class="s2-left-col">
+                    <div class="s2-cards-bank">
+                        <div class="panel-subtitle" style="font-size: 18px; font-weight: bold; color: #0d47a1;">🃏 CÁC THẺ SỐ: 0, 1, 6, 8, 9</div>
+                        <div class="s2-bank-grid" id="s2-left-cards"></div>
+                    </div>
+
+                    <div class="s2-rules-board">
+                        <div class="panel-subtitle" style="font-size: 19px; font-weight: bold; color: #e65100;">
+                            📋 SƠ ĐỒ TỔNG HỢP QUY LUẬT
+                        </div>
+                        <div class="rule-slot" id="rule-slot-1">
+                            <span>🔒 Chữ số tự đối xứng tâm</span>
+                        </div>
+                        <div class="rule-slot" id="rule-slot-2">
+                            <span>🔒 Cặp chữ số đối xứng tâm với nhau</span>
+                        </div>
+                        <div class="rule-slot" id="rule-slot-3">
+                            <span>🔒 Vị trí chữ số ở giữa</span>
+                        </div>
+                        <div class="rule-slot" id="rule-slot-4">
+                            <span>🔒 Vị trí hai chữ số ở hai đầu</span>
+                        </div>
+                        <div class="rule-slot" id="rule-slot-5">
+                            <span>🔒 Điều kiện chữ số hàng trăm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Khu vực câu hỏi/kết luận đơn + Khu vực mô phỏng phép quay 180 độ -->
+                <div class="s2-right-col">
+                    <div class="s2-question-stage" id="s2-question-box" onclick="handleSlide2StageClick(event)">
+                        <!-- Render duy nhất 1 câu hỏi HOẶC 1 đáp án tại mỗi thời điểm -->
+                    </div>
+
+                    <div class="s2-sim-stage">
+                        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                            <span class="badge badge-info" style="font-size: 15px;">🔄 KHU VỰC MINH HỌA PHÉP QUAY 180°</span>
+                            <span id="s2-sim-caption" style="font-size: 16px; font-weight: bold; color: #1565c0;"></span>
+                        </div>
+
+                        <div class="sim-canvas-area" id="s2-sim-canvas">
+                            <!-- Nội dung mô phỏng phép quay 180 độ -->
+                        </div>
+
+                        <div id="s2-sim-footer" style="width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                            <!-- Nút Quay 180° trực tiếp trong khu vực mô phỏng -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal kết thúc Slide 2 -->
+            <div class="modal-overlay" id="s2-end-modal">
+                <div class="cta-dialog">
+                    <div class="cta-title">🎉 EM ĐÃ TÌM RA QUY LUẬT CHƯA?</div>
+                    <div style="text-align: left; background: #ffffff; border: 2px solid #ffb300; border-radius: 16px; padding: 18px 24px; margin-bottom: 20px; font-size: 19px; color: #0d47a1; line-height: 1.6; font-weight: bold;">
+                        ✅ Chữ số đầu và cuối: <b>6 và 9</b><br>
+                        ✅ Chữ số ở giữa: <b>0, 1 hoặc 8</b><br>
+                        ✅ Không được lặp chữ số<br>
+                        ✅ Số đầu tiên không được là <b>0</b>
+                    </div>
+                    <div class="cta-desc" style="margin-bottom: 20px; font-size: 20px;">
+                        "Chúng ta cùng áp dụng để lập các số thỏa mãn yêu cầu nhé!"
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 16px;">
+                        <button class="ctrl-btn btn-reset" onclick="closeSlide2Modal()" style="font-size: 18px; padding: 14px 24px;">
+                            Quan sát lại sơ đồ
+                        </button>
+                        <button class="cta-btn" onclick="goToSlide(3)">
+                            XEM LỜI GIẢI →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========================================================
+             SLIDE 3: GIẢI BÀI VÀ KẾT LUẬN
+             ========================================================= -->
+        <section class="slide" id="slide-3">
+            <div class="slide-header">
+                <div class="title-group">
+                    <span class="badge badge-discovery">🏆 Mục tiêu: Vận dụng quy luật để tìm đáp án</span>
+                    <h1 class="slide-title">CÙNG GIẢI BÀI TOÁN!</h1>
+                </div>
+                <div style="font-size: 16px; color: #e65100; font-weight: bold;">Trình bày lời giải & Kiểm chứng 180°</div>
+            </div>
+
+            <!-- Thanh chọn 5 bước trên Slide 3 -->
+            <div class="s3-stepper" id="s3-stepper">
+                <div class="step-tab active" onclick="setSlide3Step(1)">Bước 1: Hai chữ số đầu & cuối</div>
+                <div class="step-tab" onclick="setSlide3Step(2)">Bước 2: Chọn chữ số ở giữa</div>
+                <div class="step-tab" onclick="setSlide3Step(3)">Bước 3: Lập các số</div>
+                <div class="step-tab" onclick="setSlide3Step(4)">Bước 4: Kiểm chứng quay 180°</div>
+                <div class="step-tab" onclick="setSlide3Step(5)">Bước 5: Kết luận & Đáp án</div>
+            </div>
+
+            <!-- Khu vực hiển thị nội dung từng bước của Slide 3 -->
+            <div class="s3-content-box" id="s3-stage">
+                <!-- Render bằng JS -->
+            </div>
+        </section>
+
+    </div>
+
+    <!-- THANH ĐIỀU KHIỂN CỐ ĐỊNH PHÍA DƯỚI -->
+    <footer class="control-bar">
+        <div class="nav-group">
+            <button class="ctrl-btn btn-nav" id="btn-prev-slide" onclick="prevSlide()">◀ Trước</button>
+            <div class="slide-counter" id="slide-indicator">Slide 1 / 3</div>
+            <button class="ctrl-btn btn-nav" id="btn-next-slide" onclick="nextSlide()">Tiếp ▶</button>
+        </div>
+
+        <div class="action-group">
+            <button class="ctrl-btn btn-step" id="btn-next-step" onclick="triggerNextQuestionOrStep()">
+                💡 Hiện câu hỏi / Bước tiếp
+            </button>
+            <button class="ctrl-btn btn-hint" id="btn-show-hint" onclick="triggerHint()">
+                🔍 Gợi ý
+            </button>
+            <button class="ctrl-btn btn-answer" id="btn-show-answer" onclick="triggerAnswer()">
+                🔄 Quay 180° & Kết luận
+            </button>
+            <button class="ctrl-btn btn-reset" onclick="resetCurrentSlide()">
+                🔄 Làm lại
+            </button>
+            <button class="ctrl-btn btn-fullscreen" onclick="toggleFullScreen()">
+                ⛶ Toàn màn hình
+            </button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    /* =========================================================================
+       1. HỆ THỐNG CO GIÃN TỶ LỆ 16:9 TỰ ĐỘNG THEO MÀN HÌNH
+       ========================================================================= */
+    function resizeStage() {
+        const wrapper = document.getElementById('stage-wrapper');
+        const scaleX = window.innerWidth / 1600;
+        const scaleY = window.innerHeight / 900;
+        const scale = Math.min(scaleX, scaleY) * 0.985;
+        wrapper.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', resizeStage);
+    window.addEventListener('load', resizeStage);
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+            document.exitFullscreen().catch(() => {});
+        }
+    }
+
+    /* =========================================================================
+       2. BỘ VẼ CHỮ SỐ SVG ĐỐI XỨNG TÂM TUYỆT ĐỐI 100%
+       - Đảm bảo khi quay 180° quanh tâm (50, 70):
+         + Số 0 -> trùng khít số 0
+         + Số 1 -> đoạn thẳng đứng tâm đối xứng trùng khít số 1
+         + Số 8 -> 2 vòng tròn trên dưới bằng nhau, trùng khít số 8
+         + Số 6 <-> Số 9 là ảnh phép quay 180° chính xác 100% của nhau
+       ========================================================================= */
+    function getSymmetricDigitSVG(digit, strokeColor = '#0d47a1') {
+        const d = String(digit);
+        let paths = '';
+
+        if (d === '0') {
+            // Hình bầu dục đối xứng tâm qua (50, 70)
+            paths = `
+                <rect x="24" y="22" width="52" height="96" rx="26" ry="26"
+                      fill="none" stroke="${strokeColor}" stroke-width="13" stroke-linecap="round"/>
+                <circle cx="50" cy="70" r="3" fill="${strokeColor}" opacity="0.25"/>
+            `;
+        } else if (d === '1') {
+            // Chữ số 1 dạng thanh thẳng đối xứng tâm tuyệt đối qua (50, 70)
+            paths = `
+                <line x1="50" y1="22" x2="50" y2="118"
+                      stroke="${strokeColor}" stroke-width="14" stroke-linecap="round"/>
+            `;
+        } else if (d === '8') {
+            // Hai vòng tròn bằng nhau hoàn toàn trên và dưới tâm (50, 70)
+            paths = `
+                <circle cx="50" cy="46" r="23" fill="none" stroke="${strokeColor}" stroke-width="12.5"/>
+                <circle cx="50" cy="94" r="23" fill="none" stroke="${strokeColor}" stroke-width="12.5"/>
+            `;
+        } else if (d === '6') {
+            // Bụng tròn ở dưới (tâm 50,92, r=24) và nhánh cong lên trên
+            paths = `
+                <circle cx="50" cy="92" r="24" fill="none" stroke="${strokeColor}" stroke-width="12.5"/>
+                <path d="M 26 92 C 26 42, 48 22, 70 24" fill="none" stroke="${strokeColor}" stroke-width="12.5" stroke-linecap="round"/>
+            `;
+        } else if (d === '9') {
+            // Chính xác là hình của số 6 quay 180 độ quanh tâm (50, 70)
+            paths = `
+                <g transform="rotate(180, 50, 70)">
+                    <circle cx="50" cy="92" r="24" fill="none" stroke="${strokeColor}" stroke-width="12.5"/>
+                    <path d="M 26 92 C 26 42, 48 22, 70 24" fill="none" stroke="${strokeColor}" stroke-width="12.5" stroke-linecap="round"/>
+                </g>
+            `;
+        }
+
+        return `
+            <svg class="digit-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+                ${paths}
+            </svg>
+        `;
+    }
+
+    function createCardHTML(digit, extraClass = '', idAttr = '', onclickAttr = '') {
+        let color = '#0d47a1';
+        if (extraClass.includes('pair-sym')) color = '#e65100';
+        if (extraClass.includes('self-sym')) color = '#0d47a1';
+        return `
+            <div class="number-card card-tone-${digit} ${extraClass}" ${idAttr ? `id="${idAttr}"` : ''} ${onclickAttr ? `onclick="${onclickAttr}"` : ''}>
+                ${getSymmetricDigitSVG(digit, color)}
+            </div>
+        `;
+    }
+
+    /* =========================================================================
+       3. QUẢN LÝ TRẠNG THÁI TOÀN BÀI GIẢNG
+       ========================================================================= */
+    let currentSlide = 1;
+
+    // Trạng thái Slide 1 (Tuần tự 7 bước: 0 -> 7)
+    let s1State = {
+        selectedDigits: {},
+        step: 0, // 0: ban đầu, 1: Q1, 2: A1, 3: Q2, 4: A2, 5: Q3, 6: A3, 7: Modal
+        isTransitioning: false
+    };
+
+    const s1QAItems = [
+        {
+            question: "Đề bài cho biết những thông tin gì?",
+            answer: "Đề bài cho 5 thẻ số: 0, 1, 6, 8, 9. Cần ghép thành số có 3 chữ số khác nhau."
+        },
+        {
+            question: "Đề bài yêu cầu chúng ta thực hiện điều gì?",
+            answer: "Ta cần ghép các số có 3 chữ số khác nhau sao cho hình ảnh của số đó có tâm đối xứng."
+        },
+        {
+            question: "Để giải bài toán này, em cần vận dụng kiến thức nào đã học?",
+            answer: "Ta cần vận dụng kiến thức về tâm đối xứng và phép quay 180°."
+        }
+    ];
+
+    // Trạng thái Slide 2 (Hiển thị tuần tự từng câu hỏi -> mô phỏng quay 180° -> câu hỏi mờ dần biến mất -> hiện đáp án)
+    let s2State = {
+        currentQ: 1,         // 1..5
+        phase: 'question',   // 'question' | 'animating' | 'answer'
+        hintShown: false,
+        unlockedRules: {},
+        timers: []
+    };
+
+    const s2QuestionsData = [
+        null,
+        {
+            prompt: "Chữ số nào giữ nguyên khi quay 180°?",
+            subPrompt: "Nếu quay từng chữ số một góc 180°, chữ số nào vẫn giữ nguyên hình dạng?",
+            hint: "Em hãy tưởng tượng xoay ngược từng thẻ số một góc 180° quanh tâm: những chữ số nào có hình ảnh không thay đổi?",
+            conclusion: "Các chữ số 0, 1, 8 giữ nguyên hình dạng khi quay 180°. (0, 1, 8 là những chữ số tự đối xứng tâm).",
+            ruleText: "✅ Tự đối xứng tâm (quay 180° giữ nguyên): 0, 1, 8",
+            lockedLabel: "🔒 Chữ số tự đối xứng tâm"
+        },
+        {
+            prompt: "Khi quay chữ số 6 một góc 180°, ta nhận được chữ số nào? Vậy chữ số 9 khi quay 180° sẽ biến thành chữ số nào?",
+            subPrompt: "",
+            hint: "Quan sát phần bụng tròn của chữ số 6 (ở dưới) và chữ số 9 (ở trên) khi xoay nửa vòng tròn (180°).",
+            conclusion: "Khi quay 180°, chữ số 6 biến thành 9 và chữ số 9 biến thành 6. Vậy 6 và 9 đối xứng tâm với nhau.",
+            ruleText: "✅ Đối xứng tâm với nhau khi quay 180°: 6 ⇄ 9",
+            lockedLabel: "🔒 Cặp chữ số đối xứng tâm với nhau"
+        },
+        {
+            prompt: "Khi quay cả số có 3 chữ số một góc 180°, chữ số ở giữa sẽ thay đổi vị trí như thế nào?",
+            subPrompt: "",
+            hint: "Quan sát 3 vị trí [ A ] [ B ] [ C ]: Tâm quay của cả số nằm ngay tại vị trí B chính giữa.",
+            conclusion: "Chữ số ở giữa vẫn đứng ở chính giữa và phải tự đối xứng tâm, nên chữ số ở giữa phải là 0, 1 hoặc 8.",
+            ruleText: "✅ Chữ số ở giữa: 0, 1 hoặc 8",
+            lockedLabel: "🔒 Vị trí chữ số ở giữa"
+        },
+        {
+            prompt: "Nếu chữ số đầu là 6 thì chữ số cuối phải là chữ số nào? Nếu chữ số đầu là 9 thì chữ số cuối phải là chữ số nào?",
+            subPrompt: "",
+            hint: "Số cần lập có 3 chữ số khác nhau. Khi quay 180°, hai chữ số ở hai đầu sẽ đổi vị trí cho nhau.",
+            conclusion: "Hai chữ số ở hai đầu phải là cặp 6 và 9 theo hai thứ tự: 6 – 9 và 9 – 6.",
+            ruleText: "✅ Chữ số đầu và cuối: Cặp 6 và 9 (6 – 9 hoặc 9 – 6)",
+            lockedLabel: "🔒 Vị trí hai chữ số ở hai đầu"
+        },
+        {
+            prompt: "Trong một số có 3 chữ số, chữ số 0 có thể đứng ở hàng trăm không?",
+            subPrompt: "",
+            hint: "Một số tự nhiên có 3 chữ số thì chữ số đầu tiên bên trái (hàng trăm) phải thỏa mãn điều kiện gì?",
+            conclusion: "Chữ số 0 không được đứng ở hàng trăm.",
+            ruleText: "✅ Số đầu tiên (hàng trăm) không được là 0 & Không lặp chữ số",
+            lockedLabel: "🔒 Điều kiện chữ số hàng trăm"
+        }
+    ];
+
+    // Trạng thái Slide 3
+    let s3State = {
+        step: 1,         // 1..5
+        subStep: 0,      // Bước con trong từng bước để trình chiếu từng phần
+        verifyNum: '609',
+        isVerifyRotated: false
+    };
+
+    /* =========================================================================
+       4. LOGIC SLIDE 1: KHÁM PHÁ ĐỀ BÀI (TUẦN TỰ 7 BƯỚC NHẤP CHUỘT)
+       ========================================================================= */
+    function renderSlide1Cards(animateZoom = false) {
+        const container = document.getElementById('s1-cards-container');
+        if (!container) return;
+        const digits = [0, 1, 6, 8, 9];
+        container.innerHTML = digits.map((d, idx) => {
+            const isSelected = !!s1State.selectedDigits[d];
+            const zoomClass = animateZoom ? 'zoom-in' : '';
+            const selClass = isSelected ? 'selected' : '';
+            const delayStyle = animateZoom ? `style="animation-delay: ${idx * 0.1}s; opacity: 0;"` : '';
+            return `
+                <div ${delayStyle} class="${zoomClass}">
+                    ${createCardHTML(d, selClass, `s1-card-${d}`, `toggleS1Card(${d})`)}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleS1Card(digit) {
+        s1State.selectedDigits[digit] = !s1State.selectedDigits[digit];
+        renderSlide1Cards(false);
+    }
+
+    function renderSlide1QuestionArea() {
+        const doneListEl = document.getElementById('s1-done-list');
+        const activeWrapperEl = document.getElementById('s1-active-q-wrapper');
+        if (!doneListEl || !activeWrapperEl) return;
+
+        const step = s1State.step;
+
+        // Các câu trả lời đã hoàn thành ở các bước chẵn (2 -> A1, 4 -> A2, 6 -> A3)
+        let doneCount = Math.floor(step / 2);
+        if (doneCount > 3) doneCount = 3;
+
+        let doneHTML = '';
+        for (let i = 0; i < doneCount; i++) {
+            doneHTML += `
+                <div class="done-item">
+                    ${s1QAItems[i].answer}
+                </div>
+            `;
+        }
+        doneListEl.innerHTML = doneHTML;
+
+        // Chỉ hiển thị câu hỏi khi ở bước lẻ (1 -> Q1, 3 -> Q2, 5 -> Q3)
+        if (step === 1 || step === 3 || step === 5) {
+            const qIndex = Math.floor((step - 1) / 2);
+            const currentQ = s1QAItems[qIndex];
+            activeWrapperEl.style.display = 'flex';
+            activeWrapperEl.innerHTML = `
+                <div class="active-question-card" id="s1-live-q-card">
+                    <div class="s1-live-question-text">
+                        "${currentQ.question}"
+                    </div>
+                </div>
+            `;
+        } else {
+            activeWrapperEl.style.display = 'none';
+            activeWrapperEl.innerHTML = '';
+        }
+    }
+
+    function advanceSlide1Step() {
+        if (s1State.isTransitioning) return;
+
+        const step = s1State.step;
+
+        if (step === 0 || step === 2 || step === 4) {
+            // Nhấp lần 1, 3, 5: Xuất hiện câu hỏi tiếp theo
+            s1State.step = step + 1;
+            renderSlide1QuestionArea();
+            updateControlButtonsState();
+        } else if (step === 1 || step === 3 || step === 5) {
+            // Nhấp lần 2, 4, 6: Câu hỏi mờ dần biến mất, câu trả lời xuất hiện
+            s1State.isTransitioning = true;
+            const liveCard = document.getElementById('s1-live-q-card');
+            if (liveCard) {
+                liveCard.classList.add('fade-out');
+            }
+            setTimeout(() => {
+                s1State.step = step + 1;
+                s1State.isTransitioning = false;
+                renderSlide1QuestionArea();
+                updateControlButtonsState();
+            }, 280);
+        } else if (step === 6) {
+            // Nhấp lần 7: Hộp thoại "🌟 EM HÃY THỬ NHÉ!" xuất hiện
+            s1State.step = 7;
+            document.getElementById('s1-end-modal').classList.add('show');
+            updateControlButtonsState();
+        }
+    }
+
+    function closeSlide1Modal() {
+        const modal = document.getElementById('s1-end-modal');
+        if (modal) modal.classList.remove('show');
+        if (s1State.step === 7) {
+            s1State.step = 6;
+        }
+    }
+
+    /* =========================================================================
+       5. LOGIC SLIDE 2: KHÁM PHÁ QUY LUẬT BẰNG CÂU HỎI DẪN DẮT (TUẦN TỰ, KHÔNG ĐÁNH SỐ)
+       ========================================================================= */
+    function clearSlide2Timers() {
+        if (s2State.timers && s2State.timers.length) {
+            s2State.timers.forEach(t => clearTimeout(t));
+            s2State.timers = [];
+        }
+    }
+
+    function renderSlide2LeftPanel() {
+        // Cập nhật 5 thẻ bên trái
+        const leftCardsEl = document.getElementById('s2-left-cards');
+        const digits = [0, 1, 6, 8, 9];
+        leftCardsEl.innerHTML = digits.map(d => {
+            let extra = 'sm';
+            if (s2State.unlockedRules[1] && (d === 0 || d === 1 || d === 8)) extra += ' self-sym';
+            if (s2State.unlockedRules[2] && (d === 6 || d === 9)) extra += ' pair-sym';
+            return createCardHTML(d, extra);
+        }).join('');
+
+        // Cập nhật sơ đồ tổng hợp quy luật (không dùng nhãn đánh số)
+        for (let i = 1; i <= 5; i++) {
+            const slotEl = document.getElementById(`rule-slot-${i}`);
+            if (!slotEl) continue;
+            if (s2State.unlockedRules[i]) {
+                slotEl.className = 'rule-slot unlocked';
+                slotEl.innerHTML = `<span>${s2QuestionsData[i].ruleText}</span>`;
+            } else {
+                slotEl.className = 'rule-slot';
+                slotEl.innerHTML = `<span>${s2QuestionsData[i].lockedLabel}</span>`;
+            }
+        }
+    }
+
+    function renderSlide2QuestionBox() {
+        const qData = s2QuestionsData[s2State.currentQ];
+        const qBox = document.getElementById('s2-question-box');
+        if (!qBox || !qData) return;
+
+        if (s2State.phase === 'question' || s2State.phase === 'animating') {
+            qBox.innerHTML = `
+                <div class="s2-single-item zoom-in" id="s2-live-item" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 25px; color: #0d47a1; font-weight: bold; line-height: 1.4;">
+                                ❓ "${qData.prompt}"
+                            </div>
+                            ${qData.subPrompt ? `
+                                <div style="font-size: 19px; color: #1565c0; margin-top: 6px; font-weight: bold;">
+                                    ${qData.subPrompt}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${s2State.hintShown ? `
+                        <div class="hint-box" style="font-size: 18px; padding: 10px 16px;">
+                            💡 <b>Gợi ý:</b> ${qData.hint}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else if (s2State.phase === 'answer') {
+            // Chỉ hiển thị duy nhất đáp án/kết luận sau khi câu hỏi đã biến mất
+            qBox.innerHTML = `
+                <div class="s2-single-item zoom-in" id="s2-live-item">
+                    <div class="answer-box" style="font-size: 23px; padding: 18px 24px; text-align: center; box-shadow: 0 6px 16px rgba(46, 125, 50, 0.15);">
+                        🎯 ${qData.conclusion}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function renderSlide2() {
+        clearSlide2Timers();
+        renderSlide2LeftPanel();
+        renderSlide2QuestionBox();
+        renderSlide2Simulation();
+        updateControlButtonsState();
+    }
+
+    function renderSlide2Simulation() {
+        const canvas = document.getElementById('s2-sim-canvas');
+        const caption = document.getElementById('s2-sim-caption');
+        const footer = document.getElementById('s2-sim-footer');
+        const q = s2State.currentQ;
+        const phase = s2State.phase;
+
+        if (phase === 'question') {
+            footer.innerHTML = `
+                <button class="ctrl-btn btn-answer" onclick="runSlide2SimulationAndRevealAnswer()" style="font-size: 18px; padding: 10px 26px;">
+                    🔄 Quay 180°
+                </button>
+            `;
+        } else if (phase === 'animating') {
+            footer.innerHTML = `
+                <div style="font-size: 18px; font-weight: bold; color: #e65100;">
+                    ⏳ Đang thực hiện mô phỏng phép quay 180° quanh tâm...
+                </div>
+            `;
+        } else {
+            footer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="ctrl-btn btn-reset" onclick="replaySlide2CurrentQuestion()" style="font-size: 16px; padding: 8px 18px;">
+                        🔄 Xem lại phép quay 180°
+                    </button>
+                    <button class="ctrl-btn btn-step" onclick="advanceSlide2ToNextQuestion()" style="font-size: 17px; padding: 9px 22px;">
+                        ${s2State.currentQ < 5 ? 'Câu hỏi tiếp theo ▶' : 'Tổng hợp quy luật ▶'}
+                    </button>
+                </div>
+            `;
+        }
+
+        if (q === 1) {
+            if (phase !== 'answer') {
+                caption.textContent = "Quan sát 5 thẻ số 0, 1, 6, 8, 9 và dự đoán trước khi quay 180°";
+                canvas.innerHTML = `
+                    <div style="display: flex; gap: 22px; align-items: center;">
+                        ${[0, 1, 6, 8, 9].map(d => `
+                            <div style="text-align: center;">
+                                <div class="rotatable-group" id="s2-q1-card-${d}">
+                                    ${createCardHTML(d, '', `s2-q1-inner-${d}`)}
+                                </div>
+                                <div id="s2-q1-label-${d}" style="margin-top: 10px; font-weight: bold; font-size: 17px; color: #0d47a1;">
+                                    Thẻ số ${d}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                caption.textContent = "Kết quả sau khi quay 180°: 0, 1, 8 giữ nguyên; 6 và 9 thay đổi hình dạng!";
+                canvas.innerHTML = `
+                    <div style="display: flex; gap: 36px; align-items: center;">
+                        <div class="zoom-in" style="background: #e3f2fd; border: 3px solid #1e88e5; border-radius: 18px; padding: 14px 22px; text-align: center;">
+                            <div style="font-weight: bold; color: #0d47a1; margin-bottom: 10px; font-size: 17px;">✨ Giữ nguyên hình dạng (0, 1, 8)</div>
+                            <div style="display: flex; gap: 16px;">
+                                ${[0, 1, 8].map(d => `
+                                    <div class="rotatable-group rotated-180">
+                                        ${createCardHTML(d, 'self-sym')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="zoom-in" style="background: #fff8e1; border: 3px dashed #ff8f00; border-radius: 18px; padding: 14px 22px; text-align: center;">
+                            <div style="font-weight: bold; color: #e65100; margin-bottom: 10px; font-size: 17px;">🔄 Biến đổi thành số khác (6 và 9)</div>
+                            <div style="display: flex; gap: 16px;">
+                                ${[6, 9].map(d => `
+                                    <div class="rotatable-group rotated-180">
+                                        ${createCardHTML(d, 'pair-sym')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } else if (q === 2) {
+            caption.textContent = "Mô phỏng phép quay 180° của chữ số 6 và chữ số 9";
+            const showResult = (phase === 'answer');
+            canvas.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 42px;">
+                    <div style="display: flex; align-items: center; gap: 16px; background: #fff8e1; padding: 16px 24px; border-radius: 18px; border: 2px solid #ffb300;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 15px; font-weight: bold; color: #5d4037; margin-bottom: 6px;">Ban đầu: Số 6</div>
+                            <div class="rotatable-group ${showResult ? 'rotated-180' : ''}" id="s2-q2-six">
+                                ${createCardHTML(6, 'pair-sym')}
+                            </div>
+                        </div>
+                        <div id="s2-q2-arrow-1" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.35s; font-size: 24px; font-weight: bold; color: #e65100; text-align: center;">
+                            <div>Quay 180°</div>
+                            <div style="font-size: 36px;">⟶</div>
+                        </div>
+                        <div id="s2-q2-res-1" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.35s; text-align: center;">
+                            <div style="font-size: 15px; font-weight: bold; color: #e65100; margin-bottom: 6px;">Thành: Số 9</div>
+                            ${createCardHTML(9, 'pair-sym')}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 16px; background: #fff8e1; padding: 16px 24px; border-radius: 18px; border: 2px solid #ffb300;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 15px; font-weight: bold; color: #5d4037; margin-bottom: 6px;">Ban đầu: Số 9</div>
+                            <div class="rotatable-group ${showResult ? 'rotated-180' : ''}" id="s2-q2-nine">
+                                ${createCardHTML(9, 'pair-sym')}
+                            </div>
+                        </div>
+                        <div id="s2-q2-arrow-2" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.35s; font-size: 24px; font-weight: bold; color: #e65100; text-align: center;">
+                            <div>Quay 180°</div>
+                            <div style="font-size: 36px;">⟶</div>
+                        </div>
+                        <div id="s2-q2-res-2" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.35s; text-align: center;">
+                            <div style="font-size: 15px; font-weight: bold; color: #e65100; margin-bottom: 6px;">Thành: Số 6</div>
+                            ${createCardHTML(6, 'pair-sym')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (q === 3) {
+            caption.textContent = "Quay số có 3 vị trí [ A ] [ B ] [ C ] một góc 180° quanh tâm B";
+            const showResult = (phase === 'answer');
+            canvas.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 38px;">
+                    <div id="s2-q3-abc" class="rotatable-group ${showResult ? 'rotated-180' : ''}" style="display: flex; gap: 16px; padding: 18px 24px; background: #e3f2fd; border: 3px solid #1e88e5; border-radius: 20px; position: relative;">
+                        <div class="number-card" style="background:#fff; border-color:#1e88e5; font-size:36px; font-weight:bold; color:#1565c0;">[ A ]</div>
+                        <div class="number-card selected" style="font-size:36px; font-weight:bold; color:#e65100;">
+                            [ B ]
+                            <span style="position:absolute; bottom:6px; font-size:12px; color:#e65100;">★ TÂM QUAY</span>
+                        </div>
+                        <div class="number-card" style="background:#fff; border-color:#1e88e5; font-size:36px; font-weight:bold; color:#1565c0;">[ C ]</div>
+                    </div>
+
+                    <div id="s2-q3-detail" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.4s; display: flex; flex-direction: column; gap: 10px; background: #f1f8e9; border: 2px solid #43a047; padding: 14px 20px; border-radius: 16px;">
+                        <div style="font-size: 17px; font-weight: bold; color: #1b5e20;">
+                            • A và C đổi vị trí cho nhau.<br>
+                            • B vẫn ở chính giữa và tự quay 180°!<br>
+                            ➜ Chữ số ở giữa B phải là 0, 1 hoặc 8:
+                        </div>
+                        <div style="display: flex; gap: 12px; justify-content: center;">
+                            ${createCardHTML(0, 'sm self-sym')}
+                            ${createCardHTML(1, 'sm self-sym')}
+                            ${createCardHTML(8, 'sm self-sym')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (q === 4) {
+            caption.textContent = "Quan hệ đối xứng giữa chữ số đầu và chữ số cuối";
+            if (phase !== 'answer') {
+                canvas.innerHTML = `
+                    <div style="display: flex; gap: 40px; align-items: center;">
+                        <div id="s2-q4-box1" style="display: flex; align-items: center; gap: 12px; background: #fff8e1; padding: 14px 20px; border-radius: 18px; border: 2px dashed #ffb300;">
+                            ${createCardHTML(6, 'md pair-sym')}
+                            <div class="slot-placeholder">_</div>
+                            <div class="slot-placeholder" id="s2-q4-slot1">?</div>
+                        </div>
+                        <div id="s2-q4-box2" style="display: flex; align-items: center; gap: 12px; background: #fff8e1; padding: 14px 20px; border-radius: 18px; border: 2px dashed #ffb300;">
+                            ${createCardHTML(9, 'md pair-sym')}
+                            <div class="slot-placeholder">_</div>
+                            <div class="slot-placeholder" id="s2-q4-slot2">?</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                canvas.innerHTML = `
+                    <div style="display: flex; gap: 44px; align-items: center;">
+                        <div class="zoom-in" style="background: #fff8e1; border: 3px solid #ff8f00; padding: 14px 20px; border-radius: 18px; text-align: center;">
+                            <div style="font-weight: bold; color: #e65100; margin-bottom: 8px; font-size: 17px;">Cách sắp xếp: 6 – 9</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${createCardHTML(6, 'md pair-sym')}
+                                <div class="slot-placeholder">_</div>
+                                ${createCardHTML(9, 'md pair-sym')}
+                            </div>
+                        </div>
+
+                        <div class="zoom-in" style="background: #fff8e1; border: 3px solid #ff8f00; padding: 14px 20px; border-radius: 18px; text-align: center;">
+                            <div style="font-weight: bold; color: #e65100; margin-bottom: 8px; font-size: 17px;">Cách sắp xếp: 9 – 6</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${createCardHTML(9, 'md pair-sym')}
+                                <div class="slot-placeholder">_</div>
+                                ${createCardHTML(6, 'md pair-sym')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } else if (q === 5) {
+            caption.textContent = "Kiểm tra trường hợp đặt chữ số 0 ở vị trí hàng trăm";
+            const showResult = (phase === 'answer');
+            canvas.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 32px;">
+                    <div id="s2-q5-cardbox" class="${showResult ? 'shake-error' : ''}" style="position: relative; display: flex; align-items: center; gap: 12px; background: #ffebee; border: 3px solid #e53935; padding: 16px 24px; border-radius: 20px;">
+                        ${createCardHTML(0)}
+                        <div class="slot-placeholder">_</div>
+                        <div class="slot-placeholder">_</div>
+                        <div id="s2-q5-xmark" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.3s; position: absolute; inset: 0; background: rgba(229, 57, 53, 0.18); display: flex; align-items: center; justify-content: center; border-radius: 18px;">
+                            <span style="font-size: 96px; color: #d32f2f; font-weight: bold; text-shadow: 0 3px 10px #fff;">✖</span>
+                        </div>
+                    </div>
+                    <div id="s2-q5-note" style="opacity: ${showResult ? '1' : '0'}; transition: opacity 0.35s; max-width: 460px; background: #ffebee; border-left: 8px solid #d32f2f; padding: 16px 20px; border-radius: 12px; color: #b71c1c; font-size: 18px; font-weight: bold; line-height: 1.5;">
+                        ❌ Trường hợp không hợp lệ!<br>
+                        Chữ số 0 đứng ở hàng trăm thì số đó không còn là số có 3 chữ số.
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function runSlide2SimulationAndRevealAnswer() {
+        if (s2State.phase !== 'question') return;
+        s2State.phase = 'animating';
+        updateControlButtonsState();
+
+        const footer = document.getElementById('s2-sim-footer');
+        if (footer) {
+            footer.innerHTML = `
+                <div style="font-size: 18px; font-weight: bold; color: #e65100;">
+                    ⏳ Đang thực hiện mô phỏng phép quay 180° quanh tâm...
+                </div>
+            `;
+        }
+
+        const q = s2State.currentQ;
+        let animDuration = 1150;
+
+        if (q === 1) {
+            // Lần lượt từng thẻ số 0, 1, 6, 8, 9 xoay 180 độ quanh tâm
+            const digits = [0, 1, 6, 8, 9];
+            digits.forEach((d, idx) => {
+                const t1 = setTimeout(() => {
+                    const cardGroup = document.getElementById(`s2-q1-card-${d}`);
+                    const innerCard = document.getElementById(`s2-q1-inner-${d}`);
+                    const labelEl = document.getElementById(`s2-q1-label-${d}`);
+                    if (cardGroup) cardGroup.classList.add('rotated-180');
+                    if (innerCard) {
+                        if (d === 0 || d === 1 || d === 8) {
+                            innerCard.classList.add('self-sym');
+                        } else {
+                            innerCard.classList.add('pair-sym');
+                        }
+                    }
+                    if (labelEl) {
+                        if (d === 0 || d === 1 || d === 8) {
+                            labelEl.textContent = `Số ${d}: Giữ nguyên ✓`;
+                            labelEl.style.color = '#1b5e20';
+                        } else {
+                            labelEl.textContent = `Số ${d} ➔ Thành ${d === 6 ? 9 : 6}`;
+                            labelEl.style.color = '#e65100';
+                        }
+                    }
+                }, idx * 240);
+                s2State.timers.push(t1);
+            });
+            animDuration = digits.length * 240 + 950;
+        } else if (q === 2) {
+            const s6 = document.getElementById('s2-q2-six');
+            const s9 = document.getElementById('s2-q2-nine');
+            if (s6) s6.classList.add('rotated-180');
+            if (s9) s9.classList.add('rotated-180');
+
+            const tMid = setTimeout(() => {
+                ['s2-q2-arrow-1', 's2-q2-res-1', 's2-q2-arrow-2', 's2-q2-res-2'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.opacity = '1';
+                });
+            }, 650);
+            s2State.timers.push(tMid);
+            animDuration = 1200;
+        } else if (q === 3) {
+            const abc = document.getElementById('s2-q3-abc');
+            if (abc) abc.classList.add('rotated-180');
+            const tMid = setTimeout(() => {
+                const detail = document.getElementById('s2-q3-detail');
+                if (detail) detail.style.opacity = '1';
+            }, 700);
+            s2State.timers.push(tMid);
+            animDuration = 1200;
+        } else if (q === 4) {
+            const slot1 = document.getElementById('s2-q4-slot1');
+            const slot2 = document.getElementById('s2-q4-slot2');
+            if (slot1) slot1.outerHTML = createCardHTML(9, 'md pair-sym zoom-in');
+            if (slot2) slot2.outerHTML = createCardHTML(6, 'md pair-sym zoom-in');
+            animDuration = 850;
+        } else if (q === 5) {
+            const box = document.getElementById('s2-q5-cardbox');
+            const xmark = document.getElementById('s2-q5-xmark');
+            const note = document.getElementById('s2-q5-note');
+            if (box) box.classList.add('shake-error');
+            if (xmark) xmark.style.opacity = '1';
+            if (note) note.style.opacity = '1';
+            animDuration = 850;
+        }
+
+        // Sau khi hiệu ứng mô phỏng kết thúc: Câu hỏi Fade Out biến mất -> Đáp án/Kết luận Fade In xuất hiện
+        const tEnd = setTimeout(() => {
+            const liveItem = document.getElementById('s2-live-item');
+            if (liveItem) liveItem.classList.add('fade-out');
+
+            const tSwap = setTimeout(() => {
+                s2State.phase = 'answer';
+                s2State.unlockedRules[q] = true;
+                renderSlide2LeftPanel();
+                renderSlide2QuestionBox();
+                renderSlide2Simulation();
+                updateControlButtonsState();
+            }, 300);
+            s2State.timers.push(tSwap);
+        }, animDuration);
+
+        s2State.timers.push(tEnd);
+    }
+
+    function replaySlide2CurrentQuestion() {
+        clearSlide2Timers();
+        s2State.phase = 'question';
+        renderSlide2();
+        setTimeout(() => {
+            runSlide2SimulationAndRevealAnswer();
+        }, 80);
+    }
+
+    function advanceSlide2ToNextQuestion() {
+        if (s2State.phase === 'animating') return;
+
+        if (s2State.currentQ < 5) {
+            const liveItem = document.getElementById('s2-live-item');
+            if (liveItem) liveItem.classList.add('fade-out');
+
+            const tNext = setTimeout(() => {
+                s2State.currentQ++;
+                s2State.phase = 'question';
+                s2State.hintShown = false;
+                renderSlide2();
+            }, 260);
+            s2State.timers.push(tNext);
+        } else {
+            for (let i = 1; i <= 5; i++) s2State.unlockedRules[i] = true;
+            renderSlide2LeftPanel();
+            document.getElementById('s2-end-modal').classList.add('show');
+        }
+    }
+
+    function handleSlide2StageClick(event) {
+        if (event && event.target && event.target.closest('button')) return;
+        if (s2State.phase === 'question') {
+            runSlide2SimulationAndRevealAnswer();
+        } else if (s2State.phase === 'answer') {
+            advanceSlide2ToNextQuestion();
+        }
+    }
+
+    function closeSlide2Modal() {
+        document.getElementById('s2-end-modal').classList.remove('show');
+    }
+
+    /* =========================================================================
+       6. LOGIC SLIDE 3: GIẢI BÀI VÀ KẾT LUẬN (5 BƯỚC)
+       ========================================================================= */
+    function setSlide3Step(stepNum) {
+        s3State.step = stepNum;
+        if (stepNum === 2) s3State.subStep = 0;
+        if (stepNum === 3) s3State.subStep = 1;
+        if (stepNum === 4) s3State.isVerifyRotated = false;
+        if (stepNum === 5) s3State.subStep = 6;
+        renderSlide3();
+        updateControlButtonsState();
+    }
+
+    function renderSlide3() {
+        // Cập nhật thanh tab bước
+        const tabs = document.querySelectorAll('#s3-stepper .step-tab');
+        tabs.forEach((t, idx) => {
+            const s = idx + 1;
+            t.className = 'step-tab';
+            if (s < s3State.step) t.classList.add('completed');
+            if (s === s3State.step) t.classList.add('active');
+        });
+
+        const stage = document.getElementById('s3-stage');
+        const step = s3State.step;
+
+        if (step === 1) {
+            // BƯỚC 1: Xác định chữ số ở hai đầu
+            const swapped = s3State.subStep % 2 === 1;
+            stage.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="q-header-title">Bước 1: Xác định chữ số ở hai đầu</div>
+                    <button class="ctrl-btn btn-hint" onclick="s3State.subStep++; renderSlide3();">
+                        🔄 Đổi chỗ 6 và 9 để quan sát
+                    </button>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 70px; align-items: center; margin: auto 0;">
+                    <div style="background: #fff8e1; border: 3px solid #ff8f00; border-radius: 22px; padding: 24px 32px; text-align: center; box-shadow: 0 8px 20px rgba(255,143,0,0.15);">
+                        <div style="font-size: 20px; font-weight: bold; color: #e65100; margin-bottom: 14px;">Trường hợp 1: <span style="font-size:26px;">6 _ 9</span></div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            ${createCardHTML(swapped ? 9 : 6, 'pair-sym zoom-in')}
+                            <div class="slot-placeholder">_</div>
+                            ${createCardHTML(swapped ? 6 : 9, 'pair-sym zoom-in')}
+                        </div>
+                    </div>
+
+                    <div style="font-size: 40px; color: #ff8f00; font-weight: bold;">⇄</div>
+
+                    <div style="background: #fff8e1; border: 3px solid #ff8f00; border-radius: 22px; padding: 24px 32px; text-align: center; box-shadow: 0 8px 20px rgba(255,143,0,0.15);">
+                        <div style="font-size: 20px; font-weight: bold; color: #e65100; margin-bottom: 14px;">Trường hợp 2: <span style="font-size:26px;">9 _ 6</span></div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            ${createCardHTML(swapped ? 6 : 9, 'pair-sym zoom-in')}
+                            <div class="slot-placeholder">_</div>
+                            ${createCardHTML(swapped ? 9 : 6, 'pair-sym zoom-in')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="answer-box" style="text-align: center; font-size: 20px;">
+                    💡 Giải thích: "Hai chữ số ở hai đầu phải là <b>6 và 9</b> theo hai thứ tự (<b>6 _ 9</b> và <b>9 _ 6</b>) để khi quay 180°, chúng đổi chỗ và biến đổi thành nhau."
+                </div>
+            `;
+        } else if (step === 2) {
+            // BƯỚC 2: Chọn chữ số ở giữa
+            const midChoices = [0, 1, 8];
+            const activeMid = midChoices[s3State.subStep % 3];
+            stage.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="q-header-title">Bước 2: Chọn chữ số ở giữa</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="ctrl-btn btn-step" onclick="s3State.subStep = 0; renderSlide3();">Thử đặt số 0</button>
+                        <button class="ctrl-btn btn-step" onclick="s3State.subStep = 1; renderSlide3();">Thử đặt số 1</button>
+                        <button class="ctrl-btn btn-step" onclick="s3State.subStep = 2; renderSlide3();">Thử đặt số 8</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-around; margin: auto 0;">
+                    <div style="text-align: center; background: #e3f2fd; padding: 20px 28px; border-radius: 20px; border: 2px solid #1e88e5;">
+                        <div style="font-size: 18px; font-weight: bold; color: #0d47a1; margin-bottom: 14px;">3 thẻ tự đối xứng tâm:</div>
+                        <div style="display: flex; gap: 16px;">
+                            ${midChoices.map((d, i) => createCardHTML(d, `self-sym zoom-in ${activeMid === d ? 'selected' : ''}`, '', `s3State.subStep=${i}; renderSlide3();`)).join('')}
+                        </div>
+                    </div>
+
+                    <div style="font-size: 42px; color: #1e88e5; font-weight: bold;">➜</div>
+
+                    <div style="display: flex; flex-direction: column; gap: 18px;">
+                        <div style="display: flex; align-items: center; gap: 12px; background: #fff8e1; padding: 12px 22px; border-radius: 18px; border: 2px solid #ffb300;">
+                            ${createCardHTML(6, 'sm pair-sym')}
+                            ${createCardHTML(activeMid, 'sm self-sym zoom-in')}
+                            ${createCardHTML(9, 'sm pair-sym')}
+                            <span style="font-size: 26px; font-weight: bold; color: #0d47a1; margin-left: 12px;">➜ Số: 6${activeMid}9</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; background: #fff8e1; padding: 12px 22px; border-radius: 18px; border: 2px solid #ffb300;">
+                            ${createCardHTML(9, 'sm pair-sym')}
+                            ${createCardHTML(activeMid, 'sm self-sym zoom-in')}
+                            ${createCardHTML(6, 'sm pair-sym')}
+                            <span style="font-size: 26px; font-weight: bold; color: #0d47a1; margin-left: 12px;">➜ Số: 9${activeMid}6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="answer-box" style="text-align: center; font-size: 20px;">
+                    💡 Giải thích: "Chữ số ở giữa phải tự đối xứng tâm nên ta chọn <b>0, 1 hoặc 8</b> đưa vào vị trí giữa."
+                </div>
+            `;
+        } else if (step === 3) {
+            // BƯỚC 3: Lập các số (hiển thị lần lượt từng số)
+            const allNums = ['609', '619', '689', '906', '916', '986'];
+            const count = Math.min(Math.max(s3State.subStep, 1), 6);
+
+            stage.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="q-header-title">Bước 3: Lập các số thỏa mãn yêu cầu (Đã mở: ${count} / 6 số)</div>
+                    <div style="display: flex; gap: 10px;">
+                        ${count < 6 ? `
+                        <button class="ctrl-btn btn-step" onclick="s3State.subStep++; renderSlide3();">
+                            ➕ Hiện số tiếp theo (${count + 1}/6)
+                        </button>
+                        <button class="ctrl-btn btn-answer" onclick="s3State.subStep = 6; renderSlide3();">
+                            ✨ Hiện tất cả 6 số
+                        </button>
+                        ` : `
+                        <button class="ctrl-btn btn-reset" onclick="s3State.subStep = 1; renderSlide3();">
+                            🔄 Chạy lại từng số
+                        </button>
+                        `}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: auto 0; padding: 10px 20px;">
+                    ${allNums.map((numStr, idx) => {
+                        if (idx >= count) {
+                            return `
+                                <div onclick="s3State.subStep = ${idx + 1}; renderSlide3();"
+                                     style="height: 148px; border: 3px dashed #90caf9; border-radius: 20px; background: #f5f9ff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; color: #1e88e5;">
+                                    👆 Nhấp để mở số thứ ${idx + 1}
+                                </div>
+                            `;
+                        }
+                        const digits = numStr.split('');
+                        return `
+                            <div class="formed-number-badge zoom-in" style="justify-content: center;">
+                                ${createCardHTML(digits[0], 'sm pair-sym')}
+                                ${createCardHTML(digits[1], 'sm self-sym')}
+                                ${createCardHTML(digits[2], 'sm pair-sym')}
+                                <div style="font-size: 28px; font-weight: bold; color: #0d47a1; margin-left: 10px;">${numStr}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="answer-box" style="text-align: center; font-size: 20px;">
+                    ✅ Hàng 1 (bắt đầu bằng 6): <b>609, 619, 689</b> &nbsp;|&nbsp; Hàng 2 (bắt đầu bằng 9): <b>906, 916, 986</b>
+                </div>
+            `;
+        } else if (step === 4) {
+            // BƯỚC 4: Kiểm chứng kết quả bằng phép quay 180 độ thực tế
+            const allNums = ['609', '619', '689', '906', '916', '986'];
+            const current = s3State.verifyNum;
+            const d0 = current[0], d1 = current[1], d2 = current[2];
+
+            stage.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="q-header-title">Bước 4: Kiểm chứng kết quả bằng phép quay 180°</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-weight: bold; color: #0d47a1;">Chọn số:</span>
+                        ${allNums.map(n => `
+                            <button class="verify-selector-btn ${current === n ? 'active' : ''}"
+                                    onclick="selectVerifyNumber('${n}')">${n}</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-around; margin: auto 0; padding: 10px 0;">
+                    <!-- Số ban đầu -->
+                    <div style="text-align: center; background: #f8fbff; border: 3px solid #90caf9; padding: 20px 28px; border-radius: 22px;">
+                        <div style="font-size: 18px; font-weight: bold; color: #1565c0; margin-bottom: 12px;">Số ban đầu: ${current}</div>
+                        <div style="display: flex; gap: 12px;">
+                            ${createCardHTML(d0, 'pair-sym')}
+                            ${createCardHTML(d1, 'self-sym')}
+                            ${createCardHTML(d2, 'pair-sym')}
+                        </div>
+                    </div>
+
+                    <!-- Nút điều khiển quay 180 độ -->
+                    <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                        <button class="cta-btn" style="padding: 14px 28px; font-size: 20px;" onclick="toggleVerifyRotation()">
+                            🔄 ${s3State.isVerifyRotated ? 'Đặt lại góc 0°' : 'Quay 180° kiểm chứng'}
+                        </button>
+                        <div style="font-size: 16px; font-weight: bold; color: #e65100;">
+                            ${s3State.isVerifyRotated ? 'Đã quay 180° quanh tâm!' : 'Nhấn nút để quay 180°'}
+                        </div>
+                    </div>
+
+                    <!-- Bản sao thực hiện phép quay 180 độ trực tiếp -->
+                    <div style="text-align: center; background: #fffde7; border: 3px solid #ff8f00; padding: 20px 28px; border-radius: 22px;">
+                        <div style="font-size: 18px; font-weight: bold; color: #e65100; margin-bottom: 12px;">
+                            ${s3State.isVerifyRotated ? `Ảnh sau khi quay 180°: Trùng khít ${current}!` : `Mô hình quay quanh tâm số ${d1}`}
+                        </div>
+                        <div id="verify-rot-box" class="rotatable-group ${s3State.isVerifyRotated ? 'rotated-180' : ''}" style="display: flex; gap: 12px;">
+                            ${createCardHTML(d0, 'pair-sym')}
+                            ${createCardHTML(d1, 'self-sym')}
+                            ${createCardHTML(d2, 'pair-sym')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="answer-box" style="font-size: 18px; line-height: 1.5;">
+                    🔍 <b>Giải thích phép quay 180° của số ${current}:</b><br>
+                    • Chữ số <b>${d0}</b> ở đầu chuyển ra cuối và biến thành <b>${d2}</b> &nbsp;|&nbsp;
+                    • Chữ số <b>${d1}</b> ở giữa giữ nguyên là <b>${d1}</b> &nbsp;|&nbsp;
+                    • Chữ số <b>${d2}</b> ở cuối chuyển lên đầu và biến thành <b>${d0}</b>.<br>
+                    ➜ Sau phép quay 180°, hình ảnh thu được là <b>${current}</b> trùng khít hoàn toàn với số ban đầu!
+                </div>
+            `;
+        } else if (step === 5) {
+            // BƯỚC 5: Kết luận
+            const allNums = ['609', '619', '689', '906', '916', '986'];
+            stage.innerHTML = `
+                <div style="text-align: center; margin: auto; width: 100%;">
+                    <div style="display: inline-block; background: #ff8f00; color: #fff; font-size: 24px; font-weight: bold; padding: 8px 30px; border-radius: 999px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(230,81,0,0.3);">
+                        🏆 ĐÁP ÁN BÀI TOÁN
+                    </div>
+
+                    <div style="font-size: 23px; color: #0d47a1; font-weight: bold; margin-bottom: 18px;">
+                        Các số có 3 chữ số khác nhau thỏa mãn yêu cầu là:
+                    </div>
+
+                    <div style="display: flex; justify-content: center; gap: 18px; margin-bottom: 20px;">
+                        ${allNums.map((n, idx) => `
+                            <div class="zoom-in" style="animation-delay: ${idx * 0.1}s; opacity: 0; background: linear-gradient(180deg, #fffde7 0%, #fff59d 100%); border: 4px solid #ff8f00; border-radius: 18px; padding: 14px 24px; font-size: 34px; font-weight: bold; color: #e65100; box-shadow: 0 6px 0 #e65100;">
+                                ${n}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="zoom-in" style="animation-delay: 0.65s; opacity: 0; font-size: 26px; font-weight: bold; color: #1b5e20; background: #e8f5e9; display: inline-block; padding: 10px 32px; border-radius: 14px; border: 2px solid #43a047; margin-bottom: 22px;">
+                        👉 Có tất cả 6 số.
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; text-align: left; max-width: 1100px; margin: 0 auto;">
+                        <div class="done-item" style="font-size: 18px;">✔️ Chữ số ở giữa là <b>0, 1 hoặc 8</b> (tự đối xứng tâm).</div>
+                        <div class="done-item" style="font-size: 18px;">✔️ Chữ số đầu và cuối là cặp <b>6 và 9</b> (đối xứng tâm với nhau).</div>
+                        <div class="done-item" style="font-size: 18px;">✔️ Chữ số <b>0 không đứng đầu</b> (hàng trăm khác 0).</div>
+                        <div class="done-item" style="font-size: 18px;">✔️ Các chữ số trong mỗi số <b>không lặp lại</b>.</div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function selectVerifyNumber(numStr) {
+        s3State.verifyNum = numStr;
+        s3State.isVerifyRotated = false;
+        renderSlide3();
+    }
+
+    function toggleVerifyRotation() {
+        const box = document.getElementById('verify-rot-box');
+        s3State.isVerifyRotated = !s3State.isVerifyRotated;
+        if (box) {
+            box.classList.toggle('rotated-180', s3State.isVerifyRotated);
+        }
+        setTimeout(() => renderSlide3(), 1050);
+    }
+
+    /* =========================================================================
+       7. ĐIỀU KHIỂN CHUYỂN SLIDE & CÁC NÚT SƯ PHẠM
+       ========================================================================= */
+    function goToSlide(slideNum) {
+        if (slideNum < 1 || slideNum > 3) return;
+        // Đóng các modal của slide cũ để độc lập trạng thái
+        closeSlide1Modal();
+        closeSlide2Modal();
+
+        currentSlide = slideNum;
+        document.querySelectorAll('.slide').forEach((el, idx) => {
+            el.classList.toggle('active', idx + 1 === currentSlide);
+        });
+
+        document.getElementById('slide-indicator').textContent = `Slide ${currentSlide} / 3`;
+
+        if (currentSlide === 1) {
+            renderSlide1Cards(false);
+            renderSlide1QuestionArea();
+        } else if (currentSlide === 2) {
+            renderSlide2();
+        } else if (currentSlide === 3) {
+            renderSlide3();
+        }
+        updateControlButtonsState();
+    }
+
+    function prevSlide() {
+        if (currentSlide > 1) goToSlide(currentSlide - 1);
+    }
+
+    function nextSlide() {
+        if (currentSlide < 3) goToSlide(currentSlide + 1);
+    }
+
+    function triggerNextQuestionOrStep() {
+        if (currentSlide === 1) {
+            advanceSlide1Step();
+        } else if (currentSlide === 2) {
+            if (s2State.phase === 'question') {
+                runSlide2SimulationAndRevealAnswer();
+            } else if (s2State.phase === 'answer') {
+                advanceSlide2ToNextQuestion();
+            }
+        } else if (currentSlide === 3) {
+            if (s3State.step === 3 && s3State.subStep < 6) {
+                s3State.subStep++;
+                renderSlide3();
+            } else if (s3State.step < 5) {
+                setSlide3Step(s3State.step + 1);
+            }
+        }
+        updateControlButtonsState();
+    }
+
+    function triggerHint() {
+        if (currentSlide === 1) {
+            if (s1State.step % 2 === 0 && s1State.step < 6) {
+                advanceSlide1Step();
+            }
+        } else if (currentSlide === 2) {
+            if (s2State.phase === 'question') {
+                s2State.hintShown = !s2State.hintShown;
+                renderSlide2QuestionBox();
+            }
+        } else if (currentSlide === 3) {
+            if (s3State.step === 1 || s3State.step === 2) {
+                s3State.subStep++;
+                renderSlide3();
+            } else if (s3State.step === 4) {
+                toggleVerifyRotation();
+            }
+        }
+        updateControlButtonsState();
+    }
+
+    function triggerAnswer() {
+        if (currentSlide === 1) {
+            advanceSlide1Step();
+        } else if (currentSlide === 2) {
+            if (s2State.phase === 'question') {
+                runSlide2SimulationAndRevealAnswer();
+            } else if (s2State.phase === 'answer') {
+                replaySlide2CurrentQuestion();
+            }
+        } else if (currentSlide === 3) {
+            if (s3State.step === 3) {
+                s3State.subStep = 6;
+                renderSlide3();
+            } else if (s3State.step === 4) {
+                toggleVerifyRotation();
+            } else {
+                setSlide3Step(5);
+            }
+        }
+        updateControlButtonsState();
+    }
+
+    function resetCurrentSlide() {
+        if (currentSlide === 1) {
+            s1State = {
+                selectedDigits: {},
+                step: 0,
+                isTransitioning: false
+            };
+            closeSlide1Modal();
+            renderSlide1Cards(true);
+            renderSlide1QuestionArea();
+        } else if (currentSlide === 2) {
+            clearSlide2Timers();
+            s2State = {
+                currentQ: 1,
+                phase: 'question',
+                hintShown: false,
+                unlockedRules: {},
+                timers: []
+            };
+            closeSlide2Modal();
+            renderSlide2();
+        } else if (currentSlide === 3) {
+            s3State = {
+                step: 1,
+                subStep: 0,
+                verifyNum: '609',
+                isVerifyRotated: false
+            };
+            renderSlide3();
+        }
+        updateControlButtonsState();
+    }
+
+    function updateControlButtonsState() {
+        document.getElementById('btn-prev-slide').disabled = (currentSlide === 1);
+        document.getElementById('btn-next-slide').disabled = (currentSlide === 3);
+
+        const hintBtn = document.getElementById('btn-show-hint');
+        const ansBtn = document.getElementById('btn-show-answer');
+
+        if (hintBtn) {
+            hintBtn.style.display = (currentSlide === 1) ? 'none' : 'inline-flex';
+            if (currentSlide === 2) {
+                hintBtn.disabled = (s2State.phase !== 'question');
+            } else {
+                hintBtn.disabled = false;
+            }
+        }
+
+        if (ansBtn) {
+            if (currentSlide === 2) {
+                ansBtn.innerHTML = '🔄 Quay 180° & Kết luận';
+                ansBtn.disabled = (s2State.phase === 'animating');
+            } else {
+                ansBtn.innerHTML = '✅ Hiện câu trả lời';
+                ansBtn.disabled = false;
+            }
+        }
+    }
+
+    // Hỗ trợ bàn phím: Mũi tên Trái/Phải chuyển slide, Space/Enter chuyển bước
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevSlide();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextSlide();
+        } else if (e.key === ' ') {
+            e.preventDefault();
+            triggerNextQuestionOrStep();
+        }
+    });
+
+    // Khởi chạy lần đầu
+    window.addEventListener('DOMContentLoaded', () => {
+        renderSlide1Cards(true);
+        renderSlide1QuestionArea();
+        updateControlButtonsState();
+    });
+</script>
+
+</body>
+</html>
