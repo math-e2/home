@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhiệm vụ 3: Dốc núi</title>
+    <style>
+        /* =====================================================================
+           1. THIẾT LẬP CHUNG & SÂN KHẤU 16:9 (1280x720) CHẠY OFFLINE
+           ===================================================================== */
+        :root {
+            --paper-bg: #FAF7F2;
+            --paper-line: #EFE9DF;
+            --text-dark: #1E293B;
+            --text-muted: #475569;
+
+            /* Hệ màu nhất quán xuyên suốt 7 slide */
+            --purple-main: #7C3AED;
+            --purple-bg: #F3E8FF;
+            --purple-border: #A78BFA;
+
+            --orange-main: #EA580C;
+            --orange-bar: #F37021;
+            --orange-text: #C2410C;
+            --orange-bg: #FFEDD5;
+
+            --teal-main: #0D9488;
+            --teal-text: #0F766E;
+            --teal-bg: #CCFBF1;
+
+            --blue-main: #2563EB;
+            --blue-text: #1D4ED8;
+            --blue-bg: #DBEAFE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+            font-family: inherit;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #E4DFD7;
+            font-family: Verdana, Geneva, sans-serif;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sân khấu trình chiếu cố định 1280x720, tự động scale vừa mọi màn hình */
+        #stage {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            transform-origin: center center;
+            background-color: var(--paper-bg);
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 43px,
+                var(--paper-line) 43px,
+                var(--paper-line) 44px
+            );
+            border-radius: 12px;
+            box-shadow: 0 24px 60px rgba(30, 20, 10, 0.18);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* =====================================================================
+           2. THANH 7 TAB ĐIỀU HƯỚNG PASTEL TRÊN CÙNG
+           ===================================================================== */
+        .top-tabs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 5px;
+            padding: 0 16px;
+        }
+
+        .nav-tab {
+            border: none;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1E293B;
+            padding: 8px 20px;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            cursor: pointer;
+            opacity: 0.84;
+            transition: padding 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .nav-tab:hover {
+            opacity: 1;
+            padding-bottom: 11px;
+        }
+
+        .nav-tab.active {
+            opacity: 1;
+            padding-top: 12px;
+            padding-bottom: 13px;
+            box-shadow: 0 5px 14px rgba(0, 0, 0, 0.14);
+            z-index: 10;
+        }
+
+        .tab-0 { background-color: #F7C9C9; }
+        .tab-1 { background-color: #E58A8A; }
+        .tab-2 { background-color: #FFAB8E; }
+        .tab-3 { background-color: #FF8282; }
+        .tab-4 { background-color: #FFD0AE; }
+        .tab-5 { background-color: #C5E8C8; }
+        .tab-6 { background-color: #FFE89E; }
+
+        /* Thanh cam đậm ở cạnh dưới cùng */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background-color: var(--orange-bar);
+            z-index: 20;
+        }
+
+        /* =====================================================================
+           3. KHUNG NỘI DUNG SLIDE & HIỆU ỨNG CLICK-TO-REVEAL
+           ===================================================================== */
+        .slides-viewport {
+            width: 100%;
+            height: 100%;
+            padding: 58px 52px 24px;
+            position: relative;
+        }
+
+        .slide-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .slide-panel.active {
+            display: flex;
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-bar {
+            width: 6px;
+            height: 38px;
+            border-radius: 99px;
+            background-color: var(--orange-main);
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--orange-main);
+            letter-spacing: -0.01em;
+        }
+
+        .problem-line {
+            font-size: 25px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-top: 8px;
+            padding-left: 8px;
+        }
+
+        sup {
+            font-size: 0.65em;
+            vertical-align: super;
+            line-height: 0;
+        }
+
+        /* Hiệu ứng xuất hiện mượt mà */
+        .reveal {
+            opacity: 0;
+            transform: translateY(14px);
+            pointer-events: none;
+            transition: opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* =====================================================================
+           4. HỆ THỐNG NHÃN TÔ MÀU NHẤT QUÁN (TÍM / CAM / XANH NGỌC / XANH DƯƠNG)
+           ===================================================================== */
+        .chip {
+            display: inline-block;
+            border-radius: 10px;
+            padding: 2px 11px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .chip-purple {
+            background-color: var(--purple-bg);
+            border: 2.5px solid var(--purple-border);
+            color: var(--purple-main);
+        }
+
+        .chip-orange {
+            background-color: var(--orange-bg);
+            border: 2.5px solid var(--orange-main);
+            color: var(--orange-text);
+        }
+
+        .chip-teal {
+            background-color: var(--teal-bg);
+            border: 2.5px solid var(--teal-main);
+            color: var(--teal-text);
+        }
+
+        .chip-blue {
+            background-color: var(--blue-bg);
+            border: 2.5px solid var(--blue-main);
+            color: var(--blue-text);
+        }
+
+        /* =====================================================================
+           5. SLIDE 1: ĐỀ BÀI
+           ===================================================================== */
+        .s1-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 32px;
+        }
+
+        .s1-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 3px solid #FBD3B6;
+            border-radius: 28px;
+            padding: 46px 56px;
+            box-shadow: 0 16px 40px rgba(120, 60, 10, 0.08);
+            text-align: center;
+            width: 100%;
+            max-width: 980px;
+        }
+
+        .s1-prompt {
+            font-size: 28px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 26px;
+        }
+
+        .s1-equation {
+            display: inline-block;
+            font-size: 46px;
+            font-weight: 700;
+            color: #0F172A;
+            background: #FFF6EE;
+            border: 2px solid #FDE2CF;
+            border-radius: 18px;
+            padding: 22px 40px;
+            letter-spacing: 0.01em;
+        }
+
+        /* =====================================================================
+           6. SLIDE 2: TÌM HIỂU
+           ===================================================================== */
+        .s2-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+            padding: 10px 0 8px;
+        }
+
+        .s2-box {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 22px;
+            padding: 20px 30px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .s2-step1 {
+            border: 2.5px solid var(--purple-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .s2-q-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--purple-main);
+            margin-bottom: 6px;
+        }
+
+        .s2-q-desc {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1E293B;
+        }
+
+        .s2-result-pill {
+            background: var(--purple-bg);
+            border: 2.5px solid var(--purple-border);
+            color: var(--purple-main);
+            border-radius: 16px;
+            padding: 14px 26px;
+            font-size: 30px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .s2-step2 {
+            border: 2.5px solid #FBD3B6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            font-weight: 700;
+            color: #0F172A;
+            gap: 12px;
+            padding: 22px 30px;
+        }
+
+        .s2-step3 {
+            border: 2.5px solid var(--orange-main);
+            background: #FFFBF7;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 20px 34px;
+        }
+
+        .s2-hidden-eq {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            font-size: 38px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        .s2-hidden-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .s2-role-tag {
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--orange-text);
+            background: var(--orange-bg);
+            border: 1.5px solid var(--orange-main);
+            border-radius: 999px;
+            padding: 4px 16px;
+        }
+
+        .s2-rule-box {
+            background: #FFFFFF;
+            border: 2px dashed var(--orange-main);
+            border-radius: 16px;
+            padding: 14px 22px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--orange-text);
+            line-height: 1.5;
+        }
+
+        /* =====================================================================
+           7. SLIDE 3: LÀM THỬ
+           ===================================================================== */
+        .s3-pad {
+            flex: 1;
+            margin-top: 16px;
+            margin-bottom: 6px;
+            background: #FFFFFF;
+            border: 2.5px solid #E8DFD1;
+            border-radius: 24px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            display: flex;
+            cursor: text;
+        }
+
+        .s3-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.75;
+            color: #1E293B;
+        }
+
+        .s3-textarea::placeholder {
+            color: #CBD5E1;
+            font-weight: 400;
+        }
+
+        /* =====================================================================
+           8. SLIDE 4: QUYẾT ĐỊNH
+           ===================================================================== */
+        .two-col {
+            flex: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 26px;
+            margin-top: 16px;
+        }
+
+        .s4-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .s4-group-label {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--orange-text);
+            padding-left: 6px;
+            margin-top: 4px;
+        }
+
+        .layer-card {
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 15px 22px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .layer-card.purple { border: 2.5px solid var(--purple-border); }
+        .layer-card.orange { border: 2.5px solid var(--orange-main); }
+        .layer-card.teal   { border: 2.5px solid var(--teal-main); }
+        .layer-card.blue   { border: 2.5px solid var(--blue-main); }
+
+        .layer-badge {
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 7px 14px;
+            border-radius: 10px;
+            white-space: nowrap;
+            min-width: 92px;
+            text-align: center;
+        }
+
+        .layer-badge.purple { background: var(--purple-main); }
+        .layer-badge.orange { background: var(--orange-main); }
+        .layer-badge.teal   { background: var(--teal-main); }
+        .layer-badge.blue   { background: var(--blue-main); }
+
+        .layer-content {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1E293B;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .arrow-sep {
+            color: #94A3B8;
+            font-size: 22px;
+        }
+
+        .strategy-stack {
+            width: 300px;
+            flex-shrink: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+        }
+
+        .strategy-item {
+            text-align: center;
+            font-size: 17px;
+            font-weight: 700;
+            padding: 22px 16px;
+            line-height: 1.4;
+        }
+
+        .strat-1 { background: #C00000; color: #FFFFFF; }
+        .strat-2 { background: #FAD7B5; color: #1E293B; }
+        .strat-3 { background: #F4B183; color: #1E293B; }
+
+        /* =====================================================================
+           9. SLIDE 5: CÁCH GIẢI (9 DÒNG THẲNG HÀNG DẤU "=")
+           ===================================================================== */
+        .s5-card {
+            flex: 1;
+            background: #FFFFFF;
+            border: 2px solid #EAE2D6;
+            border-radius: 24px;
+            padding: 18px 30px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 492px;
+        }
+
+        .sol-row {
+            display: grid;
+            grid-template-columns: 310px 36px 230px 1fr;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        .sol-lhs {
+            text-align: right;
+            padding-right: 6px;
+        }
+
+        .sol-eq {
+            text-align: center;
+        }
+
+        .sol-rhs {
+            padding-left: 6px;
+        }
+
+        .sol-note {
+            font-size: 15px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 999px;
+            justify-self: start;
+        }
+
+        .note-purple { background: var(--purple-bg); color: var(--purple-main); }
+        .note-orange { background: var(--orange-bg); color: var(--orange-text); }
+        .note-teal   { background: var(--teal-bg); color: var(--teal-text); }
+        .note-blue   { background: var(--blue-bg); color: var(--blue-text); }
+
+        .final-pill {
+            display: inline-block;
+            background: var(--blue-bg);
+            border: 2.5px solid var(--blue-main);
+            color: var(--blue-text);
+            padding: 4px 18px;
+            border-radius: 12px;
+            font-size: 21px;
+        }
+
+        /* =====================================================================
+           10. SLIDE 6: TỰ GIẢI (ĐIỀN TỪNG BƯỚC + 1 NÚT KIỂM TRA)
+           ===================================================================== */
+        .s6-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .s6-card {
+            background: #FFFFFF;
+            border: 2.5px solid #FBD3B6;
+            border-radius: 24px;
+            padding: 20px 38px;
+            width: 100%;
+            max-width: 960px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+            cursor: default;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+
+        .prac-row {
+            display: grid;
+            grid-template-columns: 320px 38px 1fr;
+            align-items: center;
+            font-size: 23px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        .prac-lhs {
+            text-align: right;
+            padding-right: 6px;
+        }
+
+        .prac-eq {
+            text-align: center;
+        }
+
+        .prac-rhs {
+            padding-left: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .prac-input {
+            width: 195px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 2px solid #CBD5E1;
+            background: #FFFBF7;
+            font-size: 21px;
+            font-weight: 700;
+            color: #0F172A;
+            outline: none;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .prac-input.lhs-input {
+            width: 175px;
+            text-align: right;
+        }
+
+        .prac-input:focus {
+            border-color: var(--orange-main);
+            background: #FFFFFF;
+        }
+
+        .prac-input.correct {
+            border-color: #16A34A;
+            background: #ECFDF5;
+            color: #15803D;
+        }
+
+        .prac-input.wrong {
+            border-color: #DC2626;
+            background: #FEF2F2;
+            color: #B91C1C;
+            animation: shakeX 0.35s ease;
+        }
+
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        .check-btn {
+            background: var(--orange-main);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 26px;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 14px rgba(243, 112, 33, 0.28);
+            transition: background-color 0.18s ease, transform 0.12s ease;
+        }
+
+        .check-btn:hover {
+            background: #D95D14;
+        }
+
+        .check-btn:active {
+            transform: scale(0.96);
+        }
+
+        .prac-feedback {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .prac-feedback.ok { color: #15803D; }
+        .prac-feedback.err { color: #DC2626; }
+
+        /* =====================================================================
+           11. SLIDE 7: ÔN TẬP
+           ===================================================================== */
+        .s7-question {
+            margin-top: 10px;
+            background: #FFF5D6;
+            border: 2.5px solid #F5C563;
+            border-radius: 16px;
+            padding: 12px 24px;
+            font-size: 21px;
+            font-weight: 700;
+            color: #9A3412;
+            text-align: center;
+        }
+
+        .s7-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: 14px;
+        }
+
+        .tip-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #E2E8F0;
+            min-height: 295px;
+        }
+
+        .tip-head {
+            padding: 13px 16px;
+            color: #FFFFFF;
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tip-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .tip-head.purple { background: var(--purple-main); }
+        .tip-head.orange { background: var(--orange-main); }
+        .tip-head.teal   { background: var(--teal-main); }
+
+        .tip-body {
+            padding: 16px 18px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 15.5px;
+            line-height: 1.5;
+            color: #1E293B;
+        }
+
+        .tip-example {
+            background: #F8FAFC;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.65;
+        }
+
+        .tip-warn {
+            margin-top: auto;
+            background: #FEF2F2;
+            border: 1.5px solid #FECACA;
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #B91C1C;
+            line-height: 1.45;
+        }
+
+        .s7-verify {
+            margin-top: 14px;
+            background: #ECFDF5;
+            border: 2.5px solid var(--teal-main);
+            border-radius: 18px;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.1);
+        }
+
+        .s7-verify-badge {
+            background: var(--teal-main);
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .s7-verify-math {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0F172A;
+            line-height: 1.5;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SÂN KHẤU TRÌNH CHIẾU 16:9 -->
+    <div id="stage" role="application" aria-label="Bài giảng tương tác Nhiệm vụ 3: Dốc núi">
+
+        <!-- 7 TAB ĐIỀU HƯỚNG PASTEL -->
+        <nav class="top-tabs" aria-label="Điều hướng 7 slide">
+            <button type="button" class="nav-tab tab-0 active" data-slide="0">Đề bài</button>
+            <button type="button" class="nav-tab tab-1" data-slide="1">Tìm hiểu</button>
+            <button type="button" class="nav-tab tab-2" data-slide="2">Làm thử</button>
+            <button type="button" class="nav-tab tab-3" data-slide="3">Quyết định</button>
+            <button type="button" class="nav-tab tab-4" data-slide="4">Cách Giải</button>
+            <button type="button" class="nav-tab tab-5" data-slide="5">Tự giải</button>
+            <button type="button" class="nav-tab tab-6" data-slide="6">Ôn tập</button>
+        </nav>
+
+        <main class="slides-viewport">
+
+            <!-- =========================================================
+                 SLIDE 1: ĐỀ BÀI
+            ========================================================== -->
+            <section class="slide-panel active" data-index="0" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+
+                <div class="s1-body">
+                    <div class="s1-card">
+                        <div class="s1-prompt">Tìm x, biết:</div>
+                        <div class="s1-equation">
+                            2016 − 100(x + 31) = 2<sup>7</sup> : 2<sup>3</sup>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 2: TÌM HIỂU (4 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="1" data-max-step="4">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+                <div class="problem-line">
+                    Tìm x, biết: 2016 − 100(x + 31) = <span class="chip chip-purple" style="padding: 1px 10px;">2<sup>7</sup> : 2<sup>3</sup></span>
+                </div>
+
+                <div class="s2-body">
+                    <!-- Click 1: Hiện thẻ câu hỏi (ô kết quả tím vẫn ẩn) -->
+                    <div class="s2-box s2-step1 reveal" data-step="1">
+                        <div>
+                            <div class="s2-q-title">Điểm mới của bài toán:</div>
+                            <div class="s2-q-desc">
+                                Vế phải <span class="chip chip-purple">2<sup>7</sup> : 2<sup>3</sup></span> không chứa x — ta tính gọn trước được bao nhiêu?
+                            </div>
+                        </div>
+                        <!-- Click 2: Hiện ô kết quả màu tím riêng biệt -->
+                        <div class="s2-result-pill reveal" data-step="2">
+                            2<sup>7</sup> : 2<sup>3</sup> = 2<sup>4</sup> = 16
+                        </div>
+                    </div>
+
+                    <!-- Click 3: Biểu thức sau khi dọn gọn + tô màu cụm 100(x + 31) -->
+                    <div class="s2-box s2-step2 reveal" data-step="3">
+                        <span>2016 −</span>
+                        <span class="chip chip-orange">100(x + 31)</span>
+                        <span>= 16</span>
+                    </div>
+
+                    <!-- Click 4: Quy đổi trực quan thành Ẩn 1 (Số trừ) -->
+                    <div class="s2-box s2-step3 reveal" data-step="4">
+                        <div class="s2-hidden-eq">
+                            <span style="padding-top: 6px;">2016 −</span>
+                            <div class="s2-hidden-col">
+                                <span class="chip chip-orange" style="padding: 4px 26px;">Ẩn 1</span>
+                                <span class="s2-role-tag">Số trừ</span>
+                            </div>
+                            <span style="padding-top: 6px;">= 16</span>
+                        </div>
+                        <div class="s2-rule-box">
+                            Muốn tìm Số trừ:<br>
+                            Số trừ = Số bị trừ − Hiệu
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 3: LÀM THỬ
+            ========================================================== -->
+            <section class="slide-panel" data-index="2" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+                <div class="problem-line">
+                    Tìm x, biết: 2016 − 100(x + 31) = 2<sup>7</sup> : 2<sup>3</sup>
+                </div>
+
+                <div id="scratch-wrap" class="s3-pad">
+                    <textarea id="scratch-area" class="s3-textarea" placeholder="Nháp bài làm tại đây..."></textarea>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 4: QUYẾT ĐỊNH (5 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="3" data-max-step="5">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+                <div class="problem-line">
+                    Tìm x, biết: 2016 − 100(x + 31) = 2<sup>7</sup> : 2<sup>3</sup>
+                </div>
+
+                <div class="two-col">
+                    <!-- Cột trái: Chiến lược 2 bước (hiện từng phần theo click) -->
+                    <div class="s4-left">
+                        <!-- Click 1: Bước 1 (Thẻ tím) - hiện phép tính trước -->
+                        <div class="layer-card purple reveal" data-step="1">
+                            <span class="layer-badge purple">Bước 1</span>
+                            <div class="layer-content">
+                                <span>Dọn gọn vế độc lập:</span>
+                                <span class="chip chip-purple">2<sup>7</sup> : 2<sup>3</sup></span>
+                                <!-- Click 2: Hiện ô kết quả tím riêng biệt -->
+                                <span class="reveal" data-step="2" style="display:inline-flex;align-items:center;gap:8px;">
+                                    <span class="arrow-sep">→</span>
+                                    <span class="chip chip-purple" style="padding:4px 14px;">2<sup>7</sup> : 2<sup>3</sup> = 2<sup>4</sup> = 16</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Click 3: Tiêu đề Bước 2 + Lớp 1 (Cam) -->
+                        <div class="s4-group-label reveal" data-step="3">
+                            Bước 2: Tô màu cụm chứa x (Bóc vỏ từ ngoài vào trong)
+                        </div>
+                        <div class="layer-card orange reveal" data-step="3">
+                            <span class="layer-badge orange">Lớp 1</span>
+                            <div class="layer-content">
+                                <span>2016 −</span>
+                                <span class="chip chip-orange">100(x + 31)</span>
+                                <span>= 16</span>
+                                <span class="arrow-sep">→</span>
+                                <span>Coi là <strong style="color:var(--orange-text);">Số trừ</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Click 4: Lớp 2 (Xanh ngọc) -->
+                        <div class="layer-card teal reveal" data-step="4">
+                            <span class="layer-badge teal">Lớp 2</span>
+                            <div class="layer-content">
+                                <span>100 ·</span>
+                                <span class="chip chip-teal">(x + 31)</span>
+                                <span>= 2000</span>
+                                <span class="arrow-sep">→</span>
+                                <span>Coi là <strong style="color:var(--teal-text);">Thừa số</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Click 5: Lớp 3 (Xanh dương) -->
+                        <div class="layer-card blue reveal" data-step="5">
+                            <span class="layer-badge blue">Lớp 3</span>
+                            <div class="layer-content">
+                                <span class="chip chip-blue">x</span>
+                                <span>+ 31 = 20</span>
+                                <span class="arrow-sep">→</span>
+                                <span>Tìm x là <strong style="color:var(--blue-text);">Số hạng</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: 3 thẻ chiến lược -->
+                    <div class="strategy-stack">
+                        <div class="strategy-item strat-1">DỌN GỌN VẾ ĐỘC LẬP</div>
+                        <div class="strategy-item strat-2">TÔ MÀU CỤM CHỨA x</div>
+                        <div class="strategy-item strat-3">BÓC TÁCH TỪ NGOÀI VÀO TRONG</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 5: CÁCH GIẢI (8 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="4" data-max-step="8">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+                <div class="problem-line">
+                    Tìm x, biết: 2016 − 100(x + 31) = 2<sup>7</sup> : 2<sup>3</sup>
+                </div>
+
+                <div class="two-col">
+                    <div class="s5-card">
+                        <!-- Dòng 0 (hiển thị sẵn) -->
+                        <div class="sol-row">
+                            <div class="sol-lhs">2016 − 100(x + 31)</div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs"><span class="chip chip-purple">2<sup>7</sup> : 2<sup>3</sup></span></div>
+                            <div></div>
+                        </div>
+
+                        <!-- Click 1 -->
+                        <div class="sol-row reveal" data-step="1">
+                            <div class="sol-lhs">2016 − 100(x + 31)</div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs"><span class="chip chip-purple">2<sup>4</sup></span></div>
+                            <span class="sol-note note-purple">Dọn gọn</span>
+                        </div>
+
+                        <!-- Click 2 -->
+                        <div class="sol-row reveal" data-step="2">
+                            <div class="sol-lhs">2016 − <span class="chip chip-orange">100(x + 31)</span></div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">16</div>
+                            <div></div>
+                        </div>
+
+                        <!-- Click 3 -->
+                        <div class="sol-row reveal" data-step="3">
+                            <div class="sol-lhs"><span class="chip chip-orange">100(x + 31)</span></div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">2016 − 16</div>
+                            <span class="sol-note note-orange">Số trừ</span>
+                        </div>
+
+                        <!-- Click 4 -->
+                        <div class="sol-row reveal" data-step="4">
+                            <div class="sol-lhs">100 · <span class="chip chip-teal">(x + 31)</span></div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">2000</div>
+                            <div></div>
+                        </div>
+
+                        <!-- Click 5 -->
+                        <div class="sol-row reveal" data-step="5">
+                            <div class="sol-lhs"><span class="chip chip-teal">x + 31</span></div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">2000 : 100</div>
+                            <span class="sol-note note-teal">Thừa số</span>
+                        </div>
+
+                        <!-- Click 6 -->
+                        <div class="sol-row reveal" data-step="6">
+                            <div class="sol-lhs"><span class="chip chip-blue">x</span> + 31</div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">20</div>
+                            <div></div>
+                        </div>
+
+                        <!-- Click 7 -->
+                        <div class="sol-row reveal" data-step="7">
+                            <div class="sol-lhs"><span class="chip chip-blue">x</span></div>
+                            <div class="sol-eq">=</div>
+                            <div class="sol-rhs">20 − 31</div>
+                            <span class="sol-note note-blue">Số hạng</span>
+                        </div>
+
+                        <!-- Click 8 -->
+                        <div class="sol-row reveal" data-step="8">
+                            <div class="sol-lhs"><span class="chip chip-blue">x</span></div>
+                            <div class="sol-eq" style="color:var(--blue-text);">=</div>
+                            <div class="sol-rhs" style="color:var(--blue-text);">−11</div>
+                            <span class="final-pill">Vậy x = −11</span>
+                        </div>
+                    </div>
+
+                    <div class="strategy-stack">
+                        <div class="strategy-item strat-1">DỌN GỌN VẾ ĐỘC LẬP</div>
+                        <div class="strategy-item strat-2">TÔ MÀU CỤM CHỨA x</div>
+                        <div class="strategy-item strat-3">BÓC TÁCH TỪ NGOÀI VÀO TRONG</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 6: TỰ GIẢI (Chấm điểm từng ô + 1 nút Kiểm tra)
+            ========================================================== -->
+            <section class="slide-panel" data-index="5" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+                <div class="problem-line">
+                    Tìm x, biết: 2016 − 100(x + 31) = 2<sup>7</sup> : 2<sup>3</sup>
+                </div>
+
+                <div class="s6-wrap">
+                    <div id="practice-card" class="s6-card">
+                        <!-- Dòng 1 (sẵn) -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">2016 − 100(x + 31)</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs"><span>2<sup>7</sup> : 2<sup>3</sup></span></div>
+                        </div>
+
+                        <!-- Dòng 2: Điền 2^4 hoặc 16 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">2016 − 100(x + 31)</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="2^4|16" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 3: Điền 2016 - 16 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">100(x + 31)</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="2016-16" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 4: Điền 2000 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">100(x + 31)</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="2000" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 5: Điền 2000 : 100 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">x + 31</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="2000:100|2000/100" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 6: Điền 20 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">x + 31</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="20" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 7: Điền 20 - 31 -->
+                        <div class="prac-row">
+                            <div class="prac-lhs">x</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="20-31" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 8: Điền -11 + Duy nhất 1 nút Kiểm tra -->
+                        <div class="prac-row">
+                            <div class="prac-lhs" style="color:var(--orange-main);">x</div>
+                            <div class="prac-eq" style="color:var(--orange-main);">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answers="-11" autocomplete="off" style="color:var(--orange-text);">
+                                <div style="display:flex;align-items:center;gap:14px;">
+                                    <span id="practice-feedback" class="prac-feedback"></span>
+                                    <button id="check-btn" type="button" class="check-btn">Kiểm tra</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 7: ÔN TẬP (4 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="6" data-max-step="4">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+
+                <div class="s7-question">
+                    Bài này khác gì so với Nhiệm vụ 2?
+                </div>
+
+                <div class="s7-grid">
+                    <!-- Click 1: Thẻ 1 (Tím) -->
+                    <div class="tip-card reveal" data-step="1">
+                        <div class="tip-head purple">
+                            <span class="tip-num">1</span>
+                            <span>Rút gọn vế độc lập</span>
+                        </div>
+                        <div class="tip-body">
+                            <p>Tính gọn trước các phép tính độc lập không chứa <strong>x</strong> trước khi giải.</p>
+                            <div class="tip-example" style="border-color:var(--purple-border);background:var(--purple-bg);color:var(--purple-main);">
+                                2<sup>7</sup> : 2<sup>3</sup> = 2<sup>4</sup> = 16
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Click 2: Thẻ 2 (Cam) -->
+                    <div class="tip-card reveal" data-step="2">
+                        <div class="tip-head orange">
+                            <span class="tip-num">2</span>
+                            <span>Bóc cụm từ ngoài vào trong</span>
+                        </div>
+                        <div class="tip-body">
+                            <p>Tô màu cụm chứa <strong>x</strong> từ lớn đến nhỏ và coi từng cụm như một ẩn:</p>
+                            <div class="tip-example">
+                                <span class="chip chip-orange" style="font-size:13.5px;">100(x + 31)</span> → Số trừ<br>
+                                <span class="chip chip-teal" style="font-size:13.5px;margin-top:5px;">x + 31</span> → Thừa số<br>
+                                <span class="chip chip-blue" style="font-size:13.5px;margin-top:5px;">x</span> → Số hạng
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Click 3: Thẻ 3 (Xanh ngọc) -->
+                    <div class="tip-card reveal" data-step="3">
+                        <div class="tip-head teal">
+                            <span class="tip-num">3</span>
+                            <span>Cẩn thận dấu &amp; số âm</span>
+                        </div>
+                        <div class="tip-body">
+                            <p>Nhớ đúng quy tắc: <strong>Số trừ = Số bị trừ − Hiệu</strong> và chú ý kết quả số nguyên âm:</p>
+                            <div class="tip-example" style="border-color:var(--blue-main);background:var(--blue-bg);color:var(--blue-text);">
+                                20 − 31 = −11
+                            </div>
+                            <div class="tip-warn">
+                                ⚠ Không được lấy 2016 − 100 trước!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Click 4: Khung thử lại nhanh bằng thay thế -->
+                <div class="s7-verify reveal" data-step="4">
+                    <span class="s7-verify-badge">Kiểm tra lại</span>
+                    <div class="s7-verify-math">
+                        Thay <span style="color:var(--teal-text);">x = −11</span> vào vế trái:
+                        2016 − 100(−11 + 31) = 2016 − 100 · 20 = 2016 − 2000 =
+                        <span style="color:#15803D;">16 = 2<sup>7</sup> : 2<sup>3</sup> (Chính xác!)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 7: ÔN TẬP (3 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="6" data-max-step="3">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Nhiệm vụ 3: Dốc núi</h1>
+                </div>
+
+                <div class="s7-question">
+                    Bài này khác gì so với Nhiệm vụ 2?
+                </div>
+
+                <div class="s7-grid">
+                    <!-- Click 1: Thẻ 1 -->
+                    <div class="tip-card reveal" data-step="1">
+                        <div class="tip-head purple">
+                            <span class="tip-num">1</span>
+                            <span>Dọn gọn trước</span>
+                        </div>
+                        <div class="tip-body">
+                            <p>Tính trước các phép tính độc lập không chứa <strong>x</strong> để phương trình trở nên đơn giản hơn.</p>
+                            <div class="tip-example" style="border-color:var(--purple-border);background:var(--purple-bg);color:var(--purple-main);">
+                                2<sup>7</sup> : 2<sup>3</sup> = 2<sup>4</sup> = 16
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Click 2: Thẻ 2 -->
+                    <div class="tip-card reveal" data-step="2">
+                        <div class="tip-head orange">
+                            <span class="tip-num">2</span>
+                            <span>Coi cụm chứa x là ẩn</span>
+                        </div>
+                        <div class="tip-body">
+                            <p>Tô màu cụm chứa <strong>x</strong> từ ngoài vào trong và xác định đúng vai trò của từng cụm:</p>
+                            <div class="tip-example">
+                                <span class="chip chip-orange" style="font-size:14px;">100(x + 31)</span> → Số trừ<br>
+                                <span class="chip chip-teal" style="font-size:14px;margin-top:6px;">x + 31</span> → Thừa số<br>
+                                <span class="chip chip-blue" style="font-size:14px;margin-top:6px;">x</span> → Số hạng
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Click 3: Thẻ 3 -->
+                    <div class="tip-card reveal" data-step="3">
+                        <div class="tip-head teal">
+                            <span class="tip-num">3</span>
+                            <span>Kiểm tra bằng thay thế</span>
+                        </div>
+                        <div class="tip-body">
+                            <div class="tip-example" style="border-color:var(--teal-main);background:var(--teal-bg);">
+                                Thay <span style="color:var(--teal-text);">x = −11</span> vào vế trái:<br>
+                                2016 − 100(−11 + 31)<br>
+                                = 2016 − 100 · 20<br>
+                                = 2016 − 2000 = <span style="color:#15803D;">16 (Đúng!)</span>
+                            </div>
+                            <div class="tip-warn">
+                                ⚠ Lỗi hay gặp: Lấy 2016 − 100 trước là SAI!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- THANH CAM CẠNH DƯỚI CÙNG -->
+        <div class="bottom-bar"></div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // =========================================================================
+            // 1. TỰ ĐỘNG SCALE SÂN KHẤU 16:9 (1280x720) VỪA MỌI MÀN HÌNH
+            // =========================================================================
+            const stage = document.getElementById('stage');
+            const BASE_W = 1280;
+            const BASE_H = 720;
+
+            function fitStage() {
+                const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+                stage.style.transform = `scale(${scale})`;
+            }
+            window.addEventListener('resize', fitStage);
+            fitStage();
+
+            // =========================================================================
+            // 2. QUẢN LÝ 7 SLIDE & CLICK-TO-REVEAL
+            // =========================================================================
+            const panels = Array.from(document.querySelectorAll('.slide-panel'));
+            const tabs = Array.from(document.querySelectorAll('.nav-tab'));
+
+            let currentSlide = 0;
+            let currentStep = 0;
+
+            function getMaxStep(idx) {
+                return parseInt(panels[idx].getAttribute('data-max-step') || '0', 10);
+            }
+
+            function render() {
+                panels.forEach((panel, idx) => {
+                    if (idx === currentSlide) {
+                        panel.classList.add('active');
+                        panel.querySelectorAll('.reveal').forEach((el) => {
+                            const step = parseInt(el.getAttribute('data-step') || '0', 10);
+                            el.classList.toggle('visible', step <= currentStep);
+                        });
+                    } else {
+                        panel.classList.remove('active');
+                    }
+                });
+
+                tabs.forEach((tab, idx) => {
+                    tab.classList.toggle('active', idx === currentSlide);
+                });
+            }
+
+            function goToSlide(idx, step) {
+                if (idx < 0 || idx >= panels.length) return;
+                currentSlide = idx;
+                currentStep = typeof step === 'number' ? step : 0;
+                render();
+            }
+
+            function next() {
+                const maxStep = getMaxStep(currentSlide);
+                if (currentStep < maxStep) {
+                    currentStep += 1;
+                    render();
+                } else if (currentSlide < panels.length - 1) {
+                    currentSlide += 1;
+                    currentStep = 0;
+                    render();
+                }
+            }
+
+            function prev() {
+                if (currentStep > 0) {
+                    currentStep -= 1;
+                    render();
+                } else if (currentSlide > 0) {
+                    currentSlide -= 1;
+                    currentStep = getMaxStep(currentSlide);
+                    render();
+                }
+            }
+
+            // Nhấp tab chuyển trực tiếp
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(tab.getAttribute('data-slide') || '0', 10);
+                    goToSlide(idx, 0);
+                });
+            });
+
+            // Nhấp vùng trống của slide để hiện bước / sang slide kế tiếp
+            stage.addEventListener('click', next);
+
+            // Phím tắt Space / ArrowRight / ArrowLeft
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement ? document.activeElement.tagName : '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                    if (tag === 'INPUT' && e.key === 'Enter') {
+                        e.preventDefault();
+                        checkPractice();
+                    }
+                    return;
+                }
+                if (e.key === ' ' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    next();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prev();
+                }
+            });
+
+            // =========================================================================
+            // 3. CHẶN LAN TRUYỀN CLICK CHO SLIDE 3 (LÀM THỬ)
+            // =========================================================================
+            const scratchWrap = document.getElementById('scratch-wrap');
+            const scratchArea = document.getElementById('scratch-area');
+            scratchWrap.addEventListener('click', (e) => e.stopPropagation());
+            scratchArea.addEventListener('click', (e) => e.stopPropagation());
+
+            // =========================================================================
+            // 4. ÂM THANH NHẸ BẰNG WEB AUDIO API (OFFLINE)
+            // =========================================================================
+            let audioCtx = null;
+
+            function playTone(isSuccess) {
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) return;
+                    if (!audioCtx) audioCtx = new AudioContextClass();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                    const now = audioCtx.currentTime;
+                    const freqs = isSuccess ? [523.25, 659.25, 783.99] : [220, 180];
+                    freqs.forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = isSuccess ? 'sine' : 'triangle';
+                        osc.frequency.setValueAtTime(f, now + i * 0.09);
+                        gain.gain.setValueAtTime(0.1, now + i * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.09);
+                        osc.stop(now + i * 0.09 + 0.22);
+                    });
+                } catch (err) {
+                    // Bỏ qua nếu trình duyệt không hỗ trợ
+                }
+            }
+
+            // =========================================================================
+            // 5. CHẤM BÀI SLIDE 6 (TỰ GIẢI)
+            // =========================================================================
+            const practiceCard = document.getElementById('practice-card');
+            const practiceInputs = Array.from(document.querySelectorAll('.prac-input'));
+            const checkBtn = document.getElementById('check-btn');
+            const feedbackEl = document.getElementById('practice-feedback');
+
+            practiceCard.addEventListener('click', (e) => e.stopPropagation());
+
+            practiceInputs.forEach((inp) => {
+                inp.addEventListener('click', (e) => e.stopPropagation());
+                inp.addEventListener('input', () => {
+                    inp.classList.remove('correct', 'wrong');
+                    feedbackEl.textContent = '';
+                    feedbackEl.className = 'prac-feedback';
+                });
+            });
+
+            function normalize(str) {
+                return str
+                    .replace(/\s+/g, '')
+                    .replace(/[−–—]/g, '-')
+                    .replace(/÷/g, ':')
+                    .toLowerCase();
+            }
+
+            function checkPractice() {
+                let okCount = 0;
+
+                practiceInputs.forEach((inp) => {
+                    const accepted = (inp.getAttribute('data-answers') || '').split('|');
+                    const val = normalize(inp.value);
+
+                    inp.classList.remove('correct', 'wrong');
+                    if (accepted.includes(val)) {
+                        okCount += 1;
+                        inp.classList.add('correct');
+                    } else {
+                        void inp.offsetWidth;
+                        inp.classList.add('wrong');
+                    }
+                });
+
+                if (okCount === practiceInputs.length) {
+                    feedbackEl.textContent = 'Chính xác hoàn toàn!';
+                    feedbackEl.className = 'prac-feedback ok';
+                    playTone(true);
+                } else {
+                    feedbackEl.textContent = `Đúng ${okCount}/${practiceInputs.length} ô`;
+                    feedbackEl.className = 'prac-feedback err';
+                    playTone(false);
+                }
+            }
+
+            checkBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                checkPractice();
+            });
+
+            // Khởi chạy slide đầu tiên
+            render();
+        })();
+    </script>
+</body>
+</html>
