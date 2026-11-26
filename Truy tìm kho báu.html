@@ -1,0 +1,4163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truy Tìm Kho Báu – Hành Trình Khám Phá Tri Thức</title>
+    <style>
+        /* =====================================================================
+           1. BIẾN MÀU SẮC & THIẾT LẬP SÂN KHẤU 16:9 (1280x720)
+           ===================================================================== */
+        :root {
+            --gold: #F5B82E;
+            --gold-light: #FFE680;
+            --gold-dark: #B8740A;
+            --parchment: #FDF4DC;
+            --parchment-dark: #EED9AC;
+            --wood: #5C3317;
+            --wood-dark: #3B1E0A;
+            --wood-light: #8B4E24;
+            --forest: #2E7D32;
+            --ocean: #0284C7;
+            --cream: #FFFDF7;
+            --text-dark: #2B1A0E;
+            --success: #15803D;
+            --danger: #C62828;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #26180E 0%, #120B06 100%);
+            font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Khung trò chơi chuẩn 1280x720 (tỷ lệ 16:9), tự động co giãn vừa mọi màn hình */
+        #game-stage {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            transform-origin: center center;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7), 0 0 0 4px #8B5A2B, 0 0 0 7px #F5B82E;
+            background: #14261C;
+        }
+
+        /* Canvas hiệu ứng pháo hoa, đồng xu & kim cương phủ toàn sân khấu */
+        #fx-canvas {
+            position: absolute;
+            inset: 0;
+            width: 1280px;
+            height: 720px;
+            pointer-events: none;
+            z-index: 95;
+        }
+
+        /* Lớp chuyển cảnh bản đồ mượt mà */
+        #map-transition {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, #3A220F 0%, #140B04 100%);
+            z-index: 90;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.36s ease;
+        }
+
+        #map-transition.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .trans-compass {
+            width: 96px;
+            height: 96px;
+            animation: spinSlow 2.2s linear infinite;
+        }
+
+        .trans-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--gold-light);
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.75);
+            letter-spacing: 0.04em;
+        }
+
+        .trans-sub {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FDE68A;
+            opacity: 0.92;
+        }
+
+        /* =====================================================================
+           2. QUẢN LÝ CÁC MÀN HÌNH CHÍNH & NÚT BẤM PHONG CÁCH GAME PHIÊU LƯU
+           ===================================================================== */
+        .screen {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .game-btn {
+            border: 3px solid #FFF2B2;
+            border-radius: 14px;
+            padding: 11px 24px;
+            font-family: inherit;
+            font-size: 16.5px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            color: #3A1D06;
+            background: linear-gradient(180deg, #FFE26A 0%, #F5A623 55%, #D97706 100%);
+            box-shadow: 0 5px 0 #8A4600, 0 10px 20px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.55);
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .game-btn:hover:not(:disabled) {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 #8A4600, 0 14px 24px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.65);
+        }
+
+        .game-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #8A4600, 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-btn:disabled {
+            filter: grayscale(0.75) brightness(0.8);
+            cursor: not-allowed;
+            opacity: 0.78;
+        }
+
+        .game-btn.btn-green {
+            color: #FFFFFF;
+            border-color: #BBF7D0;
+            background: linear-gradient(180deg, #34D399 0%, #10B981 55%, #047857 100%);
+            box-shadow: 0 5px 0 #064E3B, 0 10px 20px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .game-btn.btn-green:hover:not(:disabled) {
+            box-shadow: 0 7px 0 #064E3B, 0 14px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-btn.btn-green:active:not(:disabled) {
+            box-shadow: 0 2px 0 #064E3B;
+        }
+
+        .game-btn.btn-blue {
+            color: #FFFFFF;
+            border-color: #BAE6FD;
+            background: linear-gradient(180deg, #38BDF8 0%, #0284C7 55%, #0369A1 100%);
+            box-shadow: 0 5px 0 #0C4A6E, 0 10px 20px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .game-btn.btn-blue:hover:not(:disabled) {
+            box-shadow: 0 7px 0 #0C4A6E, 0 14px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-btn.btn-wood {
+            color: #FEF3C7;
+            border-color: #D6A86E;
+            background: linear-gradient(180deg, #8B5A2B 0%, #5C3317 100%);
+            box-shadow: 0 4px 0 #2E1505, 0 8px 16px rgba(0, 0, 0, 0.32), inset 0 1.5px 0 rgba(255, 240, 200, 0.3);
+            padding: 8px 16px;
+            font-size: 14.5px;
+        }
+
+        .game-btn.btn-wood:hover:not(:disabled) {
+            box-shadow: 0 6px 0 #2E1505, 0 10px 18px rgba(0, 0, 0, 0.38);
+        }
+
+        .game-btn.btn-wood:active:not(:disabled) {
+            box-shadow: 0 2px 0 #2E1505;
+        }
+
+        /* =====================================================================
+           3. MÀN HÌNH CHÀO MỪNG (TITLE SCREEN)
+           ===================================================================== */
+        #screen-title {
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 38%, #F9E5B8 0%, #D9B477 45%, #8F612B 100%);
+        }
+
+        .title-bg-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .title-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 960px;
+            padding: 30px 44px;
+            background: rgba(59, 30, 10, 0.86);
+            border: 4px solid var(--gold);
+            border-radius: 30px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.58), inset 0 0 36px rgba(245, 184, 46, 0.18);
+        }
+
+        .title-badge {
+            background: linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B);
+            color: #3A1D06;
+            font-size: 15px;
+            font-weight: 900;
+            padding: 6px 22px;
+            border-radius: 999px;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .title-main {
+            font-size: 54px;
+            font-weight: 900;
+            color: #FFE98A;
+            text-shadow: 0 5px 0 #8A4600, 0 10px 25px rgba(0, 0, 0, 0.65);
+            letter-spacing: 0.02em;
+            line-height: 1.15;
+        }
+
+        .title-sub {
+            font-size: 24px;
+            font-weight: 800;
+            color: #FED7AA;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-features {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 26px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .title-pill {
+            background: rgba(253, 244, 220, 0.14);
+            border: 1.5px solid rgba(255, 230, 128, 0.5);
+            color: #FEF3C7;
+            font-size: 14.5px;
+            font-weight: 700;
+            padding: 8px 15px;
+            border-radius: 12px;
+        }
+
+        .title-actions {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* =====================================================================
+           4. MÀN HÌNH BẢN ĐỒ TỔNG (6 VÙNG ĐẤT BÍ ẨN)
+           ===================================================================== */
+        #screen-world {
+            background: radial-gradient(circle at 50% 45%, #F7E4BA 0%, #DFBD82 65%, #BA8F4F 100%);
+        }
+
+        .world-header {
+            height: 74px;
+            background: linear-gradient(180deg, #5C3317 0%, #3B1E0A 100%);
+            border-bottom: 4px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            z-index: 20;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .world-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--gold-light);
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+        }
+
+        .world-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hud-chip {
+            background: rgba(255, 248, 225, 0.14);
+            border: 2px solid rgba(245, 184, 46, 0.65);
+            border-radius: 12px;
+            padding: 6px 14px;
+            color: #FFFBEB;
+            font-size: 14px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .hud-chip strong {
+            color: var(--gold-light);
+            font-size: 15.5px;
+        }
+
+        .world-map-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .world-node {
+            position: absolute;
+            width: 224px;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, #FFFDF7 0%, #F7E8C8 100%);
+            border: 3.5px solid #8B5A2B;
+            border-radius: 20px;
+            padding: 12px 14px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(40, 20, 5, 0.32);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            z-index: 15;
+        }
+
+        .world-node:hover:not(.locked) {
+            transform: translate(-50%, -54%) scale(1.04);
+            box-shadow: 0 18px 32px rgba(40, 20, 5, 0.45), 0 0 20px rgba(245, 184, 46, 0.55);
+        }
+
+        .world-node.unlocked {
+            border-color: var(--gold);
+            box-shadow: 0 12px 26px rgba(40, 20, 5, 0.35), 0 0 18px rgba(245, 184, 46, 0.6);
+        }
+
+        .world-node.completed {
+            border-color: #16A34A;
+            background: linear-gradient(180deg, #F0FDF4 0%, #DCFCE7 100%);
+        }
+
+        .world-node.locked {
+            filter: grayscale(0.75);
+            opacity: 0.78;
+            cursor: not-allowed;
+        }
+
+        .node-num {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 900;
+            color: #FFFFFF;
+            background: #8B5A2B;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 5px;
+        }
+
+        .world-node.completed .node-num { background: #15803D; }
+        .world-node.unlocked .node-num  { background: #D97706; }
+
+        .node-name {
+            font-size: 15.5px;
+            font-weight: 900;
+            color: #2B1A0E;
+            margin-bottom: 4px;
+        }
+
+        .node-status {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #6B4423;
+        }
+
+        .world-node.completed .node-status { color: #15803D; }
+
+        .world-footer {
+            height: 68px;
+            background: rgba(59, 30, 10, 0.92);
+            border-top: 3px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            z-index: 20;
+        }
+
+        .rank-display {
+            color: #FEF3C7;
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rank-pill {
+            background: linear-gradient(90deg, #F59E0B, #FBBF24);
+            color: #3A1D06;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-weight: 900;
+        }
+
+        /* =====================================================================
+           5. MÀN HÌNH KHÁM PHÁ THẾ GIỚI 2D ISOMETRIC / TOP-DOWN 3/4 VIEW
+           ===================================================================== */
+        .game-hud {
+            height: 66px;
+            background: linear-gradient(180deg, #5C3317 0%, #361A08 100%);
+            border-bottom: 3.5px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            z-index: 30;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+            gap: 10px;
+        }
+
+        .hud-left, .hud-center, .hud-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .map-title-plate {
+            background: linear-gradient(180deg, #FFF8DC 0%, #F2D694 100%);
+            border: 2.5px solid var(--gold);
+            border-radius: 12px;
+            padding: 4px 14px;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.18;
+            box-shadow: inset 0 1px 0 #FFFFFF;
+        }
+
+        .map-title-plate .mt-top {
+            font-size: 10.5px;
+            font-weight: 900;
+            color: #9A3412;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .map-title-plate .mt-name {
+            font-size: 15.5px;
+            font-weight: 900;
+            color: #2B1A0E;
+        }
+
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+            background: linear-gradient(180deg, #7C4722 0%, #4A250D 100%);
+            color: #FFE98A;
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #261004;
+            transition: transform 0.12s ease, filter 0.15s ease;
+        }
+
+        .icon-btn:hover {
+            filter: brightness(1.16);
+            transform: translateY(-1px);
+        }
+
+        .icon-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #261004;
+        }
+
+        /* Khung chứa Canvas thế giới 2D + Mini-map + Điều khiển Camera */
+        .world-viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #102018;
+        }
+
+        #adventure-canvas {
+            display: block;
+            width: 1280px;
+            height: 588px;
+            cursor: pointer;
+        }
+
+        #adventure-canvas.dragging {
+            cursor: grabbing;
+        }
+
+        /* Khung Mini-map góc trên bên phải */
+        .minimap-frame {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 222px;
+            background: rgba(43, 22, 8, 0.9);
+            border: 3px solid var(--gold);
+            border-radius: 14px;
+            padding: 6px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), inset 0 0 0 1.5px #8B5A2B;
+            z-index: 25;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .minimap-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--gold-light);
+            letter-spacing: 0.04em;
+        }
+
+        #minimap-canvas {
+            width: 204px;
+            height: 130px;
+            border-radius: 8px;
+            border: 1.5px solid #8B5A2B;
+            background: #1B3022;
+            cursor: pointer;
+            display: block;
+        }
+
+        .cam-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .cam-btn {
+            flex: 1;
+            height: 28px;
+            border-radius: 8px;
+            border: 1.5px solid #D6A86E;
+            background: linear-gradient(180deg, #7C4722 0%, #4A250D 100%);
+            color: #FFFBEB;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.14s ease;
+        }
+
+        .cam-btn:hover {
+            filter: brightness(1.18);
+        }
+
+        /* Thanh điều khiển dưới cùng của màn hình bản đồ */
+        .scene-bottom-bar {
+            height: 66px;
+            background: linear-gradient(180deg, #4A250D 0%, #2B1304 100%);
+            border-top: 3.5px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 30;
+            gap: 14px;
+        }
+
+        .bottom-left-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mini-dots {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .mini-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #D6A86E;
+            background: rgba(255, 255, 255, 0.12);
+            color: #FEF3C7;
+            font-size: 12.5px;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .mini-dot.current {
+            background: var(--gold);
+            color: #3A1D06;
+            border-color: #FFFFFF;
+            transform: scale(1.12);
+        }
+
+        .mini-dot.done {
+            background: #16A34A;
+            border-color: #86EFAC;
+            color: #FFFFFF;
+        }
+
+        .mini-dot.locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .key-counter {
+            background: rgba(255, 248, 225, 0.12);
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 5px 12px;
+            color: #FFE98A;
+            font-size: 13.5px;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .mission-box {
+            flex: 1;
+            background: rgba(253, 244, 220, 0.12);
+            border: 1.5px solid rgba(255, 230, 128, 0.45);
+            border-radius: 12px;
+            padding: 7px 14px;
+            color: #FEF3C7;
+            font-size: 13.5px;
+            font-weight: 800;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mission-box strong {
+            color: #FDE047;
+        }
+
+        /* =====================================================================
+           6. MODAL CÂU HỎI KHO BÁU (PHONG CÁCH CUỘN GIẤY DA CỔ)
+           ===================================================================== */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(18, 10, 4, 0.74);
+            backdrop-filter: blur(3px);
+            z-index: 80;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+            animation: fadeIn 0.22s ease;
+        }
+
+        .question-scroll {
+            width: 100%;
+            max-width: 860px;
+            background: linear-gradient(180deg, #FFFDF5 0%, #F8E8C1 100%);
+            border: 5px solid #8B5A2B;
+            box-shadow: 0 0 0 3px var(--gold), 0 26px 70px rgba(0, 0, 0, 0.65);
+            border-radius: 26px;
+            padding: 26px 34px;
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+
+        .q-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 12px;
+        }
+
+        .q-badges {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .q-chest-tag {
+            background: linear-gradient(90deg, #B45309, #F59E0B);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 900;
+            padding: 6px 14px;
+            border-radius: 999px;
+        }
+
+        .q-topic-tag {
+            background: #FEF3C7;
+            border: 2px solid #D97706;
+            color: #92400E;
+            font-size: 14px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 999px;
+        }
+
+        .q-points-badge {
+            background: #3B1E0A;
+            color: var(--gold-light);
+            font-size: 15px;
+            font-weight: 900;
+            padding: 6px 14px;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+        }
+
+        .q-text-box {
+            background: #FFFFFF;
+            border: 2.5px solid #DFC48D;
+            border-radius: 18px;
+            padding: 18px 22px;
+            font-size: 22px;
+            font-weight: 900;
+            color: #1F1209;
+            line-height: 1.45;
+            margin-bottom: 18px;
+            box-shadow: inset 0 2px 6px rgba(139, 90, 43, 0.08);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .opt-btn {
+            background: linear-gradient(180deg, #FFFFFF 0%, #FDF4DC 100%);
+            border: 3px solid #C69C6D;
+            border-radius: 16px;
+            padding: 14px 16px;
+            text-align: left;
+            font-family: inherit;
+            font-size: 17.5px;
+            font-weight: 800;
+            color: #2B1A0E;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.14s ease, border-color 0.18s ease, background 0.18s ease;
+            min-height: 68px;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            border-color: #D97706;
+            background: linear-gradient(180deg, #FFFBEB 0%, #FDE68A 100%);
+            transform: translateY(-2px);
+        }
+
+        .opt-letter {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #8B5A2B;
+            color: #FFFBEB;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .opt-btn.is-correct {
+            border-color: #15803D;
+            background: linear-gradient(180deg, #ECFDF5 0%, #BBF7D0 100%);
+            color: #14532D;
+        }
+
+        .opt-btn.is-correct .opt-letter { background: #15803D; }
+
+        .opt-btn.is-wrong {
+            border-color: #DC2626;
+            background: linear-gradient(180deg, #FEF2F2 0%, #FECACA 100%);
+            color: #7F1D1D;
+            animation: shakeX 0.36s ease;
+        }
+
+        .opt-btn.is-wrong .opt-letter { background: #DC2626; }
+
+        .q-feedback {
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .q-feedback.show {
+            display: flex;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .q-feedback.ok {
+            background: #ECFDF5;
+            border: 2.5px solid #22C55E;
+            color: #14532D;
+        }
+
+        .q-feedback.err {
+            background: #FEF2F2;
+            border: 2.5px solid #EF4444;
+            color: #991B1B;
+        }
+
+        .q-fb-title {
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .q-fb-explain {
+            font-size: 15.5px;
+            font-weight: 700;
+            line-height: 1.45;
+            color: #1E293B;
+        }
+
+        .q-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            min-height: 50px;
+        }
+
+        /* =====================================================================
+           7. MÀN HÌNH KẾT THÚC — KHO BÁU CUỐI CÙNG
+           ===================================================================== */
+        #screen-ending {
+            background: radial-gradient(circle at 50% 35%, #5E350B 0%, #2B1304 65%, #120701 100%);
+            align-items: center;
+            justify-content: center;
+            padding: 24px 40px;
+        }
+
+        .ending-sunburst {
+            position: absolute;
+            width: 900px;
+            height: 900px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: repeating-conic-gradient(
+                from 0deg,
+                rgba(255, 222, 89, 0.14) 0deg 12deg,
+                transparent 12deg 24deg
+            );
+            animation: spinSlow 24s linear infinite;
+            pointer-events: none;
+        }
+
+        .ending-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1040px;
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.96) 0%, rgba(249, 232, 189, 0.96) 100%);
+            border: 5px solid var(--gold);
+            border-radius: 30px;
+            padding: 26px 36px;
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(245, 184, 46, 0.45);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .ending-chest-wrap {
+            width: 170px;
+            height: 138px;
+            margin-top: -6px;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 0 26px rgba(255, 200, 40, 0.95));
+            animation: floatY 2.4s ease-in-out infinite;
+        }
+
+        .ending-heading {
+            font-size: 32px;
+            font-weight: 900;
+            color: #B45309;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .ending-message {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: #3A1D06;
+            line-height: 1.5;
+            max-width: 860px;
+            margin-bottom: 18px;
+        }
+
+        .ending-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .end-stat {
+            background: #FFFFFF;
+            border: 2.5px solid #E5C285;
+            border-radius: 16px;
+            padding: 12px 10px;
+        }
+
+        .end-stat-label {
+            font-size: 12px;
+            font-weight: 800;
+            color: #7C522B;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .end-stat-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: #B45309;
+        }
+
+        .end-stat-val.rank-val {
+            font-size: 17px;
+            color: #15803D;
+        }
+
+        .ending-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* =====================================================================
+           8. MODAL XEM LẠI 18 CÂU HỎI & MODAL XÁC NHẬN CHƠI LẠI
+           ===================================================================== */
+        .review-modal-box {
+            width: 100%;
+            max-width: 960px;
+            height: 600px;
+            background: #FFFDF7;
+            border: 4px solid #8B5A2B;
+            box-shadow: 0 0 0 3px var(--gold), 0 24px 60px rgba(0, 0, 0, 0.65);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .review-head {
+            background: linear-gradient(180deg, #5C3317 0%, #3B1E0A 100%);
+            color: var(--gold-light);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .review-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .review-card {
+            background: #FAF3E0;
+            border: 2px solid #E5C890;
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+
+        .review-card-top {
+            font-size: 13px;
+            font-weight: 900;
+            color: #9A3412;
+            margin-bottom: 4px;
+        }
+
+        .review-card-q {
+            font-size: 16px;
+            font-weight: 900;
+            color: #1F1209;
+            margin-bottom: 5px;
+        }
+
+        .review-card-a {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #15803D;
+            margin-bottom: 3px;
+        }
+
+        .review-card-exp {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .confirm-box {
+            max-width: 480px;
+            width: 100%;
+            background: #FFFDF5;
+            border: 4px solid #8B5A2B;
+            box-shadow: 0 0 0 3px var(--gold), 0 24px 60px rgba(0, 0, 0, 0.6);
+            border-radius: 22px;
+            padding: 26px 28px;
+            text-align: center;
+        }
+
+        .confirm-box h3 {
+            font-size: 24px;
+            color: #5C3317;
+            margin-bottom: 10px;
+        }
+
+        .confirm-box p {
+            font-size: 16px;
+            font-weight: 700;
+            color: #57534E;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-7px); }
+            50% { transform: translateX(7px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.88) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-stage" role="application" aria-label="Trò chơi Truy Tìm Kho Báu – Hành Trình Khám Phá Tri Thức">
+
+        <!-- Canvas hiệu ứng pháo hoa, đồng xu vàng và kim cương -->
+        <canvas id="fx-canvas" width="1280" height="720"></canvas>
+
+        <!-- Lớp hiệu ứng chuyển bản đồ -->
+        <div id="map-transition" aria-hidden="true">
+            <svg class="trans-compass" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" fill="#5C3317" stroke="#F5B82E" stroke-width="5"/>
+                <circle cx="50" cy="50" r="35" fill="#FDF4DC" stroke="#B8740A" stroke-width="2"/>
+                <polygon points="50,12 58,50 50,44 42,50" fill="#DC2626"/>
+                <polygon points="50,88 58,50 50,56 42,50" fill="#1E293B"/>
+                <circle cx="50" cy="50" r="6" fill="#F5B82E" stroke="#5C3317" stroke-width="2"/>
+            </svg>
+            <div id="trans-title" class="trans-title">ĐANG TIẾN VÀO VÙNG ĐẤT MỚI...</div>
+            <div id="trans-sub" class="trans-sub">Chuẩn bị la bàn và sẵn sàng khám phá!</div>
+        </div>
+
+        <!-- =================================================================
+             MÀN HÌNH 1: MÀN HÌNH CHÀO MỪNG (TITLE SCREEN)
+        ================================================================== -->
+        <section id="screen-title" class="screen active">
+            <svg class="title-bg-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                    <radialGradient id="titleGlow" cx="50%" cy="45%" r="60%">
+                        <stop offset="0%" stop-color="#FFF5D6" stop-opacity="0.7"/>
+                        <stop offset="100%" stop-color="#784415" stop-opacity="0.35"/>
+                    </radialGradient>
+                </defs>
+                <rect width="1280" height="720" fill="url(#titleGlow)"/>
+                <g stroke="#7C4A1A" stroke-opacity="0.22" stroke-width="2" fill="none">
+                    <circle cx="640" cy="360" r="240" stroke-dasharray="10 8"/>
+                    <circle cx="640" cy="360" r="390" stroke-dasharray="6 10"/>
+                    <path d="M80 620 Q 320 490 540 560 T 1180 180" stroke-width="4" stroke-dasharray="14 12" stroke="#9A3412" stroke-opacity="0.45"/>
+                </g>
+                <g transform="translate(110, 110)" opacity="0.55">
+                    <circle r="58" fill="none" stroke="#5C3317" stroke-width="3"/>
+                    <polygon points="0,-48 10,0 0,-10 -10,0" fill="#9A3412"/>
+                    <polygon points="0,48 10,0 0,10 -10,0" fill="#5C3317"/>
+                    <polygon points="-48,0 0,-10 -10,0 0,10" fill="#5C3317"/>
+                    <polygon points="48,0 0,-10 10,0 0,10" fill="#5C3317"/>
+                </g>
+                <path d="M0 720 L0 610 Q140 530 280 610 T560 630 T920 590 T1280 620 L1280 720 Z" fill="#3F6212" opacity="0.35"/>
+                <path d="M0 720 L0 650 Q240 600 480 655 T980 635 T1280 665 L1280 720 Z" fill="#1E3A5F" opacity="0.28"/>
+            </svg>
+
+            <div class="title-content">
+                <div class="title-badge">TRÒ CHƠI PHIÊU LƯU TRI THỨC LỚP 6</div>
+                <h1 class="title-main">TRUY TÌM KHO BÁU</h1>
+                <div class="title-sub">CHINH PHỤC 6 VÙNG ĐẤT BÍ ẨN</div>
+
+                <div class="title-features">
+                    <span class="title-pill">6 Vùng Đất Kỳ Thú</span>
+                    <span class="title-pill">18 Rương Kho Báu Ẩn Giấu</span>
+                    <span class="title-pill">180 Điểm Tối Đa</span>
+                    <span class="title-pill">Kho Báu Cuối Cùng</span>
+                </div>
+
+                <div class="title-actions">
+                    <button id="btn-start-game" type="button" class="game-btn">
+                        BẮT ĐẦU HÀNH TRÌNH
+                    </button>
+                    <button id="btn-title-reset" type="button" class="game-btn btn-wood" style="display:none;">
+                        CHƠI LẠI TỪ ĐẦU
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================
+             MÀN HÌNH 2: BẢN ĐỒ TỔNG (6 VÙNG ĐẤT)
+        ================================================================== -->
+        <section id="screen-world" class="screen">
+            <header class="world-header">
+                <div class="world-header-title">
+                    <span>BẢN ĐỒ 6 VÙNG ĐẤT BÍ ẨN</span>
+                </div>
+                <div class="world-stats">
+                    <span class="hud-chip">Vùng đất: <strong id="w-maps">0/6</strong></span>
+                    <span class="hud-chip">Kho báu: <strong id="w-chests">0/18</strong></span>
+                    <span class="hud-chip">Điểm: <strong id="w-score">0/180</strong></span>
+                    <button id="btn-world-sound" type="button" class="icon-btn" title="Bật/Tắt âm thanh">🔊</button>
+                    <button id="btn-world-reset" type="button" class="icon-btn" title="Chơi lại từ đầu">🔄</button>
+                </div>
+            </header>
+
+            <div class="world-map-area">
+                <svg viewBox="0 0 1280 578" style="position:absolute;inset:0;width:100%;height:100%;">
+                    <rect x="24" y="20" width="1232" height="538" rx="28" fill="#F6E3B8" stroke="#9A6B35" stroke-width="5"/>
+                    <rect x="34" y="30" width="1212" height="518" rx="22" fill="none" stroke="#C5985B" stroke-width="2" stroke-dasharray="8 6"/>
+
+                    <ellipse cx="220" cy="400" rx="145" ry="95" fill="#A7C97E" opacity="0.55"/>
+                    <ellipse cx="470" cy="185" rx="140" ry="88" fill="#D4B483" opacity="0.6"/>
+                    <ellipse cx="660" cy="420" rx="150" ry="92" fill="#7DD3FC" opacity="0.55"/>
+                    <ellipse cx="860" cy="180" rx="145" ry="88" fill="#86EFAC" opacity="0.5"/>
+                    <ellipse cx="1050" cy="410" rx="145" ry="92" fill="#FDE68A" opacity="0.6"/>
+                    <ellipse cx="1070" cy="165" rx="125" ry="75" fill="#FCD34D" opacity="0.55"/>
+
+                    <path d="M220 400 Q 320 260 450 185 T 650 415 T 840 180 T 1040 410 Q 1120 290 1070 165"
+                          fill="none" stroke="#9A3412" stroke-width="6" stroke-dasharray="14 10" stroke-linecap="round"/>
+
+                    <g transform="translate(115, 110)" opacity="0.72">
+                        <circle r="44" fill="#FFFDF5" stroke="#8B5A2B" stroke-width="3"/>
+                        <polygon points="0,-36 8,0 0,-8 -8,0" fill="#DC2626"/>
+                        <polygon points="0,36 8,0 0,8 -8,0" fill="#334155"/>
+                        <polygon points="-36,0 0,-8 -8,0 0,8" fill="#334155"/>
+                        <polygon points="36,0 0,-8 8,0 0,8" fill="#334155"/>
+                        <circle r="5" fill="#F5B82E"/>
+                    </g>
+                </svg>
+
+                <div id="world-nodes-container"></div>
+            </div>
+
+            <footer class="world-footer">
+                <div class="rank-display">
+                    <span>Danh hiệu hiện tại:</span>
+                    <span id="w-rank" class="rank-pill">Nhà thám hiểm tập sự</span>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button id="btn-world-review" type="button" class="game-btn btn-wood">XEM LẠI CÂU HỎI</button>
+                    <button id="btn-world-final" type="button" class="game-btn" style="display:none;">MỞ KHO BÁU CUỐI CÙNG</button>
+                </div>
+            </footer>
+        </section>
+
+        <!-- =================================================================
+             MÀN HÌNH 3: THẾ GIỚI PHIÊU LƯU 2D TOP-DOWN 3/4 VIEW (CANVAS)
+        ================================================================== -->
+        <section id="screen-play" class="screen">
+            <!-- Thanh HUD trên cùng -->
+            <header class="game-hud">
+                <div class="hud-left">
+                    <button id="btn-to-world" type="button" class="game-btn btn-wood">Bản đồ tổng</button>
+                    <div class="map-title-plate">
+                        <span id="hud-map-num" class="mt-top">BẢN ĐỒ 1 / 6</span>
+                        <span id="hud-map-name" class="mt-name">RỪNG TRI THỨC</span>
+                    </div>
+                </div>
+
+                <div class="hud-center">
+                    <span class="hud-chip">Kho báu: <strong id="hud-chests">0/18</strong></span>
+                    <span class="hud-chip">Điểm: <strong id="hud-score">0</strong>/180</span>
+                    <span class="hud-chip">Danh hiệu: <strong id="hud-rank">Tập sự</strong></span>
+                </div>
+
+                <div class="hud-right">
+                    <button id="btn-play-sound" type="button" class="icon-btn" title="Bật/Tắt âm thanh">🔊</button>
+                    <button id="btn-play-reset" type="button" class="icon-btn" title="Chơi lại từ đầu">🔄</button>
+                </div>
+            </header>
+
+            <!-- Viewport HTML5 Canvas 2D thế giới phiêu lưu + Mini-map -->
+            <div class="world-viewport">
+                <canvas id="adventure-canvas" width="1280" height="588"></canvas>
+
+                <!-- Mini-map & Nút điều khiển Camera -->
+                <div class="minimap-frame">
+                    <div class="minimap-top">
+                        <span>BẢN ĐỒ NHỎ</span>
+                        <span id="zoom-label">100%</span>
+                    </div>
+                    <canvas id="minimap-canvas" width="204" height="130"></canvas>
+                    <div class="cam-controls">
+                        <button id="btn-zoom-out" type="button" class="cam-btn" title="Thu nhỏ bản đồ">−</button>
+                        <button id="btn-cam-center" type="button" class="cam-btn" title="Theo dõi nhân vật">Nhân vật</button>
+                        <button id="btn-zoom-in" type="button" class="cam-btn" title="Phóng to bản đồ">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thanh tiến trình, chìa khóa, nhiệm vụ & nút sang bản đồ mới -->
+            <footer class="scene-bottom-bar">
+                <div class="bottom-left-group">
+                    <div id="mini-dots" class="mini-dots"></div>
+                    <div class="key-counter">
+                        <span>Chìa khóa vùng này:</span>
+                        <strong id="hud-local-keys">0 / 3</strong>
+                    </div>
+                </div>
+
+                <div id="scene-mission" class="mission-box">
+                    <strong>Nhiệm vụ:</strong> Nhấp vào đường đi để khám phá và tìm 3 kho báu ẩn giấu!
+                </div>
+
+                <button id="btn-next-map" type="button" class="game-btn btn-green" disabled>
+                    CÒN 3 KHO BÁU
+                </button>
+            </footer>
+        </section>
+
+        <!-- =================================================================
+             MÀN HÌNH 4: GIAO DIỆN KẾT THÚC — KHO BÁU CUỐI CÙNG
+        ================================================================== -->
+        <section id="screen-ending" class="screen">
+            <div class="ending-sunburst"></div>
+
+            <div class="ending-card">
+                <div class="ending-chest-wrap">
+                    <svg viewBox="0 0 180 145" width="170" height="138">
+                        <defs>
+                            <radialGradient id="megaGlow" cx="50%" cy="45%" r="55%">
+                                <stop offset="0%" stop-color="#FFFDE7"/>
+                                <stop offset="60%" stop-color="#FACC15" stop-opacity="0.7"/>
+                                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+                            </radialGradient>
+                            <linearGradient id="goldBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#FFE066"/>
+                                <stop offset="50%" stop-color="#F59E0B"/>
+                                <stop offset="100%" stop-color="#B45309"/>
+                            </linearGradient>
+                        </defs>
+                        <ellipse cx="90" cy="65" rx="82" ry="60" fill="url(#megaGlow)"/>
+                        <path d="M26 62 Q90 10 154 62 L146 72 L34 72 Z" fill="url(#goldBody)" stroke="#78350F" stroke-width="4"/>
+                        <circle cx="62" cy="70" r="11" fill="#FDE047" stroke="#CA8A04" stroke-width="2"/>
+                        <circle cx="90" cy="66" r="13" fill="#FEF08A" stroke="#CA8A04" stroke-width="2"/>
+                        <circle cx="118" cy="70" r="11" fill="#FDE047" stroke="#CA8A04" stroke-width="2"/>
+                        <polygon points="90,34 106,52 90,68 74,52" fill="#38BDF8" stroke="#E0F2FE" stroke-width="2.5"/>
+                        <polygon points="54,48 64,60 54,70 44,60" fill="#F472B6" stroke="#FCE7F3" stroke-width="2"/>
+                        <polygon points="126,48 136,60 126,70 116,60" fill="#34D399" stroke="#D1FAE5" stroke-width="2"/>
+                        <rect x="28" y="72" width="124" height="58" rx="10" fill="url(#goldBody)" stroke="#78350F" stroke-width="4"/>
+                        <rect x="46" y="72" width="14" height="58" fill="#FEF08A" opacity="0.65"/>
+                        <rect x="120" y="72" width="14" height="58" fill="#FEF08A" opacity="0.65"/>
+                        <rect x="78" y="84" width="24" height="24" rx="5" fill="#78350F" stroke="#FFFBEB" stroke-width="2.5"/>
+                        <circle cx="90" cy="95" r="4.5" fill="#FDE047"/>
+                    </svg>
+                </div>
+
+                <h2 class="ending-heading">CHÚC MỪNG NHÀ THÁM HIỂM!</h2>
+                <p class="ending-message">
+                    Em đã chinh phục thành công 6 vùng đất bí ẩn và khám phá kho báu tri thức.<br>
+                    Kiến thức chính là kho báu quý giá nhất. Hãy tiếp tục học tập, khám phá và thực hiện những việc tốt mỗi ngày!
+                </p>
+
+                <div class="ending-stats">
+                    <div class="end-stat">
+                        <div class="end-stat-label">Tổng điểm</div>
+                        <div id="end-score" class="end-stat-val">180 / 180</div>
+                    </div>
+                    <div class="end-stat">
+                        <div class="end-stat-label">Số câu đúng</div>
+                        <div id="end-correct" class="end-stat-val">18 / 18</div>
+                    </div>
+                    <div class="end-stat">
+                        <div class="end-stat-label">Kho báu đã mở</div>
+                        <div id="end-chests" class="end-stat-val">18 / 18</div>
+                    </div>
+                    <div class="end-stat">
+                        <div class="end-stat-label">Danh hiệu đạt được</div>
+                        <div id="end-rank" class="end-stat-val rank-val">Huyền thoại săn kho báu</div>
+                    </div>
+                </div>
+
+                <div class="ending-actions">
+                    <button id="btn-end-replay" type="button" class="game-btn">CHƠI LẠI</button>
+                    <button id="btn-end-review" type="button" class="game-btn btn-blue">XEM LẠI CÂU HỎI</button>
+                    <button id="btn-end-map" type="button" class="game-btn btn-green">QUAY VỀ BẢN ĐỒ</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================
+             MODAL CÂU HỎI TRẮC NGHIỆM KHI MỞ RƯƠNG
+        ================================================================== -->
+        <div id="question-modal" class="modal-overlay" role="dialog" aria-modal="true">
+            <div class="question-scroll">
+                <div class="q-top-bar">
+                    <div class="q-badges">
+                        <span id="qm-chest-tag" class="q-chest-tag">Rương Vàng</span>
+                        <span id="qm-topic-tag" class="q-topic-tag">Bác Hồ</span>
+                    </div>
+                    <span class="q-points-badge">+10 ĐIỂM</span>
+                </div>
+
+                <div id="qm-question" class="q-text-box"></div>
+                <div id="qm-options" class="options-grid"></div>
+
+                <div id="qm-feedback" class="q-feedback">
+                    <div id="qm-fb-title" class="q-fb-title"></div>
+                    <div id="qm-fb-explain" class="q-fb-explain"></div>
+                </div>
+
+                <div class="q-footer">
+                    <button id="btn-qm-continue" type="button" class="game-btn btn-green" style="display:none;">
+                        THU THẬP KHO BÁU &amp; TIẾP TỤC
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================
+             MODAL XEM LẠI TOÀN BỘ 18 CÂU HỎI
+        ================================================================== -->
+        <div id="review-modal" class="modal-overlay" role="dialog" aria-modal="true">
+            <div class="review-modal-box">
+                <div class="review-head">
+                    <h3 style="font-size:21px;font-weight:900;">SỔ TAY TRI THỨC — XEM LẠI 18 CÂU HỎI</h3>
+                    <button id="btn-close-review" type="button" class="game-btn btn-wood">Đóng</button>
+                </div>
+                <div id="review-list" class="review-body"></div>
+            </div>
+        </div>
+
+        <!-- =================================================================
+             MODAL XÁC NHẬN CHƠI LẠI TỪ ĐẦU (KHÔNG DÙNG confirm())
+        ================================================================== -->
+        <div id="reset-modal" class="modal-overlay" role="dialog" aria-modal="true">
+            <div class="confirm-box">
+                <h3>Chơi lại hành trình?</h3>
+                <p>Toàn bộ 6 vùng đất, 18 kho báu và điểm số hiện tại sẽ được đặt lại về ban đầu để em bắt đầu cuộc phiêu lưu mới!</p>
+                <div class="confirm-actions">
+                    <button id="btn-cancel-reset" type="button" class="game-btn btn-wood">Hủy bỏ</button>
+                    <button id="btn-confirm-reset" type="button" class="game-btn">Đồng ý chơi lại</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // =========================================================================
+            // 1. DỮ LIỆU 6 VÙNG ĐẤT & 18 KHO BÁU (GIỮ NGUYÊN 100% NỘI DUNG HỌC TẬP)
+            // =========================================================================
+            const WORLD_W = 2200;
+            const WORLD_H = 1400;
+            const GRID_SIZE = 50;
+            const GRID_COLS = WORLD_W / GRID_SIZE; // 44
+            const GRID_ROWS = WORLD_H / GRID_SIZE; // 28
+
+            const MAPS_DATA = [
+                {
+                    id: 0,
+                    code: 'BẢN ĐỒ 1',
+                    name: 'RỪNG TRI THỨC',
+                    subtitle: 'Rừng nhiệt đới huyền bí, thác nước, cầu gỗ & ngôi đền cổ',
+                    worldPos: { x: 220, y: 400 },
+                    startPos: { x: 340, y: 1080 },
+                    theme: 'forest',
+                    chests: [
+                        {
+                            id: 'm1c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: '5 điều Bác Hồ dạy',
+                            hideType: 'bush',
+                            hideLabel: 'Bụi dương xỉ rậm rạp',
+                            pos: { x: 760, y: 920 },
+                            standPos: { x: 700, y: 970 },
+                            question: 'Câu 1: Trong 5 điều Bác Hồ dạy thiếu niên, nhi đồng, điều đầu tiên là gì?',
+                            options: [
+                                'Học tập tốt, lao động tốt.',
+                                'Yêu Tổ quốc, yêu đồng bào.',
+                                'Đoàn kết tốt, kỷ luật tốt.',
+                                'Giữ gìn vệ sinh thật tốt.'
+                            ],
+                            correct: 1,
+                            explain: 'Điều đầu tiên trong 5 điều Bác Hồ dạy thiếu niên, nhi đồng là "Yêu Tổ quốc, yêu đồng bào".'
+                        },
+                        {
+                            id: 'm1c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Toán học lớp 6',
+                            hideType: 'boulder',
+                            hideLabel: 'Tảng đá rêu bên suối',
+                            pos: { x: 1320, y: 690 },
+                            standPos: { x: 1260, y: 745 },
+                            question: 'Câu 2: Tính nhanh giá trị biểu thức: 125 × 8 = ?',
+                            options: ['900', '1.000', '1.100', '1.200'],
+                            correct: 1,
+                            explain: '125 × 8 = 1.000. Đây là cặp tích đặc biệt rất hữu ích khi tính nhanh trong Toán lớp 6!'
+                        },
+                        {
+                            id: 'm1c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Ngữ văn & Tục ngữ',
+                            hideType: 'temple',
+                            hideLabel: 'Cổng đền cổ trong rừng sâu',
+                            pos: { x: 1840, y: 390 },
+                            standPos: { x: 1840, y: 465 },
+                            question: 'Câu 3: Câu tục ngữ nào sau đây nói về tinh thần đoàn kết?',
+                            options: [
+                                'Có công mài sắt, có ngày nên kim.',
+                                'Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao.',
+                                'Ăn quả nhớ kẻ trồng cây.',
+                                'Đi một ngày đàng, học một sàng khôn.'
+                            ],
+                            correct: 1,
+                            explain: '"Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao" đề cao sức mạnh của sự đoàn kết.'
+                        }
+                    ]
+                },
+                {
+                    id: 1,
+                    code: 'BẢN ĐỒ 2',
+                    name: 'NGỌN NÚI LỊCH SỬ',
+                    subtitle: 'Đường đèo quanh co, hang động, cổng đá cổ & di tích lịch sử',
+                    worldPos: { x: 455, y: 185 },
+                    startPos: { x: 320, y: 1120 },
+                    theme: 'mountain',
+                    chests: [
+                        {
+                            id: 'm2c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: 'Quê hương & Tuổi thơ Bác Hồ',
+                            hideType: 'bush',
+                            hideLabel: 'Bụi hoa dại ven đèo',
+                            pos: { x: 740, y: 980 },
+                            standPos: { x: 685, y: 1030 },
+                            question: 'Câu 4: Chủ tịch Hồ Chí Minh (Bác Hồ) sinh ngày tháng năm nào?',
+                            options: ['19/5/1890.', '2/9/1945.', '3/2/1930.', '19/5/1945.'],
+                            correct: 0,
+                            explain: 'Bác Hồ sinh ngày 19/5/1890 tại làng Hoàng Trù (làng Chùa), quê nội làng Sen, xã Kim Liên, huyện Nam Đàn, tỉnh Nghệ An.'
+                        },
+                        {
+                            id: 'm2c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Lịch sử Việt Nam',
+                            hideType: 'cave',
+                            hideLabel: 'Hang động sườn núi',
+                            pos: { x: 1260, y: 650 },
+                            standPos: { x: 1260, y: 725 },
+                            question: 'Câu 5: Ngày Quốc khánh nước Cộng hòa xã hội chủ nghĩa Việt Nam là ngày nào?',
+                            options: ['30/4.', '19/5.', '2/9.', '22/12.'],
+                            correct: 2,
+                            explain: 'Ngày 2/9 hằng năm là ngày Quốc khánh Việt Nam, kỷ niệm sự kiện Bác Hồ đọc Tuyên ngôn Độc lập năm 1945.'
+                        },
+                        {
+                            id: 'm2c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Số La Mã & Thời gian',
+                            hideType: 'temple',
+                            hideLabel: 'Cổng đá di tích trên đỉnh',
+                            pos: { x: 1810, y: 360 },
+                            standPos: { x: 1810, y: 440 },
+                            question: 'Câu 6: Số La Mã XIV có giá trị bằng bao nhiêu?',
+                            options: ['12.', '13.', '14.', '16.'],
+                            correct: 2,
+                            explain: 'Trong hệ số La Mã: X = 10 và IV = 5 − 1 = 4, nên XIV = 10 + 4 = 14.'
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    code: 'BẢN ĐỒ 3',
+                    name: 'ĐẠI DƯƠNG KHÁM PHÁ',
+                    subtitle: 'Quần đảo nhiệt đới, tàu thám hiểm, rạn san hô & hang đá ven biển',
+                    worldPos: { x: 655, y: 415 },
+                    startPos: { x: 340, y: 1020 },
+                    theme: 'ocean',
+                    chests: [
+                        {
+                            id: 'm3c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: 'Hành trình cứu nước',
+                            hideType: 'bush',
+                            hideLabel: 'Rặng dừa và bụi cỏ biển',
+                            pos: { x: 750, y: 960 },
+                            standPos: { x: 695, y: 1015 },
+                            question: 'Câu 7: Bác Hồ ra đi tìm đường cứu nước từ Bến Nhà Rồng vào năm nào?',
+                            options: ['1905.', '1911.', '1920.', '1945.'],
+                            correct: 1,
+                            explain: 'Ngày 5/6/1911, người thanh niên Nguyễn Tất Thành đã ra đi tìm đường cứu nước từ Bến Nhà Rồng.'
+                        },
+                        {
+                            id: 'm3c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Địa lý Việt Nam & Thế giới',
+                            hideType: 'boulder',
+                            hideLabel: 'Ghềnh đá san hô ven vịnh',
+                            pos: { x: 1320, y: 860 },
+                            standPos: { x: 1265, y: 920 },
+                            question: 'Câu 8: Đất nước Việt Nam nằm ở châu lục nào?',
+                            options: ['Châu Âu.', 'Châu Phi.', 'Châu Á.', 'Châu Mỹ.'],
+                            correct: 2,
+                            explain: 'Việt Nam nằm ở khu vực Đông Nam Á, thuộc Châu Á.'
+                        },
+                        {
+                            id: 'm3c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Khoa học về Biển',
+                            hideType: 'cave',
+                            hideLabel: 'Hang đá trên đảo bí mật',
+                            pos: { x: 1830, y: 520 },
+                            standPos: { x: 1830, y: 600 },
+                            question: 'Câu 9: Nước biển tự nhiên có vị gì?',
+                            options: ['Ngọt.', 'Mặn.', 'Chua.', 'Không vị.'],
+                            correct: 1,
+                            explain: 'Nước biển chứa một lượng lớn muối khoáng hòa tan (chủ yếu là muối ăn NaCl) nên có vị mặn.'
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    code: 'BẢN ĐỒ 4',
+                    name: 'VƯƠNG QUỐC KHOA HỌC',
+                    subtitle: 'Thung lũng thực vật, phòng thí nghiệm, nhà kính & dòng sông phát sáng',
+                    worldPos: { x: 845, y: 180 },
+                    startPos: { x: 330, y: 1080 },
+                    theme: 'science',
+                    chests: [
+                        {
+                            id: 'm4c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: 'Khoa học tự nhiên lớp 6',
+                            hideType: 'bush',
+                            hideLabel: 'Khóm cây vườn thực vật',
+                            pos: { x: 760, y: 930 },
+                            standPos: { x: 700, y: 985 },
+                            question: 'Câu 10: Cây xanh hấp thụ khí nào trong quá trình quang hợp?',
+                            options: ['Oxygen.', 'Carbon dioxide.', 'Nitrogen.', 'Hydrogen.'],
+                            correct: 1,
+                            explain: 'Trong quá trình quang hợp, cây xanh hấp thụ khí Carbon dioxide (CO₂) và thải ra khí Oxygen (O₂).'
+                        },
+                        {
+                            id: 'm4c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Bảo vệ môi trường',
+                            hideType: 'boulder',
+                            hideLabel: 'Khối đá năng lượng bên sông',
+                            pos: { x: 1280, y: 740 },
+                            standPos: { x: 1220, y: 800 },
+                            question: 'Câu 11: Hành động nào sau đây giúp bảo vệ môi trường?',
+                            options: [
+                                'Vứt rác xuống sông.',
+                                'Chặt phá rừng.',
+                                'Phân loại và bỏ rác đúng nơi quy định.',
+                                'Lãng phí nước sạch.'
+                            ],
+                            correct: 2,
+                            explain: 'Phân loại và bỏ rác đúng nơi quy định giúp giảm ô nhiễm, dễ tái chế và bảo vệ hệ sinh thái.'
+                        },
+                        {
+                            id: 'm4c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Toán học – Số nguyên',
+                            hideType: 'temple',
+                            hideLabel: 'Cổng phòng thí nghiệm mái vòm',
+                            pos: { x: 1820, y: 420 },
+                            standPos: { x: 1820, y: 500 },
+                            question: 'Câu 12: Số nguyên nào nhỏ nhất trong các số sau: -3; -8; 0; 5?',
+                            options: ['-3.', '-8.', '0.', '5.'],
+                            correct: 1,
+                            explain: 'Trên trục số, -8 nằm xa bên trái nhất (-8 < -3 < 0 < 5) nên -8 là số nguyên nhỏ nhất.'
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    code: 'BẢN ĐỒ 5',
+                    name: 'THÀNH PHỐ NHÂN ÁI',
+                    subtitle: 'Thị trấn cổ tích với trường học, công viên, quảng trường & vườn hoa',
+                    worldPos: { x: 1035, y: 410 },
+                    startPos: { x: 330, y: 1090 },
+                    theme: 'town',
+                    chests: [
+                        {
+                            id: 'm5c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: 'Bác Hồ với thiếu nhi',
+                            hideType: 'bush',
+                            hideLabel: 'Bồn hoa công viên trung tâm',
+                            pos: { x: 750, y: 950 },
+                            standPos: { x: 690, y: 1005 },
+                            question: 'Câu 13: Bác Hồ luôn dành tình cảm như thế nào cho thiếu nhi?',
+                            options: [
+                                'Yêu thương, quan tâm và chăm sóc.',
+                                'Chỉ quan tâm đến học sinh giỏi.',
+                                'Không quan tâm đến việc học tập.',
+                                'Chỉ quan tâm đến thiếu nhi thành phố.'
+                            ],
+                            correct: 0,
+                            explain: 'Bác Hồ luôn dành tình yêu thương bao la, sự quan tâm và chăm sóc cho tất cả thiếu niên, nhi đồng cả nước.'
+                        },
+                        {
+                            id: 'm5c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Kỹ năng sống',
+                            hideType: 'boulder',
+                            hideLabel: 'Đài đá quảng trường thị trấn',
+                            pos: { x: 1300, y: 740 },
+                            standPos: { x: 1245, y: 800 },
+                            question: 'Câu 14: Khi thấy một bạn trong lớp bị bắt nạt, em nên làm gì?',
+                            options: [
+                                'Đứng xem.',
+                                'Cười theo các bạn khác.',
+                                'Báo với thầy cô và hỗ trợ bạn phù hợp.',
+                                'Quay video đăng lên mạng.'
+                            ],
+                            correct: 2,
+                            explain: 'Báo ngay cho thầy cô và hỗ trợ bạn một cách an toàn là hành động văn minh, dũng cảm và nhân ái.'
+                        },
+                        {
+                            id: 'm5c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Đạo đức & Đoàn kết',
+                            hideType: 'temple',
+                            hideLabel: 'Cổng trường học cổ tích',
+                            pos: { x: 1830, y: 430 },
+                            standPos: { x: 1830, y: 510 },
+                            question: 'Câu 15: Hành động nào thể hiện tinh thần đoàn kết?',
+                            options: [
+                                'Không giúp đỡ bạn.',
+                                'Cùng bạn hoàn thành nhiệm vụ chung.',
+                                'Tranh giành phần thắng.',
+                                'Không tham gia hoạt động nhóm.'
+                            ],
+                            correct: 1,
+                            explain: 'Cùng bạn chia sẻ công việc và hoàn thành nhiệm vụ chung chính là biểu hiện đẹp của tinh thần đoàn kết.'
+                        }
+                    ]
+                },
+                {
+                    id: 5,
+                    code: 'BẢN ĐỒ 6',
+                    name: 'ĐẢO KHO BÁU CUỐI CÙNG',
+                    subtitle: 'Hòn đảo kỳ bí với lâu đài cổ, thác nước, hang pha lê & tượng đá',
+                    worldPos: { x: 1070, y: 165 },
+                    startPos: { x: 350, y: 1090 },
+                    theme: 'island',
+                    chests: [
+                        {
+                            id: 'm6c1',
+                            tier: 'gold',
+                            tierLabel: 'Rương Vàng',
+                            topic: 'Bác Hồ & Lịch sử',
+                            hideType: 'bush',
+                            hideLabel: 'Bụi cây nhiệt đới cạnh tượng đá',
+                            pos: { x: 750, y: 950 },
+                            standPos: { x: 690, y: 1005 },
+                            question: 'Câu 16: Bác Hồ đọc bản Tuyên ngôn Độc lập khai sinh nước Việt Nam Dân chủ Cộng hòa vào ngày nào?',
+                            options: ['19/5/1890.', '2/9/1945.', '30/4/1975.', '22/12/1944.'],
+                            correct: 1,
+                            explain: 'Ngày 2/9/1945, tại Quảng trường Ba Đình lịch sử (Hà Nội), Chủ tịch Hồ Chí Minh đã đọc Tuyên ngôn Độc lập.'
+                        },
+                        {
+                            id: 'm6c2',
+                            tier: 'silver',
+                            tierLabel: 'Rương Bạc',
+                            topic: 'Toán học – Hình học',
+                            hideType: 'cave',
+                            hideLabel: 'Hang động pha lê phát sáng',
+                            pos: { x: 1320, y: 740 },
+                            standPos: { x: 1320, y: 815 },
+                            question: 'Câu 17: Một hình vuông có cạnh dài 6 cm. Chu vi của hình vuông đó bằng bao nhiêu?',
+                            options: ['12 cm.', '18 cm.', '24 cm.', '36 cm.'],
+                            correct: 2,
+                            explain: 'Chu vi hình vuông bằng độ dài một cạnh nhân với 4: 6 × 4 = 24 cm.'
+                        },
+                        {
+                            id: 'm6c3',
+                            tier: 'diamond',
+                            tierLabel: 'Rương Kim Cương',
+                            topic: 'Tư duy Logic & Số học',
+                            hideType: 'temple',
+                            hideLabel: 'Cổng chính Lâu Đài Vàng',
+                            pos: { x: 1830, y: 410 },
+                            standPos: { x: 1830, y: 495 },
+                            question: 'Câu 18: Một số tự nhiên vừa chia hết cho 2 vừa chia hết cho 5 thì chữ số tận cùng là gì?',
+                            options: ['2.', '5.', '0.', '8.'],
+                            correct: 2,
+                            explain: 'Số chia hết cho 2 tận cùng là chữ số chẵn (0,2,4,6,8), chia hết cho 5 tận cùng là 0 hoặc 5 ⇒ chữ số tận cùng bắt buộc là 0.'
+                        }
+                    ]
+                }
+            ];
+
+            const STORAGE_KEY = 'treasure_hunt_grade6_2d_v2';
+
+            // =========================================================================
+            // 2. QUẢN LÝ TRẠNG THÁI & LƯU TIẾN TRÌNH LOCALSTORAGE
+            // =========================================================================
+            function defaultState() {
+                return {
+                    openedChests: {},    // { m1c1: true, ... }
+                    revealedChests: {},  // { m1c1: true, ... }
+                    currentMap: 0,
+                    soundOn: true
+                };
+            }
+
+            function loadState() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('treasure_hunt_grade6_v1');
+                    if (!raw) return defaultState();
+                    const parsed = JSON.parse(raw);
+                    return {
+                        openedChests: parsed.openedChests || {},
+                        revealedChests: parsed.revealedChests || {},
+                        currentMap: typeof parsed.currentMap === 'number' ? parsed.currentMap : 0,
+                        soundOn: parsed.soundOn !== false
+                    };
+                } catch (err) {
+                    return defaultState();
+                }
+            }
+
+            function saveState() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                } catch (err) {
+                    // Bỏ qua nếu trình duyệt chặn localStorage
+                }
+            }
+
+            let state = loadState();
+            let activeChestRef = null;
+
+            // =========================================================================
+            // 3. TỰ ĐỘNG CO GIÃN SÂN KHẤU 16:9 (1280x720) VỪA MỌI MÀN HÌNH
+            // =========================================================================
+            const stageEl = document.getElementById('game-stage');
+            function fitStage() {
+                const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+                stageEl.style.transform = `scale(${scale})`;
+            }
+            window.addEventListener('resize', fitStage);
+            fitStage();
+
+            // =========================================================================
+            // 4. HỆ THỐNG ÂM THANH WEB AUDIO API (HOÀN TOÀN OFFLINE)
+            // =========================================================================
+            let audioCtx = null;
+
+            function getAudio() {
+                if (!state.soundOn) return null;
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    if (!audioCtx) audioCtx = new Ctx();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    return audioCtx;
+                } catch (err) {
+                    return null;
+                }
+            }
+
+            function playSound(type) {
+                const ctx = getAudio();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'step') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(140 + Math.random() * 35, now);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.055);
+                } else if (type === 'reveal') {
+                    // Âm thanh phát hiện rương ẩn sau bụi cây / tảng đá / cửa đền
+                    [392, 523.25, 659.25, 987.77].forEach((f, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(f, now + i * 0.06);
+                        gain.gain.setValueAtTime(0.11, now + i * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.28);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.06);
+                        osc.stop(now + i * 0.06 + 0.3);
+                    });
+                } else if (type === 'open') {
+                    [440, 554.37, 659.25, 880].forEach((f, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(f, now + i * 0.06);
+                        gain.gain.setValueAtTime(0.11, now + i * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.06);
+                        osc.stop(now + i * 0.06 + 0.26);
+                    });
+                } else if (type === 'correct') {
+                    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(f, now + i * 0.07);
+                        gain.gain.setValueAtTime(0.13, now + i * 0.07);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.28);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.07);
+                        osc.stop(now + i * 0.07 + 0.3);
+                    });
+                } else if (type === 'wrong') {
+                    [240, 190].forEach((f, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(f, now + i * 0.11);
+                        gain.gain.setValueAtTime(0.08, now + i * 0.11);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.11 + 0.16);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.11);
+                        osc.stop(now + i * 0.11 + 0.18);
+                    });
+                } else if (type === 'fanfare') {
+                    [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5].forEach((f, i) => {
+                        const t = now + i * 0.11;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(f, t);
+                        gain.gain.setValueAtTime(0.14, t);
+                        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(t);
+                        osc.stop(t + 0.36);
+                    });
+                }
+            }
+
+            // =========================================================================
+            // 5. HIỆU ỨNG PHÁO HOA, ĐỒNG XU VÀNG & KIM CƯƠNG (OVERLAY CANVAS)
+            // =========================================================================
+            const fxCanvas = document.getElementById('fx-canvas');
+            const fxCtx = fxCanvas.getContext('2d');
+            let fxParticles = [];
+            let fxRaf = null;
+
+            function spawnTreasureFX(cx, cy, count = 80, includeGems = false) {
+                const colors = ['#FDE047', '#F59E0B', '#38BDF8', '#34D399', '#F472B6', '#FFFFFF'];
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3 + Math.random() * 9;
+                    const kindRand = Math.random();
+                    const kind = kindRand < 0.35 ? 'coin' : (includeGems && kindRand < 0.55 ? 'gem' : 'confetti');
+                    fxParticles.push({
+                        kind,
+                        x: cx + (Math.random() - 0.5) * 60,
+                        y: cy + (Math.random() - 0.5) * 40,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 5.2,
+                        size: kind === 'coin' ? 9 + Math.random() * 5 : 6 + Math.random() * 6,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rot: Math.random() * 360,
+                        vRot: (Math.random() - 0.5) * 14,
+                        alpha: 1
+                    });
+                }
+                if (!fxRaf) runFXLoop();
+            }
+
+            function runFXLoop() {
+                fxCtx.clearRect(0, 0, 1280, 720);
+                fxParticles = fxParticles.filter(p => p.alpha > 0.02 && p.y < 760);
+
+                for (const p of fxParticles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.24;
+                    p.vx *= 0.99;
+                    p.rot += p.vRot;
+                    p.alpha -= 0.011;
+
+                    fxCtx.save();
+                    fxCtx.globalAlpha = Math.max(0, p.alpha);
+                    fxCtx.translate(p.x, p.y);
+                    fxCtx.rotate((p.rot * Math.PI) / 180);
+
+                    if (p.kind === 'coin') {
+                        fxCtx.beginPath();
+                        fxCtx.arc(0, 0, p.size, 0, Math.PI * 2);
+                        fxCtx.fillStyle = '#FACC15';
+                        fxCtx.fill();
+                        fxCtx.lineWidth = 2;
+                        fxCtx.strokeStyle = '#B45309';
+                        fxCtx.stroke();
+                    } else if (p.kind === 'gem') {
+                        fxCtx.beginPath();
+                        fxCtx.moveTo(0, -p.size);
+                        fxCtx.lineTo(p.size * 0.8, 0);
+                        fxCtx.lineTo(0, p.size);
+                        fxCtx.lineTo(-p.size * 0.8, 0);
+                        fxCtx.closePath();
+                        fxCtx.fillStyle = '#38BDF8';
+                        fxCtx.fill();
+                        fxCtx.strokeStyle = '#E0F2FE';
+                        fxCtx.lineWidth = 1.5;
+                        fxCtx.stroke();
+                    } else {
+                        fxCtx.fillStyle = p.color;
+                        fxCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                    }
+                    fxCtx.restore();
+                }
+
+                if (fxParticles.length > 0) {
+                    fxRaf = requestAnimationFrame(runFXLoop);
+                } else {
+                    fxRaf = null;
+                    fxCtx.clearRect(0, 0, 1280, 720);
+                }
+            }
+
+            // =========================================================================
+            // 6. TÍNH TOÁN TIẾN ĐỘ, ĐIỂM SỐ & DANH HIỆU
+            // =========================================================================
+            function getOpenedCount() {
+                return Object.keys(state.openedChests).filter(k => state.openedChests[k]).length;
+            }
+
+            function getScore() {
+                return getOpenedCount() * 10;
+            }
+
+            function isMapComplete(mapIdx) {
+                return MAPS_DATA[mapIdx].chests.every(c => !!state.openedChests[c.id]);
+            }
+
+            function getCompletedMapsCount() {
+                return MAPS_DATA.filter((_, idx) => isMapComplete(idx)).length;
+            }
+
+            function getHighestUnlockedMap() {
+                let unlocked = 0;
+                for (let i = 0; i < MAPS_DATA.length - 1; i++) {
+                    if (isMapComplete(i)) {
+                        unlocked = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                return unlocked;
+            }
+
+            function getRankTitle(score) {
+                if (score <= 60)  return 'Nhà thám hiểm tập sự';
+                if (score <= 120) return 'Nhà thám hiểm tài ba';
+                if (score <= 170) return 'Nhà thám hiểm xuất sắc';
+                return 'Huyền thoại săn kho báu';
+            }
+
+            function getShortRank(score) {
+                if (score <= 60)  return 'Tập sự';
+                if (score <= 120) return 'Tài ba';
+                if (score <= 170) return 'Xuất sắc';
+                return 'Huyền thoại';
+            }
+
+            // =========================================================================
+            // 7. ENGINE THẾ GIỚI 2D TOP-DOWN 3/4 VIEW (CANVAS, A* PATHFINDING, FOG, CAMERA)
+            // =========================================================================
+            const advCanvas = document.getElementById('adventure-canvas');
+            const ctx = advCanvas.getContext('2d');
+            const miniCanvas = document.getElementById('minimap-canvas');
+            const miniCtx = miniCanvas.getContext('2d');
+
+            const VIEW_W = 1280;
+            const VIEW_H = 588;
+
+            // Bộ nhớ đệm nền địa hình chất lượng cao cho từng bản đồ
+            const terrainCache = {};
+            const fogGrids = {}; // Lưu sương mù khám phá theo mapIdx
+
+            // Trạng thái thế giới hiện tại
+            let worldState = {
+                mapIdx: 0,
+                navGrid: [],         // 0 = đi được, 1 = vật cản
+                props: [],           // Cây cổ thụ, đá, công trình, cầu, tàu, tượng... (Y-sorted)
+                waterZones: [],      // Vùng nước động (sông, thác, biển)
+                particles: [],       // Hạt ánh sáng vàng, lá bay, đom đóm, bụi bước chân
+                hoveredEntity: null, // Vật thể hoặc rương đang trỏ chuột
+                pointerWorld: { x: 0, y: 0 },
+                clickMarkers: [],    // Vòng sóng khi nhấp chọn điểm đến
+                camera: {
+                    x: 0,
+                    y: 0,
+                    zoom: 1.0,
+                    followPlayer: true,
+                    isDragging: false,
+                    dragMoved: false,
+                    dragStartX: 0,
+                    dragStartY: 0,
+                    camStartX: 0,
+                    camStartY: 0
+                },
+                player: {
+                    x: 340,
+                    y: 1080,
+                    facing: 1,       // 1 = phải, -1 = trái
+                    state: 'idle',   // 'idle' | 'walk' | 'run' | 'interact' | 'open' | 'celebrate'
+                    animTimer: 0,
+                    stateTimer: 0,
+                    stepSoundTimer: 0,
+                    path: [],
+                    pendingAction: null // { type: 'reveal' | 'open', chestIdx }
+                }
+            };
+
+            // Bộ sinh số ngẫu nhiên có hạt giống cố định để bố cục mỗi bản đồ luôn chuẩn xác
+            function createSeededRandom(seed) {
+                let s = seed % 2147483647;
+                if (s <= 0) s += 2147483646;
+                return function () {
+                    s = (s * 16807) % 2147483647;
+                    return (s - 1) / 2147483646;
+                };
+            }
+
+            /**
+             * Xây dựng lưới đường đi hợp lệ & danh sách vật thể 3/4 cho từng bản đồ
+             */
+            function buildMapLayout(mapIdx) {
+                const map = MAPS_DATA[mapIdx];
+                const rand = createSeededRandom((mapIdx + 1) * 9187);
+
+                // 1. Tạo lưới điều hướng 44 x 28 (mặc định 0 = đi được)
+                const grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(0));
+
+                // Khóa viền mép bản đồ
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        if (r <= 1 || r >= GRID_ROWS - 2 || c <= 1 || c >= GRID_COLS - 2) {
+                            grid[r][c] = 1;
+                        }
+                    }
+                }
+
+                // Hàm đánh dấu hình chữ nhật vật cản
+                function blockRect(wx, wy, ww, wh) {
+                    const c0 = Math.max(0, Math.floor(wx / GRID_SIZE));
+                    const r0 = Math.max(0, Math.floor(wy / GRID_SIZE));
+                    const c1 = Math.min(GRID_COLS - 1, Math.floor((wx + ww) / GRID_SIZE));
+                    const r1 = Math.min(GRID_ROWS - 1, Math.floor((wy + wh) / GRID_SIZE));
+                    for (let r = r0; r <= r1; r++) {
+                        for (let c = c0; c <= c1; c++) {
+                            grid[r][c] = 1;
+                        }
+                    }
+                }
+
+                // Hàm mở thông hình chữ nhật đường đi / cầu
+                function clearRect(wx, wy, ww, wh) {
+                    const c0 = Math.max(1, Math.floor(wx / GRID_SIZE));
+                    const r0 = Math.max(1, Math.floor(wy / GRID_SIZE));
+                    const c1 = Math.min(GRID_COLS - 2, Math.floor((wx + ww) / GRID_SIZE));
+                    const r1 = Math.min(GRID_ROWS - 2, Math.floor((wy + wh) / GRID_SIZE));
+                    for (let r = r0; r <= r1; r++) {
+                        for (let c = c0; c <= c1; c++) {
+                            grid[r][c] = 0;
+                        }
+                    }
+                }
+
+                const props = [];
+                const waterZones = [];
+
+                // Thiết kế địa hình, sông suối, cầu và công trình riêng cho từng bản đồ
+                if (mapIdx === 0) {
+                    // BẢN ĐỒ 1: RỪNG TRI THỨC
+                    // Dòng suối chảy chéo từ thác nước phía bắc xuống phía nam, có cầu gỗ bắc qua
+                    blockRect(1020, 120, 120, 1180);
+                    waterZones.push({ type: 'stream', x: 1020, y: 120, w: 120, h: 1180 });
+                    waterZones.push({ type: 'waterfall', x: 980, y: 80, w: 200, h: 180 });
+                    // Mở cầu gỗ tại y = 760..880
+                    clearRect(980, 760, 200, 120);
+                    props.push({ kind: 'bridge', x: 1080, y: 820, w: 170, h: 90 });
+
+                    // Đền cổ ở phía đông bắc (gần Rương 3)
+                    blockRect(1720, 190, 240, 170);
+                    props.push({ kind: 'temple', x: 1840, y: 340, scale: 1.15 });
+                } else if (mapIdx === 1) {
+                    // BẢN ĐỒ 2: NGỌN NÚI LỊCH SỬ
+                    // Vách núi chia đèo quanh co
+                    blockRect(480, 180, 320, 560);
+                    blockRect(1120, 820, 420, 420);
+                    props.push({ kind: 'cliff', x: 640, y: 690, w: 320, h: 240 });
+                    props.push({ kind: 'cliff', x: 1330, y: 1140, w: 380, h: 220 });
+
+                    // Hang động lịch sử giữa núi (Rương 2) & Cổng đá trên đỉnh (Rương 3)
+                    blockRect(1150, 470, 220, 140);
+                    props.push({ kind: 'cave', x: 1260, y: 600, scale: 1.05 });
+
+                    blockRect(1690, 170, 240, 160);
+                    props.push({ kind: 'stoneGate', x: 1810, y: 320, scale: 1.15 });
+                } else if (mapIdx === 2) {
+                    // BẢN ĐỒ 3: ĐẠI DƯƠNG KHÁM PHÁ
+                    // Biển sâu phía trên trái & eo biển ngăn cách đảo bí mật phía đông bắc
+                    blockRect(100, 100, 1180, 480);
+                    waterZones.push({ type: 'sea', x: 60, y: 60, w: 1240, h: 520 });
+                    props.push({ kind: 'ship', x: 660, y: 390, scale: 1.15 });
+
+                    // Eo biển ngăn đảo bí mật (x = 1520..1620), có cầu ván gỗ nối sang đảo
+                    blockRect(1520, 100, 100, 1180);
+                    waterZones.push({ type: 'stream', x: 1520, y: 100, w: 100, h: 1180 });
+                    clearRect(1480, 620, 180, 110);
+                    props.push({ kind: 'bridge', x: 1570, y: 675, w: 160, h: 86 });
+
+                    // Hang đá trên đảo bí mật (Rương 3) & Rạn san hô
+                    blockRect(1720, 350, 220, 140);
+                    props.push({ kind: 'cave', x: 1830, y: 475, scale: 1.05 });
+                    props.push({ kind: 'coral', x: 1160, y: 1080, scale: 1.0 });
+                } else if (mapIdx === 3) {
+                    // BẢN ĐỒ 4: VƯƠNG QUỐC KHOA HỌC
+                    // Dòng sông phát sáng uốn qua thung lũng
+                    blockRect(1020, 100, 110, 1200);
+                    waterZones.push({ type: 'glowRiver', x: 1020, y: 100, w: 110, h: 1200 });
+                    clearRect(980, 810, 190, 110);
+                    props.push({ kind: 'bridge', x: 1075, y: 865, w: 160, h: 86 });
+
+                    // Nhà kính thực vật & Phòng thí nghiệm mái vòm
+                    blockRect(430, 340, 230, 170);
+                    props.push({ kind: 'greenhouse', x: 545, y: 495, scale: 1.05 });
+
+                    blockRect(1690, 210, 260, 180);
+                    props.push({ kind: 'labDome', x: 1820, y: 375, scale: 1.15 });
+                } else if (mapIdx === 4) {
+                    // BẢN ĐỒ 5: THÀNH PHỐ NHÂN ÁI
+                    // Hồ nước công viên & đài phun nước quảng trường
+                    blockRect(380, 420, 240, 180);
+                    waterZones.push({ type: 'pond', x: 380, y: 420, w: 240, h: 180 });
+                    props.push({ kind: 'fountain', x: 1120, y: 980, scale: 1.0 });
+
+                    // Các ngôi nhà cổ tích & Trường học khang trang
+                    blockRect(350, 740, 180, 140);
+                    props.push({ kind: 'cottage', x: 440, y: 865, color: '#F59E0B' });
+
+                    blockRect(1140, 320, 180, 140);
+                    props.push({ kind: 'cottage', x: 1230, y: 445, color: '#EC4899' });
+
+                    blockRect(1690, 220, 280, 180);
+                    props.push({ kind: 'school', x: 1830, y: 385, scale: 1.12 });
+                } else {
+                    // BẢN ĐỒ 6: ĐẢO KHO BÁU CUỐI CÙNG
+                    // Kênh nước pha lê & thác nước phát sáng
+                    blockRect(1020, 100, 115, 1200);
+                    waterZones.push({ type: 'crystalRiver', x: 1020, y: 100, w: 115, h: 1200 });
+                    waterZones.push({ type: 'waterfall', x: 980, y: 80, w: 195, h: 175 });
+                    clearRect(980, 820, 195, 115);
+                    props.push({ kind: 'bridge', x: 1078, y: 878, w: 165, h: 88 });
+
+                    // Tượng đá cổ đại, Hang động pha lê (Rương 2) & Lâu đài vàng (Rương 3)
+                    props.push({ kind: 'statue', x: 640, y: 820, scale: 1.05 });
+
+                    blockRect(1210, 560, 220, 140);
+                    props.push({ kind: 'crystalCave', x: 1320, y: 690, scale: 1.08 });
+
+                    blockRect(1680, 170, 300, 210);
+                    props.push({ kind: 'goldenCastle', x: 1830, y: 365, scale: 1.18 });
+                }
+
+                // Rải cây cổ thụ, cụm đá, bụi hoa trang trí xung quanh sao cho không chặn đường đi chính
+                const safeZones = [
+                    { x: map.startPos.x, y: map.startPos.y, r: 170 },
+                    ...map.chests.map(c => ({ x: c.pos.x, y: c.pos.y, r: 175 })),
+                    ...map.chests.map(c => ({ x: c.standPos.x, y: c.standPos.y, r: 145 })),
+                    { x: 1080, y: 830, r: 170 },
+                    { x: 1570, y: 675, r: 160 }
+                ];
+
+                const decorCount = 46;
+                for (let i = 0; i < decorCount; i++) {
+                    const dx = 160 + rand() * (WORLD_W - 320);
+                    const dy = 160 + rand() * (WORLD_H - 320);
+
+                    const c = Math.floor(dx / GRID_SIZE);
+                    const r = Math.floor(dy / GRID_SIZE);
+                    if (grid[r] && grid[r][c] === 1) continue;
+
+                    // Không đặt lên đường mòn chính
+                    const onMainPath =
+                        (Math.abs(dy - (1060 - (dx - 340) * 0.42)) < 125) ||
+                        safeZones.some(z => Math.hypot(dx - z.x, dy - z.y) < z.r);
+                    if (onMainPath) continue;
+
+                    const propKinds = {
+                        0: ['treeAncient', 'treePalm', 'rockMoss', 'fernCluster'],
+                        1: ['pineTree', 'rockCrag', 'rockMoss'],
+                        2: ['coconutPalm', 'rockMoss', 'coral'],
+                        3: ['treeAncient', 'crystalSpire', 'fernCluster'],
+                        4: ['treeBlossom', 'flowerBed', 'treeAncient'],
+                        5: ['coconutPalm', 'crystalSpire', 'rockCrag']
+                    }[mapIdx];
+
+                    const kind = propKinds[Math.floor(rand() * propKinds.length)];
+                    const scale = 0.85 + rand() * 0.35;
+                    props.push({ kind, x: dx, y: dy, scale });
+
+                    if (kind !== 'flowerBed' && kind !== 'fernCluster') {
+                        blockRect(dx - 24, dy - 20, 48, 36);
+                    }
+                }
+
+                // Đảm bảo điểm xuất phát & vị trí đứng trước 3 rương luôn thông thoáng 100%
+                clearRect(map.startPos.x - 75, map.startPos.y - 75, 150, 150);
+                map.chests.forEach(ch => {
+                    clearRect(ch.standPos.x - 65, ch.standPos.y - 65, 130, 130);
+                });
+
+                return { grid, props, waterZones };
+            }
+
+            /**
+             * Vẽ và lưu bộ nhớ đệm nền địa hình 2200x1400 chất lượng cao (3/4 isometric texture)
+             */
+            function getTerrainCanvas(mapIdx) {
+                if (terrainCache[mapIdx]) return terrainCache[mapIdx];
+
+                const off = document.createElement('canvas');
+                off.width = WORLD_W;
+                off.height = WORLD_H;
+                const g = off.getContext('2d');
+                const rand = createSeededRandom((mapIdx + 1) * 4423);
+
+                // Bảng màu địa hình đa tầng theo chủ đề bản đồ
+                const palettes = [
+                    { base1: '#3A7D44', base2: '#2B6134', patch: '#4B9656', pathMain: '#D8B67E', pathEdge: '#9E7944' }, // Rừng
+                    { base1: '#8D7356', base2: '#6E563E', patch: '#A88C6C', pathMain: '#E5CFA3', pathEdge: '#9A7848' }, // Núi
+                    { base1: '#F2D594', base2: '#DFBC74', patch: '#FCE7B2', pathMain: '#E6C27A', pathEdge: '#BA924A' }, // Đại dương
+                    { base1: '#388E6C', base2: '#266B50', patch: '#4EB089', pathMain: '#CBD5E1', pathEdge: '#64748B' }, // Khoa học
+                    { base1: '#59A652', base2: '#43873D', patch: '#74C26D', pathMain: '#F1DEC0', pathEdge: '#B89B72' }, // Thành phố
+                    { base1: '#2D7A5E', base2: '#1F5C46', patch: '#E6C67E', pathMain: '#FDE68A', pathEdge: '#B45309' }  // Đảo kho báu
+                ];
+                const pal = palettes[mapIdx];
+
+                // 1. Nền gradient chiều sâu
+                const bgGrad = g.createLinearGradient(0, 0, WORLD_W, WORLD_H);
+                bgGrad.addColorStop(0, pal.base1);
+                bgGrad.addColorStop(1, pal.base2);
+                g.fillStyle = bgGrad;
+                g.fillRect(0, 0, WORLD_W, WORLD_H);
+
+                // 2. Các mảng địa hình hữu cơ nhiều lớp + vân đất/cỏ
+                for (let i = 0; i < 95; i++) {
+                    const px = rand() * WORLD_W;
+                    const py = rand() * WORLD_H;
+                    const rx = 80 + rand() * 190;
+                    const ry = 45 + rand() * 110;
+                    g.fillStyle = i % 2 === 0 ? pal.patch : pal.base2;
+                    g.globalAlpha = 0.24;
+                    g.beginPath();
+                    g.ellipse(px, py, rx, ry, rand() * 0.4, 0, Math.PI * 2);
+                    g.fill();
+                }
+                g.globalAlpha = 1;
+
+                // Hạt chi tiết cỏ / sỏi / cát nhỏ li ti tạo cảm giác vẽ tay
+                for (let i = 0; i < 950; i++) {
+                    const gx = rand() * WORLD_W;
+                    const gy = rand() * WORLD_H;
+                    g.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.14)' : 'rgba(15,25,15,0.14)';
+                    g.fillRect(gx, gy, 3, 2);
+                }
+
+                // 3. Vẽ hệ thống đường mòn khám phá uốn lượn nối các khu vực bí mật
+                const map = MAPS_DATA[mapIdx];
+                const waypoints = [
+                    map.startPos,
+                    { x: 560, y: 1020 },
+                    map.chests[0].standPos,
+                    { x: 1080, y: 830 },
+                    map.chests[1].standPos,
+                    { x: 1580, y: 650 },
+                    map.chests[2].standPos
+                ];
+
+                function strokeTrail(width, color, dash = []) {
+                    g.save();
+                    g.strokeStyle = color;
+                    g.lineWidth = width;
+                    g.lineCap = 'round';
+                    g.lineJoin = 'round';
+                    g.setLineDash(dash);
+                    g.beginPath();
+                    g.moveTo(waypoints[0].x, waypoints[0].y);
+                    for (let i = 1; i < waypoints.length; i++) {
+                        const prev = waypoints[i - 1];
+                        const curr = waypoints[i];
+                        const mx = (prev.x + curr.x) / 2;
+                        const my = (prev.y + curr.y) / 2 + (i % 2 === 0 ? 35 : -35);
+                        g.quadraticCurveTo(mx, my, curr.x, curr.y);
+                    }
+                    g.stroke();
+                    g.restore();
+                }
+
+                strokeTrail(96, pal.pathEdge);
+                strokeTrail(78, pal.pathMain);
+                // Dấu chân thám hiểm tinh tế dẫn lối tới các bí mật
+                strokeTrail(5, 'rgba(120, 53, 15, 0.42)', [10, 18]);
+
+                // 4. Viền khung rừng rậm / núi đá bao quanh mép bản đồ tạo chiều sâu
+                const borderGrad = g.createRadialGradient(
+                    WORLD_W / 2, WORLD_H / 2, WORLD_W * 0.34,
+                    WORLD_W / 2, WORLD_H / 2, WORLD_W * 0.56
+                );
+                borderGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                borderGrad.addColorStop(1, 'rgba(15, 25, 15, 0.52)');
+                g.fillStyle = borderGrad;
+                g.fillRect(0, 0, WORLD_W, WORLD_H);
+
+                terrainCache[mapIdx] = off;
+                return off;
+            }
+
+            /**
+             * Thuật toán tìm đường A* trên lưới 44x28 để nhân vật đi vòng qua cây, núi, sông, nhà
+             */
+            function findPathAStar(grid, startWx, startWy, goalWx, goalWy) {
+                let sc = Math.max(1, Math.min(GRID_COLS - 2, Math.floor(startWx / GRID_SIZE)));
+                let sr = Math.max(1, Math.min(GRID_ROWS - 2, Math.floor(startWy / GRID_SIZE)));
+                let gc = Math.max(1, Math.min(GRID_COLS - 2, Math.floor(goalWx / GRID_SIZE)));
+                let gr = Math.max(1, Math.min(GRID_ROWS - 2, Math.floor(goalWy / GRID_SIZE)));
+
+                // Nếu ô đích nằm trong vật cản, tìm ô đi được gần nhất xung quanh
+                if (grid[gr][gc] === 1) {
+                    let found = false;
+                    for (let radius = 1; radius <= 6 && !found; radius++) {
+                        for (let dr = -radius; dr <= radius && !found; dr++) {
+                            for (let dc = -radius; dc <= radius && !found; dc++) {
+                                const nr = gr + dr;
+                                const nc = gc + dc;
+                                if (nr > 0 && nr < GRID_ROWS - 1 && nc > 0 && nc < GRID_COLS - 1 && grid[nr][nc] === 0) {
+                                    gr = nr;
+                                    gc = nc;
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!found) return [];
+                }
+
+                const openSet = [{ c: sc, r: sr, g: 0, f: Math.hypot(gc - sc, gr - sr), parent: null }];
+                const closed = new Set();
+                const dirs = [
+                    [1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1],
+                    [1, 1, 1.414], [1, -1, 1.414], [-1, 1, 1.414], [-1, -1, 1.414]
+                ];
+
+                let iterations = 0;
+                while (openSet.length > 0 && iterations < 1600) {
+                    iterations++;
+                    openSet.sort((a, b) => a.f - b.f);
+                    const current = openSet.shift();
+                    const key = `${current.c},${current.r}`;
+                    if (closed.has(key)) continue;
+                    closed.add(key);
+
+                    if (current.c === gc && current.r === gr) {
+                        const path = [];
+                        let node = current;
+                        while (node.parent) {
+                            path.unshift({
+                                x: node.c * GRID_SIZE + GRID_SIZE / 2,
+                                y: node.r * GRID_SIZE + GRID_SIZE / 2
+                            });
+                            node = node.parent;
+                        }
+                        // Thay điểm cuối bằng tọa độ thực nếu ô đó hợp lệ
+                        if (path.length > 0 && grid[Math.floor(goalWy / GRID_SIZE)]?.[Math.floor(goalWx / GRID_SIZE)] === 0) {
+                            path[path.length - 1] = { x: goalWx, y: goalWy };
+                        }
+                        return path;
+                    }
+
+                    for (const [dc, dr, cost] of dirs) {
+                        const nc = current.c + dc;
+                        const nr = current.r + dr;
+                        if (nc <= 0 || nc >= GRID_COLS - 1 || nr <= 0 || nr >= GRID_ROWS - 1) continue;
+                        if (grid[nr][nc] === 1) continue;
+                        // Tránh cắt góc xuyên vật cản chéo
+                        if (dc !== 0 && dr !== 0 && (grid[current.r][nc] === 1 || grid[nr][current.c] === 1)) continue;
+                        if (closed.has(`${nc},${nr}`)) continue;
+
+                        const gScore = current.g + cost;
+                        const hScore = Math.hypot(gc - nc, gr - nr);
+                        openSet.push({ c: nc, r: nr, g: gScore, f: gScore + hScore, parent: current });
+                    }
+                }
+                return [];
+            }
+
+            // =========================================================================
+            // 8. HÀM VẼ VẬT THỂ 2D 3/4 VIEW CHI TIẾT TRÊN CANVAS (BÓNG ĐỔ, ÁNH SÁNG)
+            // =========================================================================
+            function drawProp3Quarter(g, prop, timeSec) {
+                const { kind, x, y } = prop;
+                const sc = prop.scale || 1;
+                g.save();
+                g.translate(x, y);
+                g.scale(sc, sc);
+
+                // Bóng đổ mềm trên mặt đất theo góc chiếu 3/4
+                g.fillStyle = 'rgba(15, 23, 15, 0.28)';
+                if (kind === 'treeAncient' || kind === 'pineTree' || kind === 'treeBlossom' || kind === 'coconutPalm') {
+                    g.beginPath();
+                    g.ellipse(14, 6, 48, 22, 0.15, 0, Math.PI * 2);
+                    g.fill();
+                }
+
+                if (kind === 'treeAncient' || kind === 'treeBlossom') {
+                    const isBlossom = kind === 'treeBlossom';
+                    // Thân cây cổ thụ nhiều rễ
+                    g.fillStyle = '#5C3317';
+                    g.beginPath();
+                    g.moveTo(-16, 4);
+                    g.quadraticCurveTo(-10, -45, -12, -75);
+                    g.lineTo(12, -75);
+                    g.quadraticCurveTo(10, -45, 18, 4);
+                    g.closePath();
+                    g.fill();
+
+                    // Tán lá 3 tầng có chiều sâu sáng tối
+                    const cDark = isBlossom ? '#BE185D' : '#14532D';
+                    const cMid  = isBlossom ? '#EC4899' : '#16A34A';
+                    const cTop  = isBlossom ? '#F9A8D4' : '#4ADE80';
+
+                    g.fillStyle = cDark;
+                    g.beginPath(); g.arc(-28, -76, 34, 0, Math.PI * 2); g.arc(28, -74, 34, 0, Math.PI * 2); g.fill();
+                    g.fillStyle = cMid;
+                    g.beginPath(); g.arc(0, -96, 44, 0, Math.PI * 2); g.arc(-20, -84, 30, 0, Math.PI * 2); g.arc(22, -84, 30, 0, Math.PI * 2); g.fill();
+                    g.fillStyle = cTop;
+                    g.beginPath(); g.arc(-10, -108, 24, 0, Math.PI * 2); g.fill();
+                } else if (kind === 'pineTree') {
+                    g.fillStyle = '#4A250D';
+                    g.fillRect(-8, -32, 16, 34);
+                    const tiers = [
+                        { y: -30, w: 48, h: 42, c: '#14532D' },
+                        { y: -56, w: 38, h: 38, c: '#166534' },
+                        { y: -80, w: 26, h: 34, c: '#22C55E' }
+                    ];
+                    tiers.forEach(t => {
+                        g.fillStyle = t.c;
+                        g.beginPath();
+                        g.moveTo(0, t.y - t.h);
+                        g.lineTo(-t.w, t.y);
+                        g.lineTo(t.w, t.y);
+                        g.closePath();
+                        g.fill();
+                    });
+                } else if (kind === 'coconutPalm') {
+                    g.strokeStyle = '#78350F';
+                    g.lineWidth = 13;
+                    g.lineCap = 'round';
+                    g.beginPath();
+                    g.moveTo(0, 2);
+                    g.quadraticCurveTo(-18, -50, 6, -96);
+                    g.stroke();
+
+                    const sway = Math.sin(timeSec * 2 + x) * 0.06;
+                    g.save();
+                    g.translate(6, -96);
+                    g.rotate(sway);
+                    g.strokeStyle = '#15803D';
+                    g.lineWidth = 11;
+                    [[-52, 18], [54, 16], [-42, -22], [44, -20], [0, -34]].forEach(([lx, ly]) => {
+                        g.beginPath();
+                        g.moveTo(0, 0);
+                        g.quadraticCurveTo(lx * 0.5, ly - 16, lx, ly);
+                        g.stroke();
+                    });
+                    g.fillStyle = '#78350F';
+                    g.beginPath(); g.arc(-5, 6, 6, 0, Math.PI * 2); g.arc(6, 6, 6, 0, Math.PI * 2); g.fill();
+                    g.restore();
+                } else if (kind === 'rockMoss' || kind === 'rockCrag') {
+                    g.fillStyle = 'rgba(15, 20, 25, 0.3)';
+                    g.beginPath(); g.ellipse(6, 4, 38, 16, 0, 0, Math.PI * 2); g.fill();
+
+                    g.fillStyle = kind === 'rockCrag' ? '#57534E' : '#64748B';
+                    g.beginPath();
+                    g.moveTo(-34, 4);
+                    g.lineTo(-26, -24);
+                    g.lineTo(0, -34);
+                    g.lineTo(28, -20);
+                    g.lineTo(34, 4);
+                    g.closePath();
+                    g.fill();
+
+                    g.fillStyle = kind === 'rockCrag' ? '#78716C' : '#94A3B8';
+                    g.beginPath();
+                    g.moveTo(-24, -22);
+                    g.lineTo(0, -32);
+                    g.lineTo(14, -14);
+                    g.lineTo(-10, -10);
+                    g.closePath();
+                    g.fill();
+
+                    if (kind === 'rockMoss') {
+                        g.fillStyle = '#4ADE80';
+                        g.beginPath(); g.ellipse(-6, -24, 16, 6, -0.2, 0, Math.PI * 2); g.fill();
+                    }
+                } else if (kind === 'fernCluster' || kind === 'flowerBed') {
+                    g.fillStyle = '#15803D';
+                    g.beginPath(); g.ellipse(0, 0, 28, 14, 0, 0, Math.PI * 2); g.fill();
+                    if (kind === 'flowerBed') {
+                        const cols = ['#F43F5E', '#FACC15', '#38BDF8', '#F472B6'];
+                        for (let i = 0; i < 6; i++) {
+                            g.fillStyle = cols[i % cols.length];
+                            g.beginPath();
+                            g.arc(-16 + i * 6.5, (i % 2 === 0 ? -4 : 3), 4.2, 0, Math.PI * 2);
+                            g.fill();
+                        }
+                    }
+                } else if (kind === 'crystalSpire') {
+                    g.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                    g.beginPath(); g.ellipse(0, 4, 34, 15, 0, 0, Math.PI * 2); g.fill();
+                    [[-14, -36, '#0284C7'], [12, -32, '#7C3AED'], [0, -52, '#38BDF8']].forEach(([cx, ch, col]) => {
+                        g.fillStyle = col;
+                        g.beginPath();
+                        g.moveTo(cx - 10, 2);
+                        g.lineTo(cx, ch);
+                        g.lineTo(cx + 10, 2);
+                        g.closePath();
+                        g.fill();
+                    });
+                } else if (kind === 'bridge') {
+                    const w = prop.w || 160;
+                    const h = prop.h || 86;
+                    g.fillStyle = '#451A03';
+                    g.fillRect(-w / 2, -h / 2 + 8, w, h);
+                    g.fillStyle = '#92400E';
+                    g.fillRect(-w / 2, -h / 2, w, h - 6);
+                    g.strokeStyle = '#451A03';
+                    g.lineWidth = 3;
+                    for (let px = -w / 2 + 16; px < w / 2; px += 22) {
+                        g.beginPath(); g.moveTo(px, -h / 2); g.lineTo(px, h / 2 - 6); g.stroke();
+                    }
+                    // Lan can cầu gỗ 3/4
+                    g.fillStyle = '#B45309';
+                    g.fillRect(-w / 2, -h / 2 - 12, w, 10);
+                    g.fillRect(-w / 2, h / 2 - 16, w, 10);
+                } else if (kind === 'temple' || kind === 'stoneGate' || kind === 'goldenCastle') {
+                    const isCastle = kind === 'goldenCastle';
+                    const isGate = kind === 'stoneGate';
+                    g.fillStyle = 'rgba(0,0,0,0.32)';
+                    g.beginPath(); g.ellipse(0, 12, 125, 42, 0, 0, Math.PI * 2); g.fill();
+
+                    // Bậc thềm đá 3/4
+                    g.fillStyle = isCastle ? '#D97706' : '#78716C';
+                    g.fillRect(-105, -24, 210, 34);
+                    g.fillStyle = isCastle ? '#F59E0B' : '#A8A29E';
+                    g.fillRect(-95, -110, 190, 90);
+
+                    // Cột trụ
+                    g.fillStyle = isCastle ? '#FEF08A' : '#E7E5E4';
+                    [-78, -28, 28, 78].forEach(cx => {
+                        g.fillRect(cx - 8, -108, 16, 86);
+                    });
+
+                    // Cửa vòm tối bí mật ở giữa
+                    g.fillStyle = '#1E1B18';
+                    g.beginPath();
+                    g.arc(0, -56, 24, Math.PI, 0);
+                    g.lineTo(24, -22);
+                    g.lineTo(-24, -22);
+                    g.closePath();
+                    g.fill();
+
+                    // Mái đền / lâu đài
+                    g.fillStyle = isCastle ? '#DC2626' : (isGate ? '#57534E' : '#B45309');
+                    g.beginPath();
+                    g.moveTo(-116, -108);
+                    g.lineTo(0, -168);
+                    g.lineTo(116, -108);
+                    g.closePath();
+                    g.fill();
+                    g.strokeStyle = isCastle ? '#FEF08A' : '#44403C';
+                    g.lineWidth = 4;
+                    g.stroke();
+                } else if (kind === 'cave' || kind === 'crystalCave') {
+                    const isCrystal = kind === 'crystalCave';
+                    g.fillStyle = 'rgba(0,0,0,0.34)';
+                    g.beginPath(); g.ellipse(0, 10, 105, 36, 0, 0, Math.PI * 2); g.fill();
+
+                    g.fillStyle = isCrystal ? '#312E81' : '#44403C';
+                    g.beginPath();
+                    g.moveTo(-98, 8);
+                    g.lineTo(-76, -86);
+                    g.lineTo(0, -116);
+                    g.lineTo(78, -82);
+                    g.lineTo(98, 8);
+                    g.closePath();
+                    g.fill();
+
+                    // Cửa hang tối sâu
+                    g.fillStyle = '#0F172A';
+                    g.beginPath();
+                    g.arc(0, -34, 34, Math.PI, 0);
+                    g.lineTo(34, 8);
+                    g.lineTo(-34, 8);
+                    g.closePath();
+                    g.fill();
+
+                    if (isCrystal) {
+                        g.fillStyle = '#38BDF8';
+                        g.beginPath(); g.moveTo(-55, -20); g.lineTo(-42, -62); g.lineTo(-30, -20); g.fill();
+                        g.beginPath(); g.moveTo(32, -20); g.lineTo(46, -66); g.lineTo(58, -20); g.fill();
+                    }
+                } else if (kind === 'greenhouse' || kind === 'labDome') {
+                    g.fillStyle = 'rgba(0,0,0,0.28)';
+                    g.beginPath(); g.ellipse(0, 10, 115, 38, 0, 0, Math.PI * 2); g.fill();
+
+                    g.fillStyle = '#FFFFFF';
+                    g.fillRect(-95, -62, 190, 68);
+                    g.strokeStyle = '#0284C7';
+                    g.lineWidth = 4;
+                    g.strokeRect(-95, -62, 190, 68);
+
+                    g.fillStyle = kind === 'greenhouse' ? 'rgba(167, 243, 208, 0.85)' : 'rgba(186, 230, 253, 0.9)';
+                    g.beginPath();
+                    g.arc(0, -62, 86, Math.PI, 0);
+                    g.closePath();
+                    g.fill();
+                    g.stroke();
+
+                    g.fillStyle = '#0369A1';
+                    g.fillRect(-20, -42, 40, 48);
+                } else if (kind === 'cottage' || kind === 'school') {
+                    const isSchool = kind === 'school';
+                    const w = isSchool ? 220 : 140;
+                    g.fillStyle = 'rgba(0,0,0,0.28)';
+                    g.beginPath(); g.ellipse(0, 10, w * 0.58, 34, 0, 0, Math.PI * 2); g.fill();
+
+                    g.fillStyle = '#FEF3C7';
+                    g.fillRect(-w / 2, -74, w, 80);
+                    g.strokeStyle = '#92400E';
+                    g.lineWidth = 3.5;
+                    g.strokeRect(-w / 2, -74, w, 80);
+
+                    g.fillStyle = isSchool ? '#EA580C' : (prop.color || '#F59E0B');
+                    g.beginPath();
+                    g.moveTo(-w / 2 - 14, -72);
+                    g.lineTo(0, -126);
+                    g.lineTo(w / 2 + 14, -72);
+                    g.closePath();
+                    g.fill();
+                    g.stroke();
+
+                    g.fillStyle = '#78350F';
+                    g.fillRect(-18, -42, 36, 48);
+
+                    if (isSchool) {
+                        // Lá cờ đỏ sao vàng trên mái trường
+                        g.strokeStyle = '#78350F';
+                        g.lineWidth = 4;
+                        g.beginPath(); g.moveTo(0, -126); g.lineTo(0, -162); g.stroke();
+                        g.fillStyle = '#DC2626';
+                        g.fillRect(0, -162, 34, 22);
+                    }
+                } else if (kind === 'ship') {
+                    const bob = Math.sin(timeSec * 2.4) * 5;
+                    g.translate(0, bob);
+                    g.fillStyle = '#78350F';
+                    g.beginPath();
+                    g.moveTo(-88, -10);
+                    g.lineTo(88, -10);
+                    g.lineTo(64, 28);
+                    g.lineTo(-64, 28);
+                    g.closePath();
+                    g.fill();
+                    g.strokeStyle = '#451A03';
+                    g.lineWidth = 3.5;
+                    g.stroke();
+
+                    g.strokeStyle = '#451A03';
+                    g.lineWidth = 6;
+                    g.beginPath(); g.moveTo(0, -10); g.lineTo(0, -125); g.stroke();
+
+                    g.fillStyle = '#FFFBEB';
+                    g.beginPath();
+                    g.moveTo(4, -118);
+                    g.quadraticCurveTo(66, -75, 4, -24);
+                    g.closePath();
+                    g.fill();
+                    g.strokeStyle = '#D97706';
+                    g.lineWidth = 2.5;
+                    g.stroke();
+                } else if (kind === 'fountain') {
+                    g.fillStyle = '#94A3B8';
+                    g.beginPath(); g.ellipse(0, 0, 56, 28, 0, 0, Math.PI * 2); g.fill();
+                    g.fillStyle = '#38BDF8';
+                    g.beginPath(); g.ellipse(0, -2, 46, 21, 0, 0, Math.PI * 2); g.fill();
+                    g.fillStyle = '#CBD5E1';
+                    g.fillRect(-10, -34, 20, 32);
+                    g.fillStyle = '#BAE6FD';
+                    g.beginPath(); g.arc(0, -38, 12 + Math.sin(timeSec * 6) * 2, 0, Math.PI * 2); g.fill();
+                } else if (kind === 'statue') {
+                    g.fillStyle = 'rgba(0,0,0,0.3)';
+                    g.beginPath(); g.ellipse(0, 6, 36, 16, 0, 0, Math.PI * 2); g.fill();
+                    g.fillStyle = '#64748B';
+                    g.fillRect(-24, -22, 48, 26);
+                    g.fillStyle = '#94A3B8';
+                    g.fillRect(-16, -68, 32, 46);
+                    g.beginPath(); g.arc(0, -82, 16, 0, Math.PI * 2); g.fill();
+                } else if (kind === 'coral') {
+                    g.fillStyle = '#FB7185';
+                    g.beginPath();
+                    g.arc(-14, -8, 14, 0, Math.PI * 2);
+                    g.arc(0, -16, 16, 0, Math.PI * 2);
+                    g.arc(16, -6, 13, 0, Math.PI * 2);
+                    g.fill();
+                } else if (kind === 'cliff') {
+                    const w = prop.w || 300;
+                    const h = prop.h || 200;
+                    g.fillStyle = '#57534E';
+                    g.beginPath();
+                    g.moveTo(-w / 2, 0);
+                    g.lineTo(-w * 0.34, -h);
+                    g.lineTo(w * 0.28, -h * 0.92);
+                    g.lineTo(w / 2, 0);
+                    g.closePath();
+                    g.fill();
+                    g.fillStyle = '#78716C';
+                    g.beginPath();
+                    g.moveTo(-w * 0.34, -h);
+                    g.lineTo(0, -h * 0.55);
+                    g.lineTo(w * 0.28, -h * 0.92);
+                    g.closePath();
+                    g.fill();
+                }
+
+                g.restore();
+            }
+
+            /**
+             * Vẽ rương kho báu & vật thể che giấu (bụi cây / tảng đá / cửa hang / cổng đền)
+             */
+            function drawTreasureSpot(g, chest, timeSec, isHovered) {
+                const isOpened = !!state.openedChests[chest.id];
+                const isRevealed = isOpened || !!state.revealedChests[chest.id];
+                const { x, y } = chest.pos;
+
+                g.save();
+                g.translate(x, y);
+
+                // Vòng sáng định vị tinh tế dưới đất (dấu hiệu thị giác giúp học sinh dễ nhận biết)
+                const pulse = 0.55 + Math.sin(timeSec * 3.5) * 0.25;
+                const glowGrad = g.createRadialGradient(0, 0, 8, 0, 0, isRevealed ? 68 : 56);
+                if (chest.tier === 'diamond') {
+                    glowGrad.addColorStop(0, `rgba(56, 189, 248, ${pulse})`);
+                } else if (chest.tier === 'silver') {
+                    glowGrad.addColorStop(0, `rgba(226, 232, 240, ${pulse})`);
+                } else {
+                    glowGrad.addColorStop(0, `rgba(250, 204, 21, ${pulse})`);
+                }
+                glowGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                g.fillStyle = glowGrad;
+                g.beginPath();
+                g.ellipse(0, 4, 68, 34, 0, 0, Math.PI * 2);
+                g.fill();
+
+                if (isHovered) {
+                    g.strokeStyle = '#FFE680';
+                    g.lineWidth = 3;
+                    g.setLineDash([6, 4]);
+                    g.beginPath();
+                    g.ellipse(0, 4, 56, 28, 0, 0, Math.PI * 2);
+                    g.stroke();
+                    g.setLineDash([]);
+                }
+
+                // 1. Vẽ chiếc rương kho báu (lấp ló phía sau vật che hoặc lộ hoàn toàn khi đã mở)
+                const chestOffset = isRevealed ? 0 : -6;
+                g.save();
+                g.translate(0, chestOffset);
+                if (!isRevealed) g.scale(0.86, 0.86);
+
+                const palettes = {
+                    gold:    { top: '#FDE047', bot: '#D97706', band: '#FEF08A', stroke: '#78350F', gem: '#EF4444' },
+                    silver:  { top: '#F8FAFC', bot: '#64748B', band: '#FFFFFF', stroke: '#334155', gem: '#38BDF8' },
+                    diamond: { top: '#A5F3FC', bot: '#0284C7', band: '#E0F2FE', stroke: '#0C4A6E', gem: '#FDE047' }
+                };
+                const p = palettes[chest.tier] || palettes.gold;
+
+                // Bóng rương
+                g.fillStyle = 'rgba(0,0,0,0.35)';
+                g.beginPath(); g.ellipse(0, 14, 34, 13, 0, 0, Math.PI * 2); g.fill();
+
+                // Thân rương
+                const cGrad = g.createLinearGradient(0, -24, 0, 14);
+                cGrad.addColorStop(0, p.top);
+                cGrad.addColorStop(1, p.bot);
+                g.fillStyle = cGrad;
+                g.strokeStyle = p.stroke;
+                g.lineWidth = 3;
+                g.beginPath();
+                g.roundRect(-28, -14, 56, 28, 6);
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = p.band;
+                g.fillRect(-19, -13, 7, 26);
+                g.fillRect(12, -13, 7, 26);
+
+                // Nắp rương (mở lên nếu đã trả lời đúng)
+                if (isOpened) {
+                    g.fillStyle = '#FEF08A';
+                    g.beginPath(); g.arc(-10, -14, 6, 0, Math.PI * 2); g.arc(0, -17, 7, 0, Math.PI * 2); g.arc(10, -14, 6, 0, Math.PI * 2); g.fill();
+
+                    g.save();
+                    g.translate(0, -22);
+                    g.rotate(-0.22);
+                    g.fillStyle = cGrad;
+                    g.beginPath();
+                    g.roundRect(-29, -14, 58, 15, 6);
+                    g.fill();
+                    g.stroke();
+                    g.restore();
+                } else {
+                    g.fillStyle = cGrad;
+                    g.beginPath();
+                    g.roundRect(-29, -26, 58, 15, 6);
+                    g.fill();
+                    g.stroke();
+
+                    g.fillStyle = p.stroke;
+                    g.fillRect(-6, -18, 12, 12);
+                    g.fillStyle = p.gem;
+                    g.beginPath(); g.arc(0, -12, 3, 0, Math.PI * 2); g.fill();
+                }
+                g.restore();
+
+                // 2. Nếu CHƯA phát hiện: vẽ vật thể che giấu (bụi cây / tảng đá / ấn phong ấn) phía trước
+                if (!isRevealed) {
+                    const wiggle = Math.sin(timeSec * 4.5 + x) * 2.5;
+                    g.save();
+                    g.translate(wiggle, 6);
+
+                    if (chest.hideType === 'bush') {
+                        g.fillStyle = '#14532D';
+                        g.beginPath(); g.arc(-18, -4, 22, 0, Math.PI * 2); g.arc(18, -4, 22, 0, Math.PI * 2); g.fill();
+                        g.fillStyle = '#16A34A';
+                        g.beginPath(); g.arc(0, -10, 26, 0, Math.PI * 2); g.fill();
+                        g.fillStyle = '#4ADE80';
+                        g.beginPath(); g.arc(-8, -16, 12, 0, Math.PI * 2); g.fill();
+                        // Quả mọng đỏ / hoa nhỏ
+                        g.fillStyle = '#FACC15';
+                        g.beginPath(); g.arc(-14, -6, 3.5, 0, Math.PI * 2); g.arc(14, -8, 3.5, 0, Math.PI * 2); g.fill();
+                    } else if (chest.hideType === 'boulder') {
+                        g.fillStyle = '#475569';
+                        g.beginPath();
+                        g.moveTo(-34, 8); g.lineTo(-22, -22); g.lineTo(8, -26); g.lineTo(34, 8);
+                        g.closePath();
+                        g.fill();
+                        g.fillStyle = '#94A3B8';
+                        g.beginPath();
+                        g.moveTo(-20, -20); g.lineTo(6, -24); g.lineTo(14, -6); g.lineTo(-10, -4);
+                        g.closePath();
+                        g.fill();
+                    } else {
+                        // Cổng ấn phong ấn của hang động / đền / lâu đài
+                        g.strokeStyle = '#F59E0B';
+                        g.lineWidth = 3.5;
+                        g.fillStyle = 'rgba(245, 158, 11, 0.22)';
+                        g.beginPath();
+                        g.arc(0, -10, 26, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+                    }
+                    g.restore();
+                }
+
+                // 3. Nhãn tên nổi gọn gàng phía trên khi trỏ chuột hoặc đã lộ diện
+                if (isHovered || isRevealed) {
+                    const labelText = isOpened
+                        ? `✓ ${chest.tierLabel}`
+                        : (isRevealed ? `Mở ${chest.tierLabel}` : chest.hideLabel);
+
+                    g.font = 'bold 13px "Trebuchet MS", sans-serif';
+                    const tw = g.measureText(labelText).width;
+                    const bw = tw + 22;
+                    const bh = 26;
+                    const by = -58;
+
+                    g.fillStyle = isOpened ? 'rgba(21, 128, 61, 0.94)' : 'rgba(43, 22, 8, 0.92)';
+                    g.strokeStyle = isOpened ? '#86EFAC' : '#F5B82E';
+                    g.lineWidth = 2;
+                    g.beginPath();
+                    g.roundRect(-bw / 2, by, bw, bh, 13);
+                    g.fill();
+                    g.stroke();
+
+                    g.fillStyle = '#FFFBEB';
+                    g.textAlign = 'center';
+                    g.textBaseline = 'middle';
+                    g.fillText(labelText, 0, by + bh / 2 + 0.5);
+                }
+
+                g.restore();
+            }
+
+            /**
+             * Vẽ nhân vật nhà thám hiểm nhí với 6 trạng thái hoạt ảnh:
+             * idle, walk, run, interact, open, celebrate
+             */
+            function drawExplorer(g, player) {
+                const { x, y, facing, state: pState, animTimer } = player;
+                g.save();
+                g.translate(x, y);
+
+                // Tính độ nhún và góc vung chân tay theo trạng thái
+                let bobY = 0;
+                let legSwing = 0;
+                let armSwing = 0;
+                let lean = 0;
+                let jumpY = 0;
+
+                if (pState === 'idle') {
+                    bobY = Math.sin(animTimer * 3.2) * 2;
+                } else if (pState === 'walk') {
+                    bobY = Math.abs(Math.sin(animTimer * 10)) * -4;
+                    legSwing = Math.sin(animTimer * 10) * 9;
+                    armSwing = -Math.sin(animTimer * 10) * 8;
+                    lean = 0.06;
+                } else if (pState === 'run') {
+                    bobY = Math.abs(Math.sin(animTimer * 16)) * -6;
+                    legSwing = Math.sin(animTimer * 16) * 14;
+                    armSwing = -Math.sin(animTimer * 16) * 13;
+                    lean = 0.16;
+                } else if (pState === 'interact' || pState === 'open') {
+                    bobY = Math.sin(animTimer * 14) * -3;
+                    armSwing = -14 + Math.sin(animTimer * 18) * 6;
+                    lean = 0.2;
+                } else if (pState === 'celebrate') {
+                    jumpY = -Math.abs(Math.sin(animTimer * 8)) * 22;
+                    armSwing = -22;
+                }
+
+                // Bóng dưới chân
+                const shadowScale = 1 - Math.abs(jumpY) * 0.015;
+                g.fillStyle = 'rgba(15, 20, 15, 0.34)';
+                g.beginPath();
+                g.ellipse(0, 4, 22 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
+                g.fill();
+
+                g.translate(0, bobY + jumpY);
+                g.scale(facing, 1);
+                g.rotate(lean);
+
+                // Ba lô thám hiểm sau lưng
+                g.fillStyle = '#B45309';
+                g.strokeStyle = '#451A03';
+                g.lineWidth = 2;
+                g.beginPath();
+                g.roundRect(-22, -46, 14, 24, 5);
+                g.fill();
+                g.stroke();
+
+                // Chân trái & chân phải
+                g.fillStyle = '#5C3317';
+                g.beginPath(); g.ellipse(-6 - legSwing * 0.5, -2, 7, 4.5, 0, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.ellipse(7 + legSwing * 0.5, -2, 7, 4.5, 0, 0, Math.PI * 2); g.fill();
+
+                // Quần soóc kaki
+                g.fillStyle = '#78512A';
+                g.beginPath();
+                g.roundRect(-12, -22, 24, 16, 5);
+                g.fill();
+
+                // Áo thám hiểm + khăn quàng đỏ bay nhẹ
+                g.fillStyle = '#FDE68A';
+                g.strokeStyle = '#B45309';
+                g.lineWidth = 2;
+                g.beginPath();
+                g.roundRect(-14, -46, 28, 26, 8);
+                g.fill();
+                g.stroke();
+
+                // Khăn quàng đỏ
+                const scarfFlutter = Math.sin(animTimer * (pState === 'run' ? 18 : 5)) * 3;
+                g.fillStyle = '#DC2626';
+                g.beginPath();
+                g.moveTo(-8, -45);
+                g.lineTo(10, -45);
+                g.lineTo(2, -33);
+                g.closePath();
+                g.fill();
+                g.beginPath();
+                g.moveTo(-12, -43);
+                g.lineTo(-26, -37 + scarfFlutter);
+                g.lineTo(-22, -31 + scarfFlutter);
+                g.closePath();
+                g.fill();
+
+                // Cánh tay
+                g.strokeStyle = '#FFDCB5';
+                g.lineWidth = 6;
+                g.lineCap = 'round';
+                g.beginPath();
+                g.moveTo(6, -38);
+                g.lineTo(15, -28 + armSwing * 0.6);
+                g.stroke();
+
+                // Đầu & khuôn mặt
+                g.fillStyle = '#FFDCB5';
+                g.strokeStyle = '#C28E5C';
+                g.lineWidth = 1.5;
+                g.beginPath();
+                g.arc(0, -60, 16, 0, Math.PI * 2);
+                g.fill();
+                g.stroke();
+
+                // Mắt & nụ cười
+                g.fillStyle = '#1E293B';
+                g.beginPath(); g.arc(6, -61, 2.5, 0, Math.PI * 2); g.fill();
+                g.fillStyle = '#FFFFFF';
+                g.beginPath(); g.arc(5.3, -62, 0.9, 0, Math.PI * 2); g.fill();
+
+                g.strokeStyle = '#9A3412';
+                g.lineWidth = 2;
+                g.beginPath();
+                if (pState === 'celebrate') {
+                    g.arc(5, -54, 4.5, 0, Math.PI);
+                } else {
+                    g.arc(4, -55, 3.5, 0.1, Math.PI - 0.2);
+                }
+                g.stroke();
+
+                // Mũ thám hiểm rộng vành
+                g.fillStyle = '#B45309';
+                g.strokeStyle = '#451A03';
+                g.lineWidth = 2;
+                g.beginPath();
+                g.ellipse(0, -72, 23, 5.5, 0, 0, Math.PI * 2);
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = '#D97706';
+                g.beginPath();
+                g.arc(0, -72, 14, Math.PI, 0);
+                g.closePath();
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = '#DC2626';
+                g.fillRect(-13, -76, 26, 3.5);
+
+                g.restore();
+            }
+
+            // =========================================================================
+            // 9. SƯƠNG MÙ KHÁM PHÁ (FOG OF WAR) & MINI-MAP
+            // =========================================================================
+            function getFogGrid(mapIdx) {
+                if (!fogGrids[mapIdx]) {
+                    fogGrids[mapIdx] = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(1));
+                }
+                return fogGrids[mapIdx];
+            }
+
+            function revealFogAt(mapIdx, wx, wy, radius = 360) {
+                const fog = getFogGrid(mapIdx);
+                const c0 = Math.max(0, Math.floor((wx - radius) / GRID_SIZE));
+                const c1 = Math.min(GRID_COLS - 1, Math.floor((wx + radius) / GRID_SIZE));
+                const r0 = Math.max(0, Math.floor((wy - radius) / GRID_SIZE));
+                const r1 = Math.min(GRID_ROWS - 1, Math.floor((wy + radius) / GRID_SIZE));
+
+                for (let r = r0; r <= r1; r++) {
+                    for (let c = c0; c <= c1; c++) {
+                        const cx = c * GRID_SIZE + GRID_SIZE / 2;
+                        const cy = r * GRID_SIZE + GRID_SIZE / 2;
+                        const d = Math.hypot(cx - wx, cy - wy);
+                        if (d < radius) {
+                            const val = Math.max(0, (d - radius * 0.55) / (radius * 0.45));
+                            if (val < fog[r][c]) fog[r][c] = val;
+                        }
+                    }
+                }
+            }
+
+            function renderFogOfWar(g, mapIdx) {
+                const fog = getFogGrid(mapIdx);
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        const alpha = fog[r][c];
+                        if (alpha <= 0.05) continue;
+                        g.fillStyle = `rgba(22, 32, 26, ${alpha * 0.72})`;
+                        g.fillRect(c * GRID_SIZE - 4, r * GRID_SIZE - 4, GRID_SIZE + 8, GRID_SIZE + 8);
+                    }
+                }
+            }
+
+            function renderMiniMap() {
+                const mapIdx = worldState.mapIdx;
+                const map = MAPS_DATA[mapIdx];
+                const terrain = getTerrainCanvas(mapIdx);
+
+                miniCtx.clearRect(0, 0, 204, 130);
+                miniCtx.drawImage(terrain, 0, 0, 204, 130);
+
+                // Sương mù trên mini-map
+                const fog = getFogGrid(mapIdx);
+                const cw = 204 / GRID_COLS;
+                const ch = 130 / GRID_ROWS;
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        if (fog[r][c] > 0.2) {
+                            miniCtx.fillStyle = `rgba(15, 24, 18, ${fog[r][c] * 0.78})`;
+                            miniCtx.fillRect(c * cw, r * ch, cw + 0.5, ch + 0.5);
+                        }
+                    }
+                }
+
+                // 3 chấm kho báu trên mini-map
+                map.chests.forEach(c => {
+                    const mx = (c.pos.x / WORLD_W) * 204;
+                    const my = (c.pos.y / WORLD_H) * 130;
+                    const opened = !!state.openedChests[c.id];
+                    miniCtx.fillStyle = opened ? '#22C55E' : '#FACC15';
+                    miniCtx.beginPath();
+                    miniCtx.arc(mx, my, 4.2, 0, Math.PI * 2);
+                    miniCtx.fill();
+                    miniCtx.strokeStyle = '#3B1E0A';
+                    miniCtx.lineWidth = 1.2;
+                    miniCtx.stroke();
+                });
+
+                // Vị trí nhân vật trên mini-map
+                const px = (worldState.player.x / WORLD_W) * 204;
+                const py = (worldState.player.y / WORLD_H) * 130;
+                miniCtx.fillStyle = '#EF4444';
+                miniCtx.beginPath();
+                miniCtx.arc(px, py, 4.8, 0, Math.PI * 2);
+                miniCtx.fill();
+                miniCtx.strokeStyle = '#FFFFFF';
+                miniCtx.lineWidth = 1.5;
+                miniCtx.stroke();
+
+                // Khung vùng nhìn camera hiện tại
+                const cam = worldState.camera;
+                const vx = (cam.x / WORLD_W) * 204;
+                const vy = (cam.y / WORLD_H) * 130;
+                const vw = ((VIEW_W / cam.zoom) / WORLD_W) * 204;
+                const vh = ((VIEW_H / cam.zoom) / WORLD_H) * 130;
+                miniCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                miniCtx.lineWidth = 1.4;
+                miniCtx.strokeRect(vx, vy, vw, vh);
+            }
+
+            // =========================================================================
+            // 10. HỆ THỐNG HẠT MÔI TRƯỜNG & CẬP NHẬT VÒNG LẶP GAME 60FPS
+            // =========================================================================
+            function spawnWorldParticles(wx, wy, color, count = 18) {
+                for (let i = 0; i < count; i++) {
+                    const a = Math.random() * Math.PI * 2;
+                    const sp = 1.2 + Math.random() * 3.5;
+                    worldState.particles.push({
+                        x: wx + (Math.random() - 0.5) * 24,
+                        y: wy + (Math.random() - 0.5) * 16,
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp - 1.8,
+                        r: 2.5 + Math.random() * 3.5,
+                        color,
+                        life: 1
+                    });
+                }
+            }
+
+            function clampCamera() {
+                const cam = worldState.camera;
+                const maxW = Math.max(0, WORLD_W - VIEW_W / cam.zoom);
+                const maxH = Math.max(0, WORLD_H - VIEW_H / cam.zoom);
+                cam.x = Math.max(0, Math.min(maxW, cam.x));
+                cam.y = Math.max(0, Math.min(maxH, cam.y));
+            }
+
+            function centerCameraOnPlayer(instant = false) {
+                const cam = worldState.camera;
+                const targetX = worldState.player.x - (VIEW_W / cam.zoom) / 2;
+                const targetY = worldState.player.y - (VIEW_H / cam.zoom) / 2;
+                if (instant) {
+                    cam.x = targetX;
+                    cam.y = targetY;
+                } else {
+                    cam.x += (targetX - cam.x) * 0.12;
+                    cam.y += (targetY - cam.y) * 0.12;
+                }
+                clampCamera();
+            }
+
+            let lastTime = performance.now();
+            let gameLoopRunning = false;
+
+            function startGameLoop() {
+                if (gameLoopRunning) return;
+                gameLoopRunning = true;
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+
+            function gameLoop(now) {
+                const dt = Math.min(0.05, (now - lastTime) / 1000);
+                lastTime = now;
+
+                if (screens.play.classList.contains('active')) {
+                    updateWorld(dt, now / 1000);
+                    renderWorld(now / 1000);
+                }
+                requestAnimationFrame(gameLoop);
+            }
+
+            function updateWorld(dt, timeSec) {
+                const p = worldState.player;
+                p.animTimer += dt;
+
+                // Xử lý đếm ngược hoạt ảnh đặc biệt (interact, open, celebrate)
+                if (p.stateTimer > 0) {
+                    p.stateTimer -= dt;
+                    if (p.stateTimer <= 0) {
+                        p.state = 'idle';
+                    }
+                }
+
+                // Di chuyển nhân vật theo lộ trình A*
+                if (p.path.length > 0) {
+                    const target = p.path[0];
+                    const dx = target.x - p.x;
+                    const dy = target.y - p.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    // Chạy nhanh nếu quãng đường còn dài, đi bộ nếu ở gần
+                    const totalRem = dist + (p.path.length - 1) * GRID_SIZE;
+                    const isRunning = totalRem > 180;
+                    const speed = isRunning ? 310 : 195;
+                    p.state = isRunning ? 'run' : 'walk';
+
+                    if (Math.abs(dx) > 2) {
+                        p.facing = dx >= 0 ? 1 : -1;
+                    }
+
+                    p.stepSoundTimer -= dt;
+                    if (p.stepSoundTimer <= 0) {
+                        playSound('step');
+                        p.stepSoundTimer = isRunning ? 0.24 : 0.36;
+                        if (isRunning) {
+                            spawnWorldParticles(p.x, p.y + 2, 'rgba(235, 220, 190, 0.7)', 3);
+                        }
+                    }
+
+                    if (dist <= speed * dt) {
+                        p.x = target.x;
+                        p.y = target.y;
+                        p.path.shift();
+                    } else {
+                        p.x += (dx / dist) * speed * dt;
+                        p.y += (dy / dist) * speed * dt;
+                    }
+
+                    // Vén sương mù xung quanh nhân vật
+                    revealFogAt(worldState.mapIdx, p.x, p.y, 370);
+
+                    // Khi vừa tới đích
+                    if (p.path.length === 0) {
+                        p.state = 'idle';
+                        if (p.pendingAction) {
+                            const act = p.pendingAction;
+                            p.pendingAction = null;
+                            executeChestInteraction(act.chestIdx);
+                        }
+                    }
+                }
+
+                if (worldState.camera.followPlayer && !worldState.camera.isDragging) {
+                    centerCameraOnPlayer(false);
+                }
+
+                // Cập nhật vòng sóng nhấp chuột & hạt môi trường
+                worldState.clickMarkers = worldState.clickMarkers.filter(m => m.life > 0);
+                for (const m of worldState.clickMarkers) m.life -= dt * 1.8;
+
+                worldState.particles = worldState.particles.filter(pt => pt.life > 0);
+                for (const pt of worldState.particles) {
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.life -= dt * 1.3;
+                }
+
+                // Tạo đom đóm / ánh sáng lấp lánh quanh các kho báu chưa mở
+                if (Math.random() < 0.22) {
+                    const map = MAPS_DATA[worldState.mapIdx];
+                    const ch = map.chests[Math.floor(Math.random() * map.chests.length)];
+                    if (!state.openedChests[ch.id]) {
+                        spawnWorldParticles(
+                            ch.pos.x + (Math.random() - 0.5) * 50,
+                            ch.pos.y - 10,
+                            ch.tier === 'diamond' ? '#7DD3FC' : '#FDE047',
+                            1
+                        );
+                    }
+                }
+            }
+
+            function renderWorld(timeSec) {
+                const mapIdx = worldState.mapIdx;
+                const map = MAPS_DATA[mapIdx];
+                const cam = worldState.camera;
+
+                ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+                ctx.save();
+                ctx.scale(cam.zoom, cam.zoom);
+                ctx.translate(-cam.x, -cam.y);
+
+                // 1. Lớp nền địa hình 3/4
+                ctx.drawImage(getTerrainCanvas(mapIdx), 0, 0);
+
+                // 2. Lớp nước động (sông, thác nước, biển, dòng sông phát sáng)
+                for (const wz of worldState.waterZones) {
+                    if (wz.type === 'glowRiver' || wz.type === 'crystalRiver') {
+                        ctx.fillStyle = wz.type === 'glowRiver' ? '#06B6D4' : '#38BDF8';
+                    } else {
+                        ctx.fillStyle = '#0284C7';
+                    }
+                    ctx.fillRect(wz.x, wz.y, wz.w, wz.h);
+
+                    // Gợn sóng ánh sáng chuyển động
+                    ctx.strokeStyle = 'rgba(224, 242, 254, 0.55)';
+                    ctx.lineWidth = 3;
+                    const waveShift = (timeSec * 36) % 44;
+                    for (let wy = wz.y + waveShift; wy < wz.y + wz.h - 16; wy += 44) {
+                        ctx.beginPath();
+                        ctx.moveTo(wz.x + 14, wy);
+                        ctx.quadraticCurveTo(wz.x + wz.w / 2, wy - 8, wz.x + wz.w - 14, wy);
+                        ctx.stroke();
+                    }
+                }
+
+                // 3. Vòng sóng điểm đến khi học sinh nhấp chuột
+                for (const m of worldState.clickMarkers) {
+                    ctx.strokeStyle = `rgba(253, 224, 71, ${m.life})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.ellipse(m.x, m.y, (1 - m.life) * 38 + 10, ((1 - m.life) * 38 + 10) * 0.5, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // 4. Vẽ đường dẫn chân nhẹ của nhân vật nếu đang đi
+                if (worldState.player.path.length > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 248, 220, 0.72)';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([8, 8]);
+                    ctx.beginPath();
+                    ctx.moveTo(worldState.player.x, worldState.player.y);
+                    for (const pt of worldState.player.path) {
+                        ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 5. Sắp xếp theo trục Y (Depth Sorting) cho Vật thể, Kho báu và Nhân vật
+                const renderQueue = [];
+                for (const prop of worldState.props) {
+                    renderQueue.push({ y: prop.y, type: 'prop', data: prop });
+                }
+                map.chests.forEach((ch, idx) => {
+                    renderQueue.push({ y: ch.pos.y, type: 'chest', data: ch, idx });
+                });
+                renderQueue.push({ y: worldState.player.y, type: 'player', data: worldState.player });
+
+                renderQueue.sort((a, b) => a.y - b.y);
+
+                for (const item of renderQueue) {
+                    if (item.type === 'prop') {
+                        drawProp3Quarter(ctx, item.data, timeSec);
+                    } else if (item.type === 'chest') {
+                        const isHov = worldState.hoveredEntity && worldState.hoveredEntity.idx === item.idx;
+                        drawTreasureSpot(ctx, item.data, timeSec, isHov);
+                    } else {
+                        drawExplorer(ctx, item.data);
+                    }
+                }
+
+                // 6. Hạt ánh sáng & bụi chuyển động
+                for (const pt of worldState.particles) {
+                    ctx.globalAlpha = Math.max(0, pt.life);
+                    ctx.fillStyle = pt.color;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // 7. Lớp sương mù khám phá (Fog of War)
+                renderFogOfWar(ctx, mapIdx);
+
+                ctx.restore();
+
+                // 8. Cập nhật bản đồ nhỏ (Mini-map)
+                renderMiniMap();
+            }
+
+            /**
+             * Khi nhân vật đã đến sát vị trí kho báu:
+             * - Nếu rương đang bị che bởi bụi cây/tảng đá/cửa đền: mở vật che, phát sáng & âm thanh!
+             * - Nếu rương đã lộ diện: chạy hoạt ảnh mở nắp rương và hiện bảng câu hỏi!
+             */
+            function executeChestInteraction(chestIdx) {
+                const mapIdx = worldState.mapIdx;
+                const chest = MAPS_DATA[mapIdx].chests[chestIdx];
+                const p = worldState.player;
+
+                p.facing = chest.pos.x >= p.x ? 1 : -1;
+
+                const isRevealed = !!state.openedChests[chest.id] || !!state.revealedChests[chest.id];
+                if (!isRevealed) {
+                    state.revealedChests[chest.id] = true;
+                    saveState();
+                    p.state = 'interact';
+                    p.stateTimer = 0.65;
+                    playSound('reveal');
+                    spawnWorldParticles(chest.pos.x, chest.pos.y - 10, '#FDE047', 32);
+                    updatePlayHUD();
+
+                    // Sau 550ms tự động mở câu hỏi để học sinh trải nghiệm liền mạch
+                    setTimeout(() => {
+                        p.state = 'open';
+                        p.stateTimer = 0.6;
+                        playSound('open');
+                        openQuestionModal(mapIdx, chestIdx);
+                    }, 560);
+                } else {
+                    p.state = 'open';
+                    p.stateTimer = 0.65;
+                    playSound('open');
+                    spawnWorldParticles(chest.pos.x, chest.pos.y - 10, '#38BDF8', 22);
+                    setTimeout(() => {
+                        openQuestionModal(mapIdx, chestIdx);
+                    }, 340);
+                }
+            }
+
+            // =========================================================================
+            // 11. SỰ KIỆN TƯƠNG TÁC CHUỘT / CẢM ỨNG TRÊN CANVAS & MINI-MAP
+            // =========================================================================
+            function screenToWorld(clientX, clientY) {
+                const rect = advCanvas.getBoundingClientRect();
+                const sx = ((clientX - rect.left) / rect.width) * VIEW_W;
+                const sy = ((clientY - rect.top) / rect.height) * VIEW_H;
+                const cam = worldState.camera;
+                return {
+                    x: sx / cam.zoom + cam.x,
+                    y: sy / cam.zoom + cam.y
+                };
+            }
+
+            function getChestAtWorld(wx, wy) {
+                const map = MAPS_DATA[worldState.mapIdx];
+                for (let i = 0; i < map.chests.length; i++) {
+                    const ch = map.chests[i];
+                    if (Math.hypot(wx - ch.pos.x, wy - ch.pos.y) <= 68) {
+                        return { idx: i, chest: ch };
+                    }
+                }
+                return null;
+            }
+
+            advCanvas.addEventListener('pointerdown', (e) => {
+                const cam = worldState.camera;
+                cam.isDragging = true;
+                cam.dragMoved = false;
+                cam.dragStartX = e.clientX;
+                cam.dragStartY = e.clientY;
+                cam.camStartX = cam.x;
+                cam.camStartY = cam.y;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!screens.play.classList.contains('active')) return;
+                const cam = worldState.camera;
+
+                if (cam.isDragging) {
+                    const dx = e.clientX - cam.dragStartX;
+                    const dy = e.clientY - cam.dragStartY;
+                    if (Math.hypot(dx, dy) > 6) {
+                        cam.dragMoved = true;
+                        cam.followPlayer = false;
+                        advCanvas.classList.add('dragging');
+                        const rect = advCanvas.getBoundingClientRect();
+                        const scaleX = VIEW_W / rect.width;
+                        const scaleY = VIEW_H / rect.height;
+                        cam.x = cam.camStartX - (dx * scaleX) / cam.zoom;
+                        cam.y = cam.camStartY - (dy * scaleY) / cam.zoom;
+                        clampCamera();
+                    }
+                    return;
+                }
+
+                const wp = screenToWorld(e.clientX, e.clientY);
+                worldState.pointerWorld = wp;
+                worldState.hoveredEntity = getChestAtWorld(wp.x, wp.y);
+            });
+
+            window.addEventListener('pointerup', (e) => {
+                const cam = worldState.camera;
+                if (!cam.isDragging) return;
+                const wasDrag = cam.dragMoved;
+                cam.isDragging = false;
+                cam.dragMoved = false;
+                advCanvas.classList.remove('dragging');
+
+                if (wasDrag || !screens.play.classList.contains('active')) return;
+
+                // Xử lý nhấp chọn trên bản đồ
+                const wp = screenToWorld(e.clientX, e.clientY);
+                if (wp.x < 0 || wp.x > WORLD_W || wp.y < 0 || wp.y > WORLD_H) return;
+
+                cam.followPlayer = true;
+                const hit = getChestAtWorld(wp.x, wp.y);
+
+                if (hit) {
+                    // Nhấp vào vật che giấu hoặc rương kho báu -> nhân vật đi tới rồi kích hoạt
+                    const stand = hit.chest.standPos;
+                    const dist = Math.hypot(worldState.player.x - stand.x, worldState.player.y - stand.y);
+                    worldState.clickMarkers.push({ x: hit.chest.pos.x, y: hit.chest.pos.y, life: 1 });
+
+                    if (dist < 42) {
+                        executeChestInteraction(hit.idx);
+                    } else {
+                        const path = findPathAStar(worldState.navGrid, worldState.player.x, worldState.player.y, stand.x, stand.y);
+                        worldState.player.path = path.length > 0 ? path : [stand];
+                        worldState.player.pendingAction = { chestIdx: hit.idx };
+                    }
+                } else {
+                    // Nhấp vào điểm bất kỳ trên bản đồ -> nhân vật đi theo đường hợp lệ
+                    const path = findPathAStar(worldState.navGrid, worldState.player.x, worldState.player.y, wp.x, wp.y);
+                    if (path.length > 0) {
+                        worldState.player.path = path;
+                        worldState.player.pendingAction = null;
+                        const dest = path[path.length - 1];
+                        worldState.clickMarkers.push({ x: dest.x, y: dest.y, life: 1 });
+                    }
+                }
+            });
+
+            // Phóng to / thu nhỏ bằng con lăn chuột hoặc nút bấm
+            function setZoom(newZoom) {
+                const cam = worldState.camera;
+                const oldZoom = cam.zoom;
+                cam.zoom = Math.max(0.65, Math.min(1.45, newZoom));
+                // Giữ tâm màn hình ổn định khi zoom
+                const centerX = cam.x + (VIEW_W / oldZoom) / 2;
+                const centerY = cam.y + (VIEW_H / oldZoom) / 2;
+                cam.x = centerX - (VIEW_W / cam.zoom) / 2;
+                cam.y = centerY - (VIEW_H / cam.zoom) / 2;
+                clampCamera();
+                document.getElementById('zoom-label').textContent = `${Math.round(cam.zoom * 100)}%`;
+            }
+
+            advCanvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                setZoom(worldState.camera.zoom + (e.deltaY < 0 ? 0.12 : -0.12));
+            }, { passive: false });
+
+            document.getElementById('btn-zoom-in').addEventListener('click', () => setZoom(worldState.camera.zoom + 0.15));
+            document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(worldState.camera.zoom - 0.15));
+            document.getElementById('btn-cam-center').addEventListener('click', () => {
+                worldState.camera.followPlayer = true;
+                centerCameraOnPlayer(false);
+            });
+
+            // Nhấp trên mini-map để nhảy camera nhanh tới vùng đó
+            miniCanvas.addEventListener('click', (e) => {
+                const rect = miniCanvas.getBoundingClientRect();
+                const wx = ((e.clientX - rect.left) / rect.width) * WORLD_W;
+                const wy = ((e.clientY - rect.top) / rect.height) * WORLD_H;
+                const cam = worldState.camera;
+                cam.followPlayer = false;
+                cam.x = wx - (VIEW_W / cam.zoom) / 2;
+                cam.y = wy - (VIEW_H / cam.zoom) / 2;
+                clampCamera();
+            });
+
+            // =========================================================================
+            // 12. CHUYỂN MÀN HÌNH & KHỞI TẠO BẢN ĐỒ
+            // =========================================================================
+            const screens = {
+                title: document.getElementById('screen-title'),
+                world: document.getElementById('screen-world'),
+                play: document.getElementById('screen-play'),
+                ending: document.getElementById('screen-ending')
+            };
+
+            const transEl = document.getElementById('map-transition');
+            const transTitle = document.getElementById('trans-title');
+            const transSub = document.getElementById('trans-sub');
+
+            function showScreen(name) {
+                Object.keys(screens).forEach(k => {
+                    screens[k].classList.toggle('active', k === name);
+                });
+                syncSoundButtons();
+            }
+
+            function transitionToMap(mapIdx) {
+                const map = MAPS_DATA[mapIdx];
+                transTitle.textContent = `${map.code}: ${map.name}`;
+                transSub.textContent = map.subtitle;
+                transEl.classList.add('active');
+
+                setTimeout(() => {
+                    state.currentMap = mapIdx;
+                    saveState();
+                    initPlayScene(mapIdx);
+                    showScreen('play');
+                }, 360);
+
+                setTimeout(() => {
+                    transEl.classList.remove('active');
+                }, 900);
+            }
+
+            function initPlayScene(mapIdx) {
+                const map = MAPS_DATA[mapIdx];
+                const built = buildMapLayout(mapIdx);
+
+                worldState.mapIdx = mapIdx;
+                worldState.navGrid = built.grid;
+                worldState.props = built.props;
+                worldState.waterZones = built.waterZones;
+                worldState.particles = [];
+                worldState.clickMarkers = [];
+                worldState.hoveredEntity = null;
+
+                worldState.player.x = map.startPos.x;
+                worldState.player.y = map.startPos.y;
+                worldState.player.facing = 1;
+                worldState.player.state = 'idle';
+                worldState.player.path = [];
+                worldState.player.pendingAction = null;
+
+                worldState.camera.zoom = 1.0;
+                worldState.camera.followPlayer = true;
+                document.getElementById('zoom-label').textContent = '100%';
+
+                // Vén sương mù tại điểm xuất phát và quanh các rương đã mở
+                revealFogAt(mapIdx, map.startPos.x, map.startPos.y, 420);
+                map.chests.forEach(ch => {
+                    if (state.openedChests[ch.id] || state.revealedChests[ch.id]) {
+                        revealFogAt(mapIdx, ch.pos.x, ch.pos.y, 320);
+                    }
+                });
+
+                centerCameraOnPlayer(true);
+                updatePlayHUD();
+                startGameLoop();
+            }
+
+            function updatePlayHUD() {
+                const mapIdx = worldState.mapIdx;
+                const map = MAPS_DATA[mapIdx];
+                const score = getScore();
+                const opened = getOpenedCount();
+                const highest = getHighestUnlockedMap();
+                const mapDone = isMapComplete(mapIdx);
+                const localOpened = map.chests.filter(c => !!state.openedChests[c.id]).length;
+
+                document.getElementById('hud-map-num').textContent = `${map.code} / 6`;
+                document.getElementById('hud-map-name').textContent = map.name;
+                document.getElementById('hud-chests').textContent = `${opened}/18`;
+                document.getElementById('hud-score').textContent = `${score}`;
+                document.getElementById('hud-rank').textContent = getShortRank(score);
+                document.getElementById('hud-local-keys').textContent = `${localOpened} / 3`;
+
+                // 6 chấm tiến trình bản đồ dưới cùng
+                const dotsWrap = document.getElementById('mini-dots');
+                dotsWrap.innerHTML = '';
+                MAPS_DATA.forEach((m, idx) => {
+                    const dot = document.createElement('button');
+                    dot.type = 'button';
+                    const done = isMapComplete(idx);
+                    const locked = idx > highest;
+                    dot.className = `mini-dot ${idx === mapIdx ? 'current' : ''} ${done ? 'done' : ''} ${locked ? 'locked' : ''}`;
+                    dot.textContent = done ? '✓' : (idx + 1);
+                    dot.disabled = locked;
+                    dot.title = m.name;
+                    if (!locked && idx !== mapIdx) {
+                        dot.addEventListener('click', () => transitionToMap(idx));
+                    }
+                    dotsWrap.appendChild(dot);
+                });
+
+                const missionEl = document.getElementById('scene-mission');
+                const nextBtn = document.getElementById('btn-next-map');
+
+                if (!mapDone) {
+                    const nextHidden = map.chests.find(c => !state.openedChests[c.id]);
+                    missionEl.innerHTML = `<strong>Nhiệm vụ:</strong> Khám phá ${map.name} — tìm & mở <strong>${nextHidden.hideLabel}</strong> (${localOpened}/3 kho báu)`;
+                    nextBtn.disabled = true;
+                    nextBtn.textContent = `CÒN ${3 - localOpened} KHO BÁU`;
+                } else if (mapIdx < MAPS_DATA.length - 1) {
+                    missionEl.innerHTML = `<strong>Hoàn thành!</strong> Em đã thu thập đủ 3 kho báu tại ${map.name}. Hãy tiến sang vùng đất tiếp theo!`;
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = `SANG BẢN ĐỒ ${mapIdx + 2} →`;
+                } else {
+                    missionEl.innerHTML = `<strong>Chinh phục hoàn tất!</strong> Đã mở toàn bộ 18 kho báu. Hãy mở <strong>KHO BÁU CUỐI CÙNG</strong>!`;
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = 'MỞ KHO BÁU CUỐI CÙNG!';
+                }
+            }
+
+            // =========================================================================
+            // 13. RENDER MÀN HÌNH CHÀO & BẢN ĐỒ TỔNG
+            // =========================================================================
+            function renderTitleScreen() {
+                const opened = getOpenedCount();
+                const startBtn = document.getElementById('btn-start-game');
+                const resetBtn = document.getElementById('btn-title-reset');
+                if (opened > 0) {
+                    startBtn.textContent = `TIẾP TỤC HÀNH TRÌNH (${opened}/18)`;
+                    resetBtn.style.display = 'inline-flex';
+                } else {
+                    startBtn.textContent = 'BẮT ĐẦU HÀNH TRÌNH';
+                    resetBtn.style.display = 'none';
+                }
+            }
+
+            function renderWorldMap() {
+                const score = getScore();
+                const opened = getOpenedCount();
+                const doneMaps = getCompletedMapsCount();
+                const highest = getHighestUnlockedMap();
+
+                document.getElementById('w-maps').textContent = `${doneMaps}/6`;
+                document.getElementById('w-chests').textContent = `${opened}/18`;
+                document.getElementById('w-score').textContent = `${score}/180`;
+                document.getElementById('w-rank').textContent = getRankTitle(score);
+
+                const finalBtn = document.getElementById('btn-world-final');
+                finalBtn.style.display = doneMaps === 6 ? 'inline-flex' : 'none';
+
+                const container = document.getElementById('world-nodes-container');
+                container.innerHTML = '';
+
+                MAPS_DATA.forEach((m, idx) => {
+                    const doneCount = m.chests.filter(c => !!state.openedChests[c.id]).length;
+                    const completed = doneCount === 3;
+                    const locked = idx > highest;
+
+                    const node = document.createElement('button');
+                    node.type = 'button';
+                    node.className = `world-node ${completed ? 'completed' : (locked ? 'locked' : 'unlocked')}`;
+                    node.style.left = `${m.worldPos.x}px`;
+                    node.style.top = `${m.worldPos.y}px`;
+                    node.disabled = locked;
+
+                    node.innerHTML = `
+                        <span class="node-num">${m.code}</span>
+                        <div class="node-name">${m.name}</div>
+                        <div class="node-status">
+                            ${locked ? 'Chưa mở khóa' : (completed ? 'Đã chinh phục (3/3)' : `Đã mở ${doneCount}/3 kho báu`)}
+                        </div>
+                    `;
+
+                    if (!locked) {
+                        node.addEventListener('click', () => transitionToMap(idx));
+                    }
+                    container.appendChild(node);
+                });
+            }
+
+            // =========================================================================
+            // 14. MODAL CÂU HỎI TRẮC NGHIỆM KHI MỞ RƯƠNG
+            // =========================================================================
+            const qModal = document.getElementById('question-modal');
+            const qmChestTag = document.getElementById('qm-chest-tag');
+            const qmTopicTag = document.getElementById('qm-topic-tag');
+            const qmQuestion = document.getElementById('qm-question');
+            const qmOptions = document.getElementById('qm-options');
+            const qmFeedback = document.getElementById('qm-feedback');
+            const qmFbTitle = document.getElementById('qm-fb-title');
+            const qmFbExplain = document.getElementById('qm-fb-explain');
+            const btnQmContinue = document.getElementById('btn-qm-continue');
+
+            function openQuestionModal(mapIdx, chestIdx) {
+                activeChestRef = { mapIdx, chestIdx };
+                const chest = MAPS_DATA[mapIdx].chests[chestIdx];
+                const solved = !!state.openedChests[chest.id];
+
+                qmChestTag.textContent = chest.tierLabel;
+                qmTopicTag.textContent = chest.topic;
+                qmQuestion.textContent = chest.question;
+
+                qmFeedback.className = 'q-feedback';
+                qmFbTitle.textContent = '';
+                qmFbExplain.textContent = '';
+                btnQmContinue.style.display = 'none';
+
+                qmOptions.innerHTML = '';
+                const letters = ['A', 'B', 'C', 'D'];
+
+                chest.options.forEach((optText, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'opt-btn';
+                    btn.innerHTML = `
+                        <span class="opt-letter">${letters[idx]}</span>
+                        <span>${optText}</span>
+                    `;
+
+                    if (solved) {
+                        btn.disabled = true;
+                        if (idx === chest.correct) btn.classList.add('is-correct');
+                    } else {
+                        btn.addEventListener('click', () => handleAnswerSelect(idx, btn));
+                    }
+                    qmOptions.appendChild(btn);
+                });
+
+                if (solved) {
+                    qmFeedback.className = 'q-feedback ok show';
+                    qmFbTitle.textContent = 'KHO BÁU ĐÃ ĐƯỢC KHÁM PHÁ!';
+                    qmFbExplain.textContent = `Giải thích: ${chest.explain}`;
+                    btnQmContinue.textContent = 'QUAY LẠI KHÁM PHÁ';
+                    btnQmContinue.style.display = 'inline-flex';
+                }
+
+                qModal.classList.add('open');
+            }
+
+            function handleAnswerSelect(selectedIdx, btnEl) {
+                if (!activeChestRef) return;
+                const { mapIdx, chestIdx } = activeChestRef;
+                const chest = MAPS_DATA[mapIdx].chests[chestIdx];
+
+                if (selectedIdx === chest.correct) {
+                    state.openedChests[chest.id] = true;
+                    state.revealedChests[chest.id] = true;
+                    saveState();
+
+                    Array.from(qmOptions.children).forEach((b, i) => {
+                        b.disabled = true;
+                        if (i === chest.correct) b.classList.add('is-correct');
+                    });
+
+                    qmFeedback.className = 'q-feedback ok show';
+                    qmFbTitle.textContent = 'CHÍNH XÁC! BẠN ĐÃ TÌM ĐƯỢC KHO BÁU! (+10 điểm)';
+                    qmFbExplain.textContent = `Giải thích: ${chest.explain}`;
+                    btnQmContinue.textContent = 'THU THẬP KHO BÁU & TIẾP TỤC';
+                    btnQmContinue.style.display = 'inline-flex';
+
+                    playSound(isMapComplete(mapIdx) ? 'fanfare' : 'correct');
+                    spawnTreasureFX(640, 290, 95, chest.tier === 'diamond');
+                } else {
+                    btnEl.classList.remove('is-wrong');
+                    void btnEl.offsetWidth;
+                    btnEl.classList.add('is-wrong');
+
+                    qmFeedback.className = 'q-feedback err show';
+                    qmFbTitle.textContent = 'CHƯA CHÍNH XÁC! HÃY SUY NGHĨ VÀ THỬ LẠI!';
+                    qmFbExplain.textContent = 'Đừng nản chí nhé nhà thám hiểm, em không bị trừ điểm đâu. Hãy chọn lại đáp án đúng!';
+                    playSound('wrong');
+                }
+            }
+
+            btnQmContinue.addEventListener('click', () => {
+                qModal.classList.remove('open');
+                if (activeChestRef) {
+                    const { mapIdx, chestIdx } = activeChestRef;
+                    const chest = MAPS_DATA[mapIdx].chests[chestIdx];
+                    if (state.openedChests[chest.id]) {
+                        worldState.player.state = 'celebrate';
+                        worldState.player.stateTimer = 1.25;
+                        spawnWorldParticles(worldState.player.x, worldState.player.y - 35, '#FDE047', 26);
+                    }
+                    updatePlayHUD();
+                    activeChestRef = null;
+                }
+            });
+
+            // =========================================================================
+            // 15. MÀN HÌNH KẾT THÚC, SỔ TAY XEM LẠI & MODAL CHƠI LẠI
+            // =========================================================================
+            function openEndingScreen() {
+                const score = getScore();
+                const opened = getOpenedCount();
+
+                document.getElementById('end-score').textContent = `${score} / 180`;
+                document.getElementById('end-correct').textContent = `${opened} / 18`;
+                document.getElementById('end-chests').textContent = `${opened} / 18`;
+                document.getElementById('end-rank').textContent = getRankTitle(score);
+
+                showScreen('ending');
+                playSound('fanfare');
+                spawnTreasureFX(640, 220, 140, true);
+                setTimeout(() => spawnTreasureFX(360, 260, 80, true), 450);
+                setTimeout(() => spawnTreasureFX(920, 260, 80, true), 850);
+            }
+
+            const reviewModal = document.getElementById('review-modal');
+            const reviewList = document.getElementById('review-list');
+            const resetModal = document.getElementById('reset-modal');
+
+            function openReviewModal() {
+                const letters = ['A', 'B', 'C', 'D'];
+                reviewList.innerHTML = '';
+
+                MAPS_DATA.forEach((m) => {
+                    m.chests.forEach((c) => {
+                        const unlocked = !!state.openedChests[c.id];
+                        const card = document.createElement('div');
+                        card.className = 'review-card';
+
+                        if (unlocked) {
+                            card.innerHTML = `
+                                <div class="review-card-top">${m.code}: ${m.name} • ${c.tierLabel} (${c.topic})</div>
+                                <div class="review-card-q">${c.question}</div>
+                                <div class="review-card-a">Đáp án đúng: ${letters[c.correct]}. ${c.options[c.correct]}</div>
+                                <div class="review-card-exp">${c.explain}</div>
+                            `;
+                        } else {
+                            card.innerHTML = `
+                                <div class="review-card-top">${m.code}: ${m.name} • ${c.tierLabel}</div>
+                                <div class="review-card-q" style="color:#94A3B8;">Kho báu này chưa được mở — hãy khám phá trên bản đồ để xem đáp án!</div>
+                            `;
+                        }
+                        reviewList.appendChild(card);
+                    });
+                });
+
+                reviewModal.classList.add('open');
+            }
+
+            document.getElementById('btn-close-review').addEventListener('click', () => {
+                reviewModal.classList.remove('open');
+            });
+
+            function openResetConfirm() {
+                resetModal.classList.add('open');
+            }
+
+            document.getElementById('btn-cancel-reset').addEventListener('click', () => {
+                resetModal.classList.remove('open');
+            });
+
+            document.getElementById('btn-confirm-reset').addEventListener('click', () => {
+                resetModal.classList.remove('open');
+                const keepSound = state.soundOn;
+                state = defaultState();
+                state.soundOn = keepSound;
+                Object.keys(fogGrids).forEach(k => delete fogGrids[k]);
+                saveState();
+                renderTitleScreen();
+                renderWorldMap();
+                transitionToMap(0);
+            });
+
+            // =========================================================================
+            // 16. BẬT/TẮT ÂM THANH & GẮN SỰ KIỆN TẤT CẢ CÁC NÚT
+            // =========================================================================
+            const soundBtns = [
+                document.getElementById('btn-world-sound'),
+                document.getElementById('btn-play-sound')
+            ];
+
+            function syncSoundButtons() {
+                soundBtns.forEach(btn => {
+                    if (btn) btn.textContent = state.soundOn ? '🔊' : '🔇';
+                });
+            }
+
+            function toggleSound() {
+                state.soundOn = !state.soundOn;
+                saveState();
+                syncSoundButtons();
+                if (state.soundOn) playSound('open');
+            }
+
+            soundBtns.forEach(btn => btn.addEventListener('click', toggleSound));
+
+            document.getElementById('btn-start-game').addEventListener('click', () => {
+                playSound('open');
+                const highest = getHighestUnlockedMap();
+                const targetMap = Math.min(state.currentMap, highest);
+                transitionToMap(targetMap);
+            });
+
+            document.getElementById('btn-title-reset').addEventListener('click', openResetConfirm);
+            document.getElementById('btn-world-reset').addEventListener('click', openResetConfirm);
+            document.getElementById('btn-world-review').addEventListener('click', openReviewModal);
+            document.getElementById('btn-world-final').addEventListener('click', openEndingScreen);
+
+            document.getElementById('btn-to-world').addEventListener('click', () => {
+                renderWorldMap();
+                showScreen('world');
+            });
+
+            document.getElementById('btn-play-reset').addEventListener('click', openResetConfirm);
+
+            document.getElementById('btn-next-map').addEventListener('click', () => {
+                if (!isMapComplete(state.currentMap)) return;
+                if (state.currentMap < MAPS_DATA.length - 1) {
+                    transitionToMap(state.currentMap + 1);
+                } else {
+                    openEndingScreen();
+                }
+            });
+
+            document.getElementById('btn-end-replay').addEventListener('click', openResetConfirm);
+            document.getElementById('btn-end-review').addEventListener('click', openReviewModal);
+            document.getElementById('btn-end-map').addEventListener('click', () => {
+                renderWorldMap();
+                showScreen('world');
+            });
+
+            // Khởi tạo ban đầu
+            renderTitleScreen();
+            syncSoundButtons();
+        })();
+    </script>
+</body>
+</html>
