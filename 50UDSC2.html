@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhiệm vụ 2: Sườn núi</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Verdana', 'Geneva', 'sans-serif'],
+                    },
+                    colors: {
+                        paper: '#FAF7F2',
+                        sparkOrange: '#F37021',
+                        sparkRed: '#C00000',
+                        sparkTeal: '#0097A7',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #E6E2DC;
+            font-family: Verdana, Geneva, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sân khấu trình chiếu 16:9 cố định 1280x720, tự động co giãn theo mọi màn hình */
+        #stage-wrapper {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            transform-origin: center center;
+            box-shadow: 0 24px 60px rgba(30, 20, 10, 0.16);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #FAF7F2;
+            /* Nền giấy kẻ ngang màu kem ấm với đường kẻ ngang rất mờ #EFE9DF */
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 43px,
+                #EFE9DF 43px,
+                #EFE9DF 44px
+            );
+            cursor: pointer;
+        }
+
+        /* Hiệu ứng xuất hiện mượt mà (Click-to-reveal) */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(16px);
+            pointer-events: none;
+            transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal-item.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Hiệu ứng rung nhẹ khi nhập sai ở Slide 6 */
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .animate-shake {
+            animation: shakeX 0.36s ease-in-out;
+        }
+
+        /* Kiểu dáng 7 tab pastel trên cùng */
+        .nav-tab {
+            transition: all 0.2s ease;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .nav-tab.active-tab {
+            padding-top: 13px;
+            padding-bottom: 13px;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.12);
+            z-index: 10;
+        }
+
+        .nav-tab:not(.active-tab) {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            opacity: 0.85;
+        }
+
+        .nav-tab:not(.active-tab):hover {
+            opacity: 1;
+            padding-bottom: 11px;
+        }
+
+        /* Nhãn tô màu cụm ẩn đồng bộ toàn bài giảng */
+        .chip-orange {
+            display: inline-block;
+            background-color: #FFF0DB;
+            border: 2.5px solid #F37021;
+            color: #C84B00;
+            border-radius: 12px;
+            padding: 2px 12px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .chip-teal {
+            display: inline-block;
+            background-color: #E0F2F1;
+            border: 2.5px solid #00897B;
+            color: #00695C;
+            border-radius: 12px;
+            padding: 2px 12px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .chip-indigo {
+            display: inline-block;
+            background-color: #E8EAF6;
+            border: 2.5px solid #3949AB;
+            color: #283593;
+            border-radius: 12px;
+            padding: 2px 12px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        /* Căn thẳng cột dấu "=" cho Slide 5 và Slide 6 */
+        .eq-row-solution {
+            display: grid;
+            grid-template-columns: 330px 42px 1fr;
+            align-items: center;
+        }
+
+        .eq-row-practice {
+            display: grid;
+            grid-template-columns: 310px 42px 1fr;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SÂN KHẤU SLIDE 16:9 -->
+    <div id="stage-wrapper" role="application" aria-label="Bài giảng tương tác Nhiệm vụ 2: Sườn núi">
+
+        <!-- THANH 7 TAB ĐIỀU HƯỚNG PASTEL TRÊN CÙNG -->
+        <nav id="top-tabs" class="absolute top-0 left-0 right-0 z-30 flex justify-center items-start gap-1 px-4">
+            <button type="button" data-slide="0" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#F7C9C9]">
+                Đề bài
+            </button>
+            <button type="button" data-slide="1" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#E58A8A]">
+                Tìm hiểu
+            </button>
+            <button type="button" data-slide="2" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#FFAB8E]">
+                Làm thử
+            </button>
+            <button type="button" data-slide="3" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#FF8282]">
+                Quyết định
+            </button>
+            <button type="button" data-slide="4" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#FFD0AE]">
+                Cách Giải
+            </button>
+            <button type="button" data-slide="5" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#C5E8C8]">
+                Tự giải
+            </button>
+            <button type="button" data-slide="6" class="nav-tab font-bold text-[14px] px-5 text-slate-900 bg-[#FFE89E]">
+                Ôn tập
+            </button>
+        </nav>
+
+        <!-- VÙNG HIỂN THỊ NỘI DUNG 7 SLIDE -->
+        <main id="slides-viewport" class="w-full h-full pt-[64px] pb-[28px] px-[52px] relative">
+
+            <!-- =========================================================
+                 SLIDE 1: ĐỀ BÀI (Hiển thị ngay lập tức)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="0" data-max-step="0">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+
+                <div class="flex-1 flex items-center justify-center pb-10">
+                    <div class="bg-white/95 border-[3px] border-[#FBD3B6] rounded-[30px] px-14 py-12 shadow-xl shadow-orange-900/5 text-center max-w-[960px] w-full">
+                        <p class="text-[28px] font-bold text-slate-700 mb-7">
+                            Tìm số tự nhiên <span class="italic text-slate-900">x</span>, biết:
+                        </p>
+                        <div class="text-[54px] font-bold text-slate-900 tracking-wide bg-[#FFF6EE] border-2 border-[#FDE2CF] rounded-2xl py-6 px-10 inline-block">
+                            5 · (12 − x) − 20 = 30
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 2: TÌM HIỂU (2 bước click — Tô màu cụm 5·(12−x))
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col relative" data-slide-index="1" data-max-step="2">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+                <p class="text-[26px] font-bold text-slate-900 mt-3 pl-2">
+                    Tìm số tự nhiên x, biết: 5 · (12 − x) − 20 = 30
+                </p>
+
+                <div class="flex-1 grid grid-cols-12 items-center gap-6 pt-2 pb-4">
+
+                    <!-- BƯỚC 1 (Trái): Chú chuột SVG dễ thương + Bong bóng thoại -->
+                    <div data-step="1" class="reveal-item col-span-5 flex flex-col items-start justify-end h-full pb-2">
+                        <!-- Bong bóng thoại -->
+                        <div class="relative bg-[#FFF5D1] border-2 border-[#F5D378] rounded-3xl px-6 py-5 shadow-md mb-4 ml-6">
+                            <p class="text-[18px] font-bold text-slate-800 leading-relaxed">
+                                Ta tô màu cả cụm <span class="text-[#C84B00]">5 · (12 − x)</span> và coi nó như một ẩn số. Khi đó biểu thức trở thành phép tính đơn giản nào?
+                            </p>
+                            <!-- Đuôi bong bóng chỉ xuống chú chuột -->
+                            <svg class="absolute left-12 -bottom-4" width="26" height="18" viewBox="0 0 26 18" fill="none">
+                                <path d="M2 0L10 18L24 0Z" fill="#FFF5D1"/>
+                                <path d="M2 0L10 18L24 0" stroke="#F5D378" stroke-width="2"/>
+                            </svg>
+                        </div>
+
+                        <!-- SVG chú chuột hoạt hình đáng yêu -->
+                        <svg width="136" height="148" viewBox="0 0 150 165" fill="none" aria-hidden="true" class="ml-4 drop-shadow-md">
+                            <path d="M28 128C10 120 12 98 25 100" stroke="#A16207" stroke-width="6" stroke-linecap="round"/>
+                            <ellipse cx="58" cy="152" rx="14" ry="8" fill="#D97706"/>
+                            <ellipse cx="94" cy="152" rx="14" ry="8" fill="#D97706"/>
+                            <rect x="44" y="102" width="64" height="48" rx="24" fill="#3B82F6"/>
+                            <path d="M56 104H96V134C96 140 88 145 76 145C64 145 56 140 56 134V104Z" fill="#EFF6FF"/>
+                            <circle cx="38" cy="40" r="19" fill="#F59E0B"/>
+                            <circle cx="38" cy="40" r="11" fill="#FDE68A"/>
+                            <circle cx="114" cy="40" r="19" fill="#F59E0B"/>
+                            <circle cx="114" cy="40" r="11" fill="#FDE68A"/>
+                            <ellipse cx="76" cy="68" rx="44" ry="38" fill="#FBBF24"/>
+                            <ellipse cx="76" cy="79" rx="34" ry="23" fill="#FEF3C7"/>
+                            <circle cx="62" cy="64" r="6.5" fill="#1E293B"/>
+                            <circle cx="60" cy="61.5" r="2.2" fill="#FFFFFF"/>
+                            <circle cx="92" cy="64" r="6.5" fill="#1E293B"/>
+                            <circle cx="90" cy="61.5" r="2.2" fill="#FFFFFF"/>
+                            <ellipse cx="77" cy="75" rx="4.5" ry="3.2" fill="#92400E"/>
+                            <path d="M70 84C73 89 81 89 84 84" stroke="#B91C1C" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="52" cy="108" r="10" fill="#FBBF24"/>
+                            <circle cx="98" cy="114" r="9" fill="#FBBF24"/>
+                            <path d="M36 75L48 77M36 83L48 82M116 75L104 77M116 83L104 82" stroke="#92400E" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+
+                    <!-- BƯỚC 1 & BƯỚC 2 (Phải): Biểu thức tô màu + Sơ đồ quy đổi Ẩn 1 -->
+                    <div class="col-span-7 flex flex-col items-center justify-center gap-5">
+                        <!-- Click 1: Biểu thức cỡ lớn có tô màu cụm 5 · (12 − x) -->
+                        <div data-step="1" class="reveal-item bg-white/95 border-2 border-[#EFE2D3] rounded-3xl px-10 py-8 shadow-md w-full flex items-center justify-center">
+                            <div class="text-[42px] font-bold text-slate-900 flex items-center flex-wrap justify-center gap-3">
+                                <span class="bg-[#FFF0DB] border-[3px] border-[#F37021] text-[#C84B00] rounded-2xl px-5 py-2 shadow-sm">
+                                    5 · (12 − x)
+                                </span>
+                                <span>− 20 = 30</span>
+                            </div>
+                        </div>
+
+                        <!-- Click 2: Mũi tên chuyển xuống & Sơ đồ quy đổi [ Ẩn 1 ] − 20 = 30 -->
+                        <div data-step="2" class="reveal-item w-full flex flex-col items-center">
+                            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" class="mb-3">
+                                <line x1="18" y1="2" x2="18" y2="28" stroke="#F37021" stroke-width="4" stroke-linecap="round"/>
+                                <path d="M8 20L18 31L28 20" stroke="#F37021" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+
+                            <div class="bg-white/95 border-2 border-[#FBD3B6] rounded-3xl px-10 py-7 shadow-md w-full flex items-start justify-center">
+                                <div class="flex items-start gap-4">
+                                    <!-- Hộp Ẩn 1 kèm nhãn Số bị trừ -->
+                                    <div class="flex flex-col items-center">
+                                        <div class="bg-[#FFF0DB] border-[3px] border-[#F37021] text-[#C84B00] rounded-2xl px-8 py-2.5 text-[40px] font-bold shadow-sm">
+                                            Ẩn 1
+                                        </div>
+                                        <span class="mt-2.5 text-[16px] font-bold text-[#C84B00] bg-[#FFF0DB] px-4 py-1 rounded-full border border-[#F8C49A]">
+                                            Số bị trừ
+                                        </span>
+                                    </div>
+
+                                    <!-- Phần còn lại của phép trừ cơ bản -->
+                                    <div class="text-[42px] font-bold text-slate-900 pt-2">
+                                        − 20 = 30
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 3: LÀM THỬ (Khung giấy trắng sạch để gõ nháp)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="2" data-max-step="0">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+                <p class="text-[26px] font-bold text-slate-900 mt-3 pl-2">
+                    Tìm số tự nhiên x, biết: 5 · (12 − x) − 20 = 30
+                </p>
+
+                <!-- Khung giấy trắng lớn bo góc có textarea trong suốt không viền -->
+                <div id="scratchpad-wrapper" class="flex-1 mt-5 mb-2 bg-white rounded-[28px] border-2 border-[#EAE2D6] shadow-md p-8 flex flex-col cursor-text">
+                    <textarea
+                        id="scratchpad-area"
+                        class="w-full h-full bg-transparent border-0 outline-none resize-none text-[24px] leading-[1.8] text-slate-800 placeholder:text-slate-300 font-medium"
+                        placeholder="Không gian làm thử..."
+                    ></textarea>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 4: QUYẾT ĐỊNH (4 bước click — 3 lớp bóc tách ẩn)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="3" data-max-step="4">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+                <p class="text-[25px] font-bold text-slate-900 mt-2 pl-2">
+                    Tìm số tự nhiên x, biết: 5 · (12 − x) − 20 = 30
+                </p>
+
+                <!-- Bố cục 2 cột: Trái là 3 lớp bóc tách + sơ đồ ngang, Phải là 3 thẻ chiến lược -->
+                <div class="flex-1 flex items-start justify-between gap-7 mt-4">
+
+                    <!-- Cột trái: 3 lớp bóc tách ẩn & thanh sơ đồ thu gọn -->
+                    <div class="flex-1 flex flex-col justify-between h-[475px]">
+
+                        <!-- Click 1: Lớp 1 (Viền cam #F37021) -->
+                        <div data-step="1" class="reveal-item bg-white border-[3px] border-[#F37021] rounded-2xl px-6 py-4 shadow-sm flex items-center gap-4">
+                            <span class="bg-[#F37021] text-white font-bold text-[15px] px-3.5 py-1.5 rounded-xl shrink-0">Lớp 1</span>
+                            <div class="text-[20px] font-bold text-slate-800 leading-snug flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span class="chip-orange">5 · (12 − x)</span>
+                                <span>− 20 = 30</span>
+                                <span class="text-[#F37021] mx-1">→</span>
+                                <span class="text-[17px] font-semibold text-slate-700">Coi cụm cam là <strong class="text-[#C84B00]">Ẩn 1</strong> (Số bị trừ)</span>
+                                <span class="text-[#F37021] mx-1">⇒</span>
+                                <span class="text-[#C84B00]">Tìm 5 · (12 − x)</span>
+                            </div>
+                        </div>
+
+                        <!-- Click 2: Lớp 2 (Viền xanh ngọc #00897B) -->
+                        <div data-step="2" class="reveal-item bg-white border-[3px] border-[#00897B] rounded-2xl px-6 py-4 shadow-sm flex items-center gap-4">
+                            <span class="bg-[#00897B] text-white font-bold text-[15px] px-3.5 py-1.5 rounded-xl shrink-0">Lớp 2</span>
+                            <div class="text-[20px] font-bold text-slate-800 leading-snug flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span>5 ·</span>
+                                <span class="chip-teal">(12 − x)</span>
+                                <span>= 50</span>
+                                <span class="text-[#00897B] mx-1">→</span>
+                                <span class="text-[17px] font-semibold text-slate-700">Coi cụm xanh là <strong class="text-[#00695C]">Ẩn 2</strong> (Thừa số)</span>
+                                <span class="text-[#00897B] mx-1">⇒</span>
+                                <span class="text-[#00695C]">Tìm 12 − x</span>
+                            </div>
+                        </div>
+
+                        <!-- Click 3: Lớp 3 (Viền xanh dương/tím #3949AB) -->
+                        <div data-step="3" class="reveal-item bg-white border-[3px] border-[#3949AB] rounded-2xl px-6 py-4 shadow-sm flex items-center gap-4">
+                            <span class="bg-[#3949AB] text-white font-bold text-[15px] px-3.5 py-1.5 rounded-xl shrink-0">Lớp 3</span>
+                            <div class="text-[20px] font-bold text-slate-800 leading-snug flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span>12 −</span>
+                                <span class="chip-indigo">x</span>
+                                <span>= 10</span>
+                                <span class="text-[#3949AB] mx-1">→</span>
+                                <span class="text-[#283593]">Tìm x (Số trừ)</span>
+                            </div>
+                        </div>
+
+                        <!-- Click 4: Thanh sơ đồ thu gọn ngang ở dưới cùng -->
+                        <div data-step="4" class="reveal-item bg-white/95 border-2 border-[#E6DCD0] rounded-2xl px-8 py-4 shadow-sm flex items-center justify-center gap-5 text-[24px] font-bold">
+                            <span class="chip-orange px-5 py-1.5">5 · (12 − x)</span>
+                            <span class="text-slate-400 text-[28px]">→</span>
+                            <span class="chip-teal px-5 py-1.5">12 − x</span>
+                            <span class="text-slate-400 text-[28px]">→</span>
+                            <span class="chip-indigo px-6 py-1.5">x</span>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: 3 thẻ chiến lược xếp chồng -->
+                    <div class="w-[300px] shrink-0 rounded-2xl overflow-hidden shadow-lg mt-1">
+                        <div class="bg-[#C00000] text-white font-bold text-[18px] text-center py-5 px-4 tracking-wide">
+                            TÔ MÀU CỤM CHỨA x
+                        </div>
+                        <div class="bg-[#FAD7B5] text-slate-900 font-bold text-[18px] text-center py-5 px-4">
+                            COI CỤM LÀ ẨN SỐ
+                        </div>
+                        <div class="bg-[#F4B183] text-slate-900 font-bold text-[18px] text-center py-5 px-4 leading-snug">
+                            GỠ TỪ NGOÀI VÀO TRONG
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 5: CÁCH GIẢI (6 bước click — Tô màu đồng bộ 3 lớp)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="4" data-max-step="6">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+                <p class="text-[25px] font-bold text-slate-900 mt-2 pl-2">
+                    Tìm số tự nhiên x, biết: 5 · (12 − x) − 20 = 30
+                </p>
+
+                <div class="flex-1 flex items-start justify-between gap-7 mt-4">
+
+                    <!-- Khung trắng bài giải căn thẳng dấu "=" -->
+                    <div class="flex-1 bg-white rounded-3xl border border-[#EAE2D6] shadow-md px-10 py-6 h-[475px] flex flex-col justify-between text-[26px] font-bold text-slate-900">
+                        <!-- Dòng 0 (hiện sẵn) -->
+                        <div class="eq-row-solution">
+                            <div class="text-right pr-2">
+                                <span class="chip-orange">5 · (12 − x)</span> − 20
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">30</span>
+                        </div>
+
+                        <!-- Click 1 -->
+                        <div data-step="1" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                <span class="chip-orange">5 · (12 − x)</span>
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">30 + 20</span>
+                        </div>
+
+                        <!-- Click 2 -->
+                        <div data-step="2" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                5 · <span class="chip-teal">(12 − x)</span>
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">50</span>
+                        </div>
+
+                        <!-- Click 3 -->
+                        <div data-step="3" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                <span class="chip-teal">12 − x</span>
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">50 : 5</span>
+                        </div>
+
+                        <!-- Click 4 -->
+                        <div data-step="4" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                12 − <span class="chip-indigo">x</span>
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">10</span>
+                        </div>
+
+                        <!-- Click 5 -->
+                        <div data-step="5" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                <span class="chip-indigo">x</span>
+                            </div>
+                            <span class="text-center">=</span>
+                            <span class="pl-2">12 − 10</span>
+                        </div>
+
+                        <!-- Click 6: x = 2 và dòng kết luận nổi bật -->
+                        <div data-step="6" class="reveal-item eq-row-solution">
+                            <div class="text-right pr-2">
+                                <span class="chip-indigo">x</span>
+                            </div>
+                            <span class="text-center text-[#283593]">=</span>
+                            <div class="pl-2 flex items-center gap-6">
+                                <span class="text-[#283593]">2</span>
+                                <span class="bg-[#FFF0DB] border-2 border-[#F37021] text-[#C84B00] text-[22px] px-5 py-1 rounded-xl">
+                                    Vậy x = 2.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Giữ 3 thẻ chiến lược bên phải -->
+                    <div class="w-[300px] shrink-0 rounded-2xl overflow-hidden shadow-lg mt-1">
+                        <div class="bg-[#C00000] text-white font-bold text-[18px] text-center py-5 px-4 tracking-wide">
+                            TÔ MÀU CỤM CHỨA x
+                        </div>
+                        <div class="bg-[#FAD7B5] text-slate-900 font-bold text-[18px] text-center py-5 px-4">
+                            COI CỤM LÀ ẨN SỐ
+                        </div>
+                        <div class="bg-[#F4B183] text-slate-900 font-bold text-[18px] text-center py-5 px-4 leading-snug">
+                            GỠ TỪ NGOÀI VÀO TRONG
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 6: TỰ GIẢI (Điền từng bước + Duy nhất 1 nút Kiểm tra)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="5" data-max-step="0">
+                <div class="flex items-center gap-3.5 mt-1">
+                    <div class="w-[6px] h-[42px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[34px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+                <p class="text-[25px] font-bold text-slate-900 mt-2 pl-2">
+                    Tìm số tự nhiên x, biết: 5 · (12 − x) − 20 = 30
+                </p>
+
+                <div class="flex-1 flex items-start justify-center mt-4">
+                    <div id="practice-card" class="bg-white rounded-3xl border-2 border-[#FBD3B6] shadow-lg px-12 py-6 w-full max-w-[920px] cursor-default">
+                        <div class="space-y-3 text-[25px] font-bold text-slate-900">
+                            <!-- Dòng 1 (cho sẵn) -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">5 · (12 − x) − 20</span>
+                                <span class="text-center">=</span>
+                                <span class="pl-2">30</span>
+                            </div>
+
+                            <!-- Dòng 2 -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">5 · (12 − x)</span>
+                                <span class="text-center">=</span>
+                                <div class="pl-2">
+                                    <input type="text" data-answers="30+20" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Dòng 3 -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">5 · (12 − x)</span>
+                                <span class="text-center">=</span>
+                                <div class="pl-2">
+                                    <input type="text" data-answers="50" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Dòng 4 -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">12 − x</span>
+                                <span class="text-center">=</span>
+                                <div class="pl-2">
+                                    <input type="text" data-answers="50:5|50/5" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Dòng 5 -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">12 − x</span>
+                                <span class="text-center">=</span>
+                                <div class="pl-2">
+                                    <input type="text" data-answers="10" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Dòng 6 -->
+                            <div class="eq-row-practice">
+                                <span class="text-right pr-2">x</span>
+                                <span class="text-center">=</span>
+                                <div class="pl-2">
+                                    <input type="text" data-answers="12-10" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Dòng 7 + Nút Kiểm tra + Phản hồi ngắn gọn -->
+                            <div class="eq-row-practice pt-1">
+                                <span class="text-right pr-2 text-sparkOrange">x</span>
+                                <span class="text-center text-sparkOrange">=</span>
+                                <div class="pl-2 flex items-center justify-between gap-4">
+                                    <input type="text" data-answers="2" class="practice-input w-[210px] h-[44px] px-4 font-bold text-[23px] text-sparkOrange rounded-xl border-2 border-slate-300 bg-[#FFFBF7] focus:border-sparkOrange focus:outline-none transition" autocomplete="off">
+
+                                    <div class="flex items-center gap-4">
+                                        <span id="practice-feedback" class="text-[16px] font-bold"></span>
+                                        <button id="check-practice-btn" type="button" class="px-7 py-2.5 bg-sparkOrange hover:bg-[#D95D14] active:scale-95 text-white font-bold text-[18px] rounded-xl shadow-md transition">
+                                            Kiểm tra
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 7: ÔN TẬP (7 bước click — Đồng bộ phương pháp mới)
+            ========================================================== -->
+            <section class="slide-panel hidden w-full h-full flex flex-col" data-slide-index="6" data-max-step="7">
+                <div class="flex items-center gap-3.5 mt-1 mb-3">
+                    <div class="w-[6px] h-[38px] bg-sparkOrange rounded-full"></div>
+                    <h1 class="text-[32px] font-bold text-sparkOrange tracking-tight">
+                        Nhiệm vụ 2: Sườn núi
+                    </h1>
+                </div>
+
+                <div class="flex-1 flex items-stretch gap-6 pb-2">
+
+                    <!-- CỘT TRÁI: COI CỤM CHỨA x LÀ ẨN SỐ (B1 -> B4) -->
+                    <div class="w-[49%] bg-white rounded-[24px] shadow-md border border-[#F1E6D8] overflow-hidden flex flex-col">
+                        <div class="bg-sparkOrange text-white text-center py-3.5 px-5">
+                            <div class="text-[14px] font-bold opacity-95">Làm sao để giải được bài này?</div>
+                            <div class="text-[20px] font-bold tracking-wide mt-0.5">COI CỤM CHỨA x LÀ ẨN SỐ</div>
+                        </div>
+
+                        <div class="flex-1 p-4 flex flex-col justify-between gap-2.5">
+                            <!-- Click 1: B1 -->
+                            <div data-step="1" class="reveal-item flex items-center gap-3.5 bg-[#FFFBF5] border-2 border-[#FCE3C8] rounded-2xl px-4 py-3">
+                                <span class="w-10 h-10 rounded-xl bg-sparkOrange text-white font-bold text-[17px] flex items-center justify-center shrink-0">B1</span>
+                                <p class="text-[15.5px] font-bold text-slate-800 leading-snug">
+                                    Tô màu cụm lớn nhất chứa x để đưa về phép tính cơ bản.
+                                </p>
+                            </div>
+
+                            <!-- Click 2: B2 -->
+                            <div data-step="2" class="reveal-item flex items-center gap-3.5 bg-[#FFFBF5] border-2 border-[#FCE3C8] rounded-2xl px-4 py-3">
+                                <span class="w-10 h-10 rounded-xl bg-sparkOrange text-white font-bold text-[17px] flex items-center justify-center shrink-0">B2</span>
+                                <p class="text-[15.5px] font-bold text-slate-800 leading-snug">
+                                    Coi cụm vừa tô là một ẩn số (số bị trừ, thừa số...) và tính giá trị của cụm đó.
+                                </p>
+                            </div>
+
+                            <!-- Click 3: B3 -->
+                            <div data-step="3" class="reveal-item flex items-center gap-3.5 bg-[#FFFBF5] border-2 border-[#FCE3C8] rounded-2xl px-4 py-3">
+                                <span class="w-10 h-10 rounded-xl bg-sparkOrange text-white font-bold text-[17px] flex items-center justify-center shrink-0">B3</span>
+                                <p class="text-[15.5px] font-bold text-slate-800 leading-snug">
+                                    Tiếp tục tô màu và giải cụm chứa x nhỏ hơn ở lớp bên trong.
+                                </p>
+                            </div>
+
+                            <!-- Click 4: B4 -->
+                            <div data-step="4" class="reveal-item flex items-center gap-3.5 bg-[#FFFBF5] border-2 border-[#FCE3C8] rounded-2xl px-4 py-3">
+                                <span class="w-10 h-10 rounded-xl bg-sparkOrange text-white font-bold text-[17px] flex items-center justify-center shrink-0">B4</span>
+                                <p class="text-[15.5px] font-bold text-slate-800 leading-snug">
+                                    Lặp lại quá trình gỡ từ ngoài vào trong cho đến khi tìm được x.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CỘT PHẢI: PHƯƠNG PHÁP THAY THẾ + LỖI SAI + CÂU HỎI TỔNG KẾT -->
+                    <div class="w-[51%] flex flex-col justify-between gap-3.5">
+
+                        <!-- Khung xanh ngọc Phương pháp thay thế -->
+                        <div class="bg-white rounded-[24px] shadow-md border border-[#D9EEF2] overflow-hidden">
+                            <div class="bg-sparkTeal text-white text-center py-3.5 px-5">
+                                <div class="text-[14px] font-bold opacity-95">Làm sao để kiểm tra kết quả?</div>
+                                <div class="text-[20px] font-bold tracking-wide mt-0.5">PHƯƠNG PHÁP THAY THẾ</div>
+                            </div>
+
+                            <div class="p-4 space-y-3">
+                                <!-- Click 5: Khung thay thế kiểm tra -->
+                                <div data-step="5" class="reveal-item bg-[#F3F9FC] border border-[#DCEEF5] rounded-2xl px-5 py-3.5">
+                                    <p class="text-[15.5px] font-bold text-slate-700 mb-1.5">
+                                        Thay <span class="text-sparkTeal">x = 2</span> vào biểu thức:
+                                    </p>
+                                    <p class="text-[16.5px] font-bold text-slate-900 leading-relaxed">
+                                        5 · (12 − 2) − 20 = 5 · 10 − 20 = 50 − 20 = <span class="text-[#16A34A]">30 (Chính xác!)</span>
+                                    </p>
+                                </div>
+
+                                <!-- Click 6: Khung Lỗi sai thường gặp -->
+                                <div data-step="6" class="reveal-item bg-[#FFF1F2] border border-[#FECDD3] rounded-2xl px-5 py-3">
+                                    <div class="text-[15px] font-bold text-[#B91C1C] mb-1">
+                                        ⚠ Lỗi sai thường gặp:
+                                    </div>
+                                    <p class="text-[14.5px] font-medium text-[#991B1B] leading-snug">
+                                        Tách nhầm cụm chứa x (ví dụ lấy 5 · 12 trước) hoặc nhầm dấu khi tìm số trừ (12 − x = 10 ⇒ x = 12 + 10).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Click 7: Khung câu hỏi vàng nhạt kèm nhân vật cừu SVG nhỏ -->
+                        <div data-step="7" class="reveal-item flex items-end justify-between gap-3 mt-auto">
+                            <div class="relative flex-1 bg-[#FFF9B1] border-2 border-[#E6D96A] rounded-2xl px-5 py-4 shadow-md">
+                                <p class="text-[15.5px] font-bold text-[#5C4308] text-center leading-snug">
+                                    Khi coi cụm chứa x là ẩn, ta bóc tách từ cụm lớn bên ngoài vào trong hay từ trong ra ngoài?
+                                </p>
+                                <svg class="absolute -right-3.5 bottom-5" width="18" height="16" viewBox="0 0 18 16" fill="none">
+                                    <path d="M0 0L18 10L0 15Z" fill="#FFF9B1"/>
+                                </svg>
+                            </div>
+
+                            <!-- SVG chú cừu đeo kính nhỏ -->
+                            <svg width="112" height="118" viewBox="0 0 140 150" fill="none" aria-hidden="true" class="shrink-0 drop-shadow-md">
+                                <circle cx="50" cy="34" r="14" fill="#FDE68A"/>
+                                <circle cx="70" cy="26" r="16" fill="#FEF3C7"/>
+                                <circle cx="90" cy="34" r="14" fill="#FDE68A"/>
+                                <circle cx="42" cy="52" r="13" fill="#FEF3C7"/>
+                                <circle cx="98" cy="52" r="13" fill="#FEF3C7"/>
+                                <circle cx="46" cy="70" r="12" fill="#FDE68A"/>
+                                <circle cx="94" cy="70" r="12" fill="#FDE68A"/>
+                                <ellipse cx="34" cy="54" rx="10" ry="6" transform="rotate(-25 34 54)" fill="#E7C6A5"/>
+                                <ellipse cx="106" cy="54" rx="10" ry="6" transform="rotate(25 106 54)" fill="#E7C6A5"/>
+                                <ellipse cx="70" cy="58" rx="26" ry="24" fill="#FDE8D7"/>
+                                <circle cx="59" cy="56" r="9.5" stroke="#334155" stroke-width="2.6" fill="#FFFFFF" fill-opacity="0.55"/>
+                                <circle cx="81" cy="56" r="9.5" stroke="#334155" stroke-width="2.6" fill="#FFFFFF" fill-opacity="0.55"/>
+                                <line x1="68.5" y1="56" x2="71.5" y2="56" stroke="#334155" stroke-width="2.6"/>
+                                <circle cx="59" cy="56" r="3" fill="#1E293B"/>
+                                <circle cx="81" cy="56" r="3" fill="#1E293B"/>
+                                <path d="M65 69C68 72 72 72 75 69" stroke="#78350F" stroke-width="2.2" stroke-linecap="round"/>
+                                <path d="M40 94L34 80" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="33" cy="78" r="4" fill="#1E293B"/>
+                                <path d="M22 92H118L110 104H30L22 92Z" fill="#D98A6C"/>
+                                <path d="M32 104H108L102 138H38L32 104Z" fill="#C47457"/>
+                                <rect x="26" y="138" width="88" height="9" rx="4" fill="#A65E44"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- THANH CAM Ở CẠNH DƯỚI CÙNG -->
+        <div class="absolute bottom-0 left-0 right-0 h-[16px] bg-sparkOrange z-20"></div>
+
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // =========================================================================
+            // 1. TỰ ĐỘNG CO GIÃN SÂN KHẤU 16:9 (1280x720) THEO MỌI MÀN HÌNH
+            // =========================================================================
+            const stage = document.getElementById('stage-wrapper');
+            const BASE_W = 1280;
+            const BASE_H = 720;
+
+            function fitStage() {
+                const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+                stage.style.transform = `scale(${scale})`;
+            }
+
+            window.addEventListener('resize', fitStage);
+            fitStage();
+
+            // =========================================================================
+            // 2. QUẢN LÝ 7 SLIDE & CƠ CHẾ CLICK-TO-REVEAL
+            // =========================================================================
+            const slides = Array.from(document.querySelectorAll('.slide-panel'));
+            const tabs = Array.from(document.querySelectorAll('.nav-tab'));
+
+            let currentSlideIndex = 0;
+            let currentStep = 0;
+
+            function getMaxStep(slideIdx) {
+                return parseInt(slides[slideIdx].getAttribute('data-max-step') || '0', 10);
+            }
+
+            /**
+             * Cập nhật slide đang hiển thị và các khối nội dung theo currentStep
+             */
+            function renderSlide() {
+                slides.forEach((panel, idx) => {
+                    if (idx === currentSlideIndex) {
+                        panel.classList.remove('hidden');
+                        const revealItems = panel.querySelectorAll('[data-step]');
+                        revealItems.forEach((el) => {
+                            const stepNum = parseInt(el.getAttribute('data-step'), 10);
+                            if (stepNum <= currentStep) {
+                                el.classList.add('is-visible');
+                            } else {
+                                el.classList.remove('is-visible');
+                            }
+                        });
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                });
+
+                tabs.forEach((tab, idx) => {
+                    if (idx === currentSlideIndex) {
+                        tab.classList.add('active-tab');
+                    } else {
+                        tab.classList.remove('active-tab');
+                    }
+                });
+            }
+
+            function goToSlide(index, step = 0) {
+                if (index < 0 || index >= slides.length) return;
+                currentSlideIndex = index;
+                currentStep = step;
+                renderSlide();
+            }
+
+            function nextAction() {
+                const maxStep = getMaxStep(currentSlideIndex);
+                if (currentStep < maxStep) {
+                    currentStep += 1;
+                    renderSlide();
+                } else if (currentSlideIndex < slides.length - 1) {
+                    currentSlideIndex += 1;
+                    currentStep = 0;
+                    renderSlide();
+                }
+            }
+
+            function prevAction() {
+                if (currentStep > 0) {
+                    currentStep -= 1;
+                    renderSlide();
+                } else if (currentSlideIndex > 0) {
+                    currentSlideIndex -= 1;
+                    currentStep = getMaxStep(currentSlideIndex);
+                    renderSlide();
+                }
+            }
+
+            // =========================================================================
+            // 3. SỰ KIỆN TAB, CLICK VÙNG TRỐNG & PHÍM TẮT
+            // =========================================================================
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(tab.getAttribute('data-slide'), 10);
+                    goToSlide(idx, 0);
+                });
+            });
+
+            stage.addEventListener('click', () => {
+                nextAction();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement ? document.activeElement.tagName : '';
+                // Khi đang gõ trong ô input hoặc textarea thì không chuyển slide bằng phím tắt
+                if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                    if (tag === 'INPUT' && e.key === 'Enter') {
+                        e.preventDefault();
+                        checkPracticeAnswers();
+                    }
+                    return;
+                }
+
+                if (e.key === ' ' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextAction();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevAction();
+                }
+            });
+
+            // =========================================================================
+            // 4. CHẶN EVENT PROPAGATION CHO SLIDE 3 (LÀM THỬ)
+            // =========================================================================
+            const scratchpadWrapper = document.getElementById('scratchpad-wrapper');
+            const scratchpadArea = document.getElementById('scratchpad-area');
+
+            scratchpadWrapper.addEventListener('click', (e) => e.stopPropagation());
+            scratchpadArea.addEventListener('click', (e) => e.stopPropagation());
+
+            // =========================================================================
+            // 5. TƯƠNG TÁC & CHẤM BÀI CHO SLIDE 6 (TỰ GIẢI)
+            // =========================================================================
+            const practiceCard = document.getElementById('practice-card');
+            const practiceInputs = Array.from(document.querySelectorAll('.practice-input'));
+            const checkPracticeBtn = document.getElementById('check-practice-btn');
+            const practiceFeedback = document.getElementById('practice-feedback');
+
+            practiceCard.addEventListener('click', (e) => e.stopPropagation());
+
+            practiceInputs.forEach((input) => {
+                input.addEventListener('click', (e) => e.stopPropagation());
+                input.addEventListener('input', () => {
+                    input.classList.remove(
+                        'border-emerald-500', 'bg-emerald-50', 'text-emerald-700',
+                        'border-red-500', 'bg-red-50', 'text-red-700', 'animate-shake'
+                    );
+                    input.classList.add('border-slate-300', 'bg-[#FFFBF7]');
+                    practiceFeedback.textContent = '';
+                });
+            });
+
+            /**
+             * Chuẩn hóa chuỗi người dùng nhập: bỏ mọi khoảng trắng và đổi dấu trừ/chia về dạng chuẩn
+             */
+            function normalizeExpr(str) {
+                return str
+                    .replace(/\s+/g, '')
+                    .replace(/[−–—]/g, '-')
+                    .replace(/÷/g, ':');
+            }
+
+            function checkPracticeAnswers() {
+                let correctCount = 0;
+
+                practiceInputs.forEach((input) => {
+                    const acceptedList = (input.getAttribute('data-answers') || '').split('|');
+                    const actual = normalizeExpr(input.value);
+
+                    input.classList.remove(
+                        'border-slate-300', 'bg-[#FFFBF7]',
+                        'border-emerald-500', 'bg-emerald-50', 'text-emerald-700',
+                        'border-red-500', 'bg-red-50', 'text-red-700', 'animate-shake'
+                    );
+
+                    if (acceptedList.includes(actual)) {
+                        correctCount += 1;
+                        input.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+                    } else {
+                        void input.offsetWidth;
+                        input.classList.add('border-red-500', 'bg-red-50', 'text-red-700', 'animate-shake');
+                    }
+                });
+
+                if (correctCount === practiceInputs.length) {
+                    practiceFeedback.textContent = 'Chính xác hoàn toàn!';
+                    practiceFeedback.className = 'text-[16px] font-bold text-emerald-600';
+                } else {
+                    practiceFeedback.textContent = `Đúng ${correctCount}/${practiceInputs.length} ô. Kiểm tra lại ô đỏ nhé!`;
+                    practiceFeedback.className = 'text-[16px] font-bold text-red-600';
+                }
+            }
+
+            checkPracticeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                checkPracticeAnswers();
+            });
+
+            // Khởi tạo hiển thị slide đầu tiên
+            renderSlide();
+        })();
+    </script>
+</body>
+</html>
