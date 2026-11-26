@@ -6809,8 +6809,8 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
   (function () {
     'use strict';
 
-    const SUPABASE_URL = 'https://kcswjakmlxazmdkbuffk.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjc3dqYWttbHhhem1ka2J1ZmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDY4MzQsImV4cCI6MjExMDk4MjgzNH0.kg9nnqx1R5AMYX5avbvRwa0S1myFuItfyZ4rTNeX0vo';
+    const SUPABASE_URL = 'https://qszwqiyppioufaohauen.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzendxaXlwcGlvdWZhb2hhdWVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MzI1MDgsImV4cCI6MjExMDUwODUwOH0.Q1R-M5dOnc0ipp3SfSUutF5FniLAkFPEJdmdj0nKBro';
 
     const isStudentRoomPage = new URLSearchParams(window.location.search).get('student_room') === '1';
     if (!isStudentRoomPage && typeof StorageAdapter !== 'undefined' && StorageAdapter.saveSupabaseConfig) {
