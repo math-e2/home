@@ -4871,15 +4871,29 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
                 }
               });
 
-              // Cắt bỏ vùng trắng thừa & tối ưu kích thước <= 55KB để truyền qua Ably Realtime tức thì (<0.1s)
-              const cropped = trimWhiteMarginsAndCap(rendered, 960);
-              dataUrl = cropped.toDataURL('image/jpeg', 0.68);
-              if (dataUrl.length > 54000) {
-                dataUrl = cropped.toDataURL('image/jpeg', 0.50);
+              // Ép kích thước ảnh <= 45 KiB (46080 bytes) để nằm gọn dưới giới hạn 64 KiB của Ably khi có 20 học sinh
+              const MAX_ABLY_BYTES = 45 * 1024;
+              const encodeUnderLimit = (srcCanvas) => {
+                const qualities = [0.62, 0.48, 0.36, 0.26];
+                for (const q of qualities) {
+                  const candidate = srcCanvas.toDataURL('image/jpeg', q);
+                  if (candidate.length <= MAX_ABLY_BYTES) return candidate;
+                }
+                return null;
+              };
+              const widths = [880, 720, 560, 420];
+              dataUrl = null;
+              for (const maxW of widths) {
+                const box = trimWhiteMarginsAndCap(rendered, maxW);
+                const fit = encodeUnderLimit(box);
+                if (fit) {
+                  dataUrl = fit;
+                  break;
+                }
               }
-              if (dataUrl.length > 54000) {
-                const smaller = trimWhiteMarginsAndCap(cropped, 720);
-                dataUrl = smaller.toDataURL('image/jpeg', 0.48);
+              if (!dataUrl) {
+                const tiny = trimWhiteMarginsAndCap(rendered, 360);
+                dataUrl = tiny.toDataURL('image/jpeg', 0.22);
               }
             } catch {}
 
@@ -4961,7 +4975,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             detectAndSyncIframeCompletion();
             sendObservation(null, null, false);
           }
-        }, 5000);
+        }, 8000);
       }
 
       function attachObservationToDocument(doc) {
@@ -5077,7 +5091,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             if (currentRoom && currentStudent && !removed) {
               sendObservation(null, null);
             }
-          }, 5000);
+          }, 8000);
         }
       }
 
@@ -5114,7 +5128,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           if (currentRoom && currentStudent && !removed) {
             sendObservation(null, null);
           }
-        }, 5000);
+        }, 8000);
 
         const isGame = Number(currentRoom.roomNumber) === 5 || String(currentRoom.id || '').includes('__r5') || /-G-/.test(currentRoom.roomCode || '');
         if (isGame) {
@@ -6882,3 +6896,4 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
 
 </html>
 Processed and analyzed in code
+Analyzing
