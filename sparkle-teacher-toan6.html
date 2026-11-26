@@ -1315,6 +1315,7 @@
       function getSectionLabel(materialType, roomNumber = null) {
         if (materialType === 'lecture') return '01. Bài giảng';
         if (materialType === 'homework') return '06. Bài tập về nhà';
+        if (materialType === 'game' || Number(roomNumber) === 5) return '🎮 Game Room (Phòng Trò Chơi)';
         if (materialType === 'exercise') return `Practice Room ${roomNumber || ''}`;
         return 'Học liệu';
       }
@@ -1588,7 +1589,7 @@ CREATE TABLE IF NOT EXISTS public.lesson_materials (
 CREATE TABLE IF NOT EXISTS public.practice_rooms (
   id TEXT PRIMARY KEY,
   lesson_id TEXT NOT NULL REFERENCES public.lessons(id) ON DELETE CASCADE,
-  room_number INT NOT NULL CHECK (room_number BETWEEN 1 AND 4),
+  room_number INT NOT NULL CHECK (room_number BETWEEN 1 AND 5),
   teacher_id TEXT NOT NULL REFERENCES public.teachers(id),
   room_code TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'open', 'closed')),
@@ -2142,9 +2143,17 @@ END $$;`;
         }
       }
 
+      const GAME_ROOM_SQL_PATCH = `ALTER TABLE public.practice_rooms DROP CONSTRAINT IF EXISTS practice_rooms_room_number_check;
+ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_check CHECK (room_number BETWEEN 1 AND 5);`;
+
       function copyMigrationSQL() {
         copyTextSafe(MIGRATION_SQL);
         Toast.show('Đã sao chép SQL Migration (có phân quyền admin/teacher)!', 'success');
+      }
+
+      function copyGameRoomSQLPatch() {
+        copyTextSafe(GAME_ROOM_SQL_PATCH);
+        Toast.show('Đã sao chép SQL mở rộng Game Room (room_number = 5)! Hãy dán vào SQL Editor trên Supabase và bấm Run.', 'success');
       }
 
       function getStatus() { return { isConnected, hasClient: Boolean(client) }; }
@@ -2222,7 +2231,7 @@ END $$;`;
       function getLastError() { return lastSyncError; }
 
       return {
-        MIGRATION_SQL, init, connectSupabaseFromConfig, syncFromSupabase, syncRoomLiveSessions, fetchRoomDirectly, fetchExercisesForRoom, getLastError,
+        MIGRATION_SQL, GAME_ROOM_SQL_PATCH, copyGameRoomSQLPatch, init, connectSupabaseFromConfig, syncFromSupabase, syncRoomLiveSessions, fetchRoomDirectly, fetchExercisesForRoom, getLastError,
         upsertRecord, updateRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
@@ -2450,7 +2459,7 @@ END $$;`;
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let rand = '';
       for (let i = 0; i < 4; i++) rand += chars[Math.floor(Math.random() * chars.length)];
-      return `B${lessonNum}R${roomNumber}-${rand}`;
+      return Number(roomNumber) === 5 ? `B${lessonNum}G-${rand}` : `B${lessonNum}R${roomNumber}-${rand}`;
     }
 
     function formatBytes(bytes) {
@@ -2767,8 +2776,15 @@ END $$;`;
         });
       }
 
+      function isGameRoomIdentifier(val) {
+        if (!val) return false;
+        if (typeof val === 'object') return Number(val.roomNumber) === 5 || String(val.id || '').includes('__r5');
+        return Number(val) === 5 || String(val).includes('__r5');
+      }
+
       async function addOrReplaceExercise(exercise, replaceId = null) {
-        if (!requireAdmin('thêm hoặc chỉnh sửa bài luyện tập mẫu')) return { error: { message: 'Không đủ quyền.' } };
+        const isGame = isGameRoomIdentifier(exercise.roomId) || exercise.isGameRoom;
+        if (!isGame && !requireAdmin('thêm hoặc chỉnh sửa bài luyện tập mẫu')) return { error: { message: 'Không đủ quyền.' } };
         if (replaceId) {
           const idx = state.exercises.findIndex((e) => e.id === replaceId);
           if (idx !== -1) {
@@ -2776,15 +2792,18 @@ END $$;`;
             if (old.sourceType === 'file' && old.blobKey) StorageAdapter.deleteFileBlob(old.blobKey).catch(() => {});
             state.exercises[idx] = exercise;
           } else state.exercises.push(exercise);
-        } else state.exercises.push(exercise);
+        } else {
+          if (isGame) state.exercises.unshift(exercise);
+          else state.exercises.push(exercise);
+        }
         persist();
         const result = await SupabaseEngine.upsertRecord('exercises', {
           id: exercise.id, room_id: exercise.roomId, exercise_title: exercise.title,
-          exercise_url: exercise.url || null, exercise_type: exercise.format || 'html',
+          exercise_url: exercise.url || null, exercise_type: exercise.format || 'game_embed',
           answer_key: exercise.answerKey || null, max_score: exercise.maxScore || 10,
         });
         if (result?.error) {
-          console.error('Không lưu được bài tập lên Supabase:', result.error);
+          console.error('Không lưu được bài tập/trò chơi lên Supabase:', result.error);
           return result;
         }
         SupabaseEngine.broadcast('DATA_SYNC', { table: 'exercises', roomId: exercise.roomId, ts: Date.now() });
@@ -2792,15 +2811,63 @@ END $$;`;
       }
 
       async function removeExercise(exerciseId) {
-        if (!requireAdmin('xóa bài luyện tập')) return false;
         const idx = state.exercises.findIndex((e) => e.id === exerciseId);
         if (idx === -1) return false;
         const ex = state.exercises[idx];
+        const isGame = isGameRoomIdentifier(ex.roomId);
+        if (!isGame && !requireAdmin('xóa bài luyện tập')) return false;
         if (ex.sourceType === 'file' && ex.blobKey) await StorageAdapter.deleteFileBlob(ex.blobKey).catch(() => {});
         state.exercises.splice(idx, 1);
         persist();
         await SupabaseEngine.deleteRecord('exercises', exerciseId);
+        SupabaseEngine.broadcast('DATA_SYNC', { table: 'exercises', roomId: ex.roomId, ts: Date.now() });
         return true;
+      }
+
+      function activateGameInRoom(roomId, exerciseId) {
+        const idx = state.exercises.findIndex((e) => e.id === exerciseId);
+        if (idx === -1) return;
+        const [picked] = state.exercises.splice(idx, 1);
+        picked.updatedAt = new Date().toISOString();
+        state.exercises.unshift(picked);
+        persist();
+        SupabaseEngine.upsertRecord('exercises', {
+          id: picked.id, room_id: picked.roomId, exercise_title: picked.title,
+          exercise_url: picked.url || null, exercise_type: picked.format || 'game_embed',
+          answer_key: picked.answerKey || null, max_score: picked.maxScore || 10,
+          created_at: new Date().toISOString(),
+        });
+        SupabaseEngine.broadcast('DATA_SYNC', { table: 'exercises', roomId: picked.roomId, activeGameId: picked.id, ts: Date.now() });
+      }
+
+      function awardQuickGamePoints(roomId, studentId, deltaPoints) {
+        const roomExs = getRoomExercises(roomId);
+        const exId = roomExs[0]?.id || `game_score_${extractBaseRoomKey(roomId)}`;
+        const subId = `sub_${roomId}__${studentId}__${exId}`;
+        const existing = state.submissions.find((s) => s.id === subId);
+        const prevScore = existing
+          ? (typeof existing.teacherScore === 'number' ? existing.teacherScore : (typeof existing.autoScore === 'number' ? existing.autoScore : 0))
+          : 0;
+        const nextScore = Math.max(0, prevScore + Number(deltaPoints || 0));
+        const acc = getCurrentAccount();
+        addSubmission({
+          id: subId,
+          roomId,
+          studentId,
+          exerciseId: exId,
+          answerData: { text: `Điểm thưởng trò chơi (${nextScore} điểm)`, source: 'game_room_quick_score' },
+          autoScore: nextScore,
+          teacherScore: nextScore,
+          teacherFeedback: existing?.teacherFeedback || 'Thưởng điểm trong Game Room',
+          submittedAt: existing?.submittedAt || new Date().toISOString(),
+          gradedAt: new Date().toISOString(),
+          gradedBy: acc?.id || 'teacher',
+          status: 'graded',
+        });
+        const p = state.participants.find((x) => x.roomId === roomId && x.studentId === studentId && x.status !== 'removed');
+        if (p) { p.status = 'graded'; persist(false); }
+        SupabaseEngine.broadcast('TEACHER_GRADED', { roomId, studentId, subId });
+        return nextScore;
       }
 
       function getRoomParticipants(roomId, includeRemoved = false) {
@@ -2878,6 +2945,10 @@ END $$;`;
           slotRooms.forEach((r) => { activeStudents += getRoomParticipants(r.id).length; });
           if (openInSlot.length > 0 || exCount > 0) filledSections++;
         });
+        const gameSlotRooms = getAllRoomsForSlot(lessonId, 5);
+        const openGameRooms = gameSlotRooms.filter((r) => r.status === 'open');
+        if (openGameRooms.length > 0) activeRooms += openGameRooms.length;
+        gameSlotRooms.forEach((r) => { activeStudents += getRoomParticipants(r.id).length; });
 
         const totalMaterials = lectures.length + homeworks.length + roomExercisesCount;
         const percent = Math.round((filledSections / 6) * 100);
@@ -2906,7 +2977,7 @@ END $$;`;
         verifyAccountPin, setAccountPin, createTeacherAccount, toggleAccountLock,
         reloadFromLocal, persist, getMaterialsForLesson, addOrReplaceMaterial, removeMaterial,
         getHomeworkMeta, setHomeworkMeta, getBaseRoomKey, extractBaseRoomKey, getAllRoomsForSlot, getRoomKey, getOrInitRoom, findRoomByCode, saveRoom,
-        getRoomExercises, addOrReplaceExercise, removeExercise, getRoomParticipants, getRoomSubmissions,
+        isGameRoomIdentifier, getRoomExercises, addOrReplaceExercise, removeExercise, activateGameInRoom, awardQuickGamePoints, getRoomParticipants, getRoomSubmissions,
         upsertParticipant, updateParticipantScreenStatus, addSubmission, updateSubmissionGrade,
         getLessonStats, getTopicStats,
       };
@@ -3382,6 +3453,59 @@ END $$;`;
               </div>
             </div>
 
+            <!-- ==================== KHU VỰC GAME ROOM: PHÒNG TRÒ CHƠI TƯƠNG TÁC ==================== -->
+            ${(() => {
+              const currentAcc = AppState.getCurrentAccount();
+              const gameRoom = AppState.getOrInitRoom(lessonId, 5, currentAcc?.id);
+              const gameParticipants = AppState.getRoomParticipants(gameRoom.id);
+              const embeddedGames = AppState.getRoomExercises(gameRoom.id);
+              const activeGame = embeddedGames[0] || null;
+              const parallelOpenGames = AppState.getAllRoomsForSlot(lessonId, 5).filter((r) => r.status === 'open').length;
+              const gameStatusBadge =
+                gameRoom.status === 'open'
+                  ? `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Phòng trò chơi đang mở</span>`
+                  : gameRoom.status === 'closed'
+                  ? `<span class="px-3 py-1 rounded-full bg-rose-100 text-rose-600 text-[11px] font-bold">Đã đóng</span>`
+                  : `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-bold">Sẵn sàng khởi tạo</span>`;
+
+              return `
+                <div class="bg-gradient-to-br from-indigo-50/70 via-white to-spark-orangePastel/40 rounded-3xl p-6 sm:p-7 shadow-soft border-2 border-indigo-200/70 hover:border-indigo-400 transition-all space-y-4">
+                  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-extrabold text-xl flex items-center justify-center shadow-md shrink-0">🎮</div>
+                      <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider">GAME ROOM • TRÒ CHƠI BÊN NGOÀI</span>
+                          ${gameStatusBadge}
+                        </div>
+                        <h2 class="text-lg font-extrabold text-spark-navy mt-1">PHÒNG TRÒ CHƠI TƯƠNG TÁC – BÀI ${lesson.num}</h2>
+                        <p class="text-xs text-spark-text mt-0.5">Nhúng trực tiếp link trò chơi bên ngoài (Wordwall, Quizizz, Kahoot, Blooket, GeoGebra, game HTML...), phát link cho học sinh và quan sát màn hình chơi trực tiếp.${parallelOpenGames > 0 ? ` (${parallelOpenGames} phòng đang mở)` : ''}</p>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                      <button type="button" onclick="PracticeRoomManager.openRoomView('${lessonId}', 5)" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-extrabold shadow-sm transition-all">🎮 MỞ PHÒNG TRÒ CHƠI</button>
+                      ${gameRoom.roomCode ? `<button type="button" onclick="PracticeRoomManager.copyRoomLink('${lessonId}', 5)" class="px-3.5 py-2.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-600 hover:text-white text-xs font-bold transition-colors" title="Sao chép link Game Room">Sao chép Link</button>` : ''}
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/90 rounded-2xl p-3.5 border border-indigo-100 text-xs">
+                    <div class="flex items-center justify-between sm:block">
+                      <span class="text-spark-text font-medium">Mã phòng trò chơi:</span>
+                      <div class="font-mono font-extrabold text-sm ${gameRoom.roomCode ? 'text-indigo-600' : 'text-gray-400'} mt-0.5">${gameRoom.roomCode || 'Chưa khởi tạo'}</div>
+                    </div>
+                    <div class="flex items-center justify-between sm:block">
+                      <span class="text-spark-text font-medium">Trò chơi đang nhúng:</span>
+                      <div class="font-bold text-spark-navy truncate mt-0.5">${activeGame ? escapeHtml(activeGame.title) : 'Chưa nhúng link trò chơi'}</div>
+                    </div>
+                    <div class="flex items-center justify-between sm:block">
+                      <span class="text-spark-text font-medium">Học sinh đang chơi:</span>
+                      <div class="font-bold text-spark-navy mt-0.5">${gameParticipants.length} học sinh • ${embeddedGames.length} link game</div>
+                    </div>
+                  </div>
+                </div>`;
+            })()}
+
             <!-- ==================== KHU VỰC 06: BÀI TẬP VỀ NHÀ ==================== -->
             <div class="bg-white rounded-3xl p-6 sm:p-7 shadow-soft border border-gray-100 space-y-5">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-gray-100">
@@ -3653,12 +3777,100 @@ END $$;`;
         }
       }
 
+      function isGameRoom(room = getActiveRoom()) {
+        return Boolean(room && Number(room.roomNumber) === 5);
+      }
+
       function copyRoomLink(lessonId, roomNumber) {
         const tid = isOpen() ? currentRoomTeacherId : AppState.getCurrentAccount()?.id;
         const room = AppState.getOrInitRoom(lessonId, roomNumber, tid);
         if (!room.roomCode) { Toast.show('Vui lòng tạo phòng trước khi sao chép link.', 'info'); return; }
         copyTextSafe(getStudentRoomUrl(room.roomCode));
-        Toast.show(`Đã sao chép link Practice Room ${roomNumber} (${room.roomCode})!`, 'success');
+        const label = Number(roomNumber) === 5 ? 'Game Room (Phòng Trò Chơi)' : `Practice Room ${roomNumber}`;
+        Toast.show(`Đã sao chép link ${label} (${room.roomCode})!`, 'success');
+      }
+
+      async function saveExternalGameLink(e) {
+        if (e) e.preventDefault();
+        const room = getActiveRoom();
+        if (!room || !isGameRoom(room)) return;
+        const urlInput = document.getElementById('game-embed-url-input');
+        const titleInput = document.getElementById('game-embed-title-input');
+        const modeSelect = document.getElementById('game-embed-mode-select');
+        const rawUrl = (urlInput?.value || '').trim();
+        const rawTitle = (titleInput?.value || '').trim();
+        const displayMode = modeSelect?.value || 'game_embed';
+
+        if (!rawUrl) {
+          Toast.show('Vui lòng dán đường dẫn link trò chơi bên ngoài (https://...).', 'error');
+          return;
+        }
+        const cleanUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl;
+        let autoTitle = rawTitle;
+        if (!autoTitle) {
+          try {
+            const u = new URL(cleanUrl);
+            autoTitle = `Trò chơi (${u.hostname.replace(/^www\./, '')})`;
+          } catch {
+            autoTitle = 'Trò chơi tương tác bên ngoài';
+          }
+        }
+
+        const baseRoomKey = AppState.getBaseRoomKey(room.lessonId, room.roomNumber);
+        const exObj = {
+          id: 'game_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          lessonId: room.lessonId,
+          roomId: baseRoomKey,
+          materialType: 'exercise',
+          title: autoTitle,
+          format: displayMode,
+          sourceType: 'link',
+          url: cleanUrl,
+          answerKey: '',
+          maxScore: 10,
+          isGameRoom: true,
+          updatedAt: new Date().toISOString(),
+        };
+
+        const res = await AppState.addOrReplaceExercise(exObj, null);
+        if (res && res.error) {
+          Toast.show(`Lỗi lưu link trò chơi lên Supabase: ${res.error.message}`, 'error');
+          return;
+        }
+        if (urlInput) urlInput.value = '';
+        if (titleInput) titleInput.value = '';
+        Toast.show(`Đã nhúng & phát trò chơi "${autoTitle}" vào Game Room!`, 'success');
+        renderRoomView();
+      }
+
+      function activateGame(exerciseId) {
+        const room = getActiveRoom();
+        if (!room) return;
+        AppState.activateGameInRoom(room.id, exerciseId);
+        Toast.show('Đã chuyển sang trò chơi này cho toàn bộ học sinh trong phòng!', 'success');
+        renderRoomView();
+      }
+
+      function requestAllStudentsScreen() {
+        const room = getActiveRoom();
+        if (!room) return;
+        const participants = AppState.getRoomParticipants(room.id);
+        if (participants.length === 0) {
+          Toast.show('Hiện chưa có học sinh nào trong phòng.', 'info');
+          return;
+        }
+        participants.forEach((p) => {
+          SupabaseEngine.broadcast('WEBRTC_REQUEST_SHARE', { roomId: room.id, studentId: p.studentId });
+        });
+        Toast.show(`Đã gửi yêu cầu chia sẻ màn hình tới ${participants.length} học sinh!`, 'success');
+      }
+
+      function quickAwardPoints(studentId, delta) {
+        const room = getActiveRoom();
+        if (!room) return;
+        const newScore = AppState.awardQuickGamePoints(room.id, studentId, delta);
+        Toast.show(`Đã cộng +${delta} điểm (Tổng: ${newScore} điểm)!`, 'success');
+        renderRoomView();
       }
 
       function previewStudentInterface() {
@@ -3671,24 +3883,40 @@ END $$;`;
       function renderRoomView() {
         const room = getActiveRoom();
         if (!room) return;
+        const isGame = isGameRoom(room);
         const lesson = CurriculumData.getLessonById(room.lessonId);
         const participants = AppState.getRoomParticipants(room.id);
         const completedCount = participants.filter((p) => p.status === 'submitted' || p.status === 'graded').length;
         const inProgressCount = participants.length - completedCount;
         const assignableTeachers = AppState.getAssignableTeachers();
+        const embeddedGames = isGame ? AppState.getRoomExercises(room.id) : [];
+
+        const tabDash = document.getElementById('room-tab-dashboard');
+        const tabEx = document.getElementById('room-tab-exercises');
+        const tabScore = document.getElementById('room-tab-scoreboard');
+        if (tabDash) tabDash.textContent = isGame ? 'Quan sát học sinh chơi' : 'Giám sát học sinh';
+        if (tabEx) tabEx.textContent = isGame ? `Link trò chơi đã nhúng (${embeddedGames.length})` : 'Bài luyện tập của phòng';
+        if (tabScore) tabScore.textContent = isGame ? 'Bảng điểm trò chơi' : 'Bảng điểm phòng';
 
         const headerEl = document.getElementById('practice-room-header');
         if (headerEl) {
           const shareUrl = room.roomCode ? getStudentRoomUrl(room.roomCode) : '';
+          const roomBadgeHtml = isGame
+            ? `<span class="px-3 py-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-extrabold">🎮 GAME ROOM • PHÒNG TRÒ CHƠI</span>`
+            : `<span class="px-3 py-1 rounded-full bg-spark-gradient text-white text-xs font-extrabold">PRACTICE ROOM ${room.roomNumber}</span>`;
+          const roomHeadingText = isGame
+            ? `GAME ROOM (TRÒ CHƠI TƯƠNG TÁC) – BÀI ${lesson.num}: ${escapeHtml(lesson.title)}`
+            : `PRACTICE ROOM ${room.roomNumber} – BÀI ${lesson.num}: ${escapeHtml(lesson.title)}`;
+
           headerEl.innerHTML = `
             <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="px-3 py-1 rounded-full bg-spark-gradient text-white text-xs font-extrabold">PRACTICE ROOM ${room.roomNumber}</span>
+                  ${roomBadgeHtml}
                   <span class="px-3 py-1 rounded-full bg-spark-orangePastel text-spark-orangeDark text-xs font-bold">BÀI ${lesson.num}</span>
                   <span class="px-3 py-1 rounded-full text-xs font-bold ${room.status === 'open' ? 'bg-emerald-100 text-emerald-700' : room.status === 'closed' ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-spark-text'}">${room.status === 'open' ? 'ĐANG MỞ' : room.status === 'closed' ? 'ĐÃ ĐÓNG' : 'CHƯA MỞ'}</span>
                 </div>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-spark-navy">PRACTICE ROOM ${room.roomNumber} – BÀI ${lesson.num}: ${escapeHtml(lesson.title)}</h1>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-spark-navy">${roomHeadingText}</h1>
                 <div class="flex flex-wrap items-center gap-4 text-xs text-spark-text pt-1">
                   ${
                     AppState.isAdmin()
@@ -3700,13 +3928,13 @@ END $$;`;
                         </label>`
                       : `<span>Phòng riêng của: <strong class="text-spark-navy">${escapeHtml(AppState.getAccountById(room.teacherId)?.name || '')}</strong></span>`
                   }
-                  <span>Mã phòng: <strong class="font-mono text-spark-pink text-sm">${room.roomCode || '—'}</strong></span>
+                  <span>Mã phòng: <strong class="font-mono ${isGame ? 'text-indigo-600' : 'text-spark-pink'} text-sm">${room.roomCode || '—'}</strong></span>
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-3 shrink-0">
-                <div class="bg-spark-bg rounded-2xl px-4 py-3 text-center border border-gray-100"><div class="text-xl font-extrabold text-spark-navy">${participants.length}</div><div class="text-[11px] text-spark-text font-medium">Đang tham gia</div></div>
-                <div class="bg-emerald-50 rounded-2xl px-4 py-3 text-center border border-emerald-100"><div class="text-xl font-extrabold text-emerald-600">${completedCount}</div><div class="text-[11px] text-emerald-700 font-medium">Đã hoàn thành</div></div>
-                <div class="bg-spark-orangePastel/60 rounded-2xl px-4 py-3 text-center border border-spark-orange/20"><div class="text-xl font-extrabold text-spark-orangeDark">${inProgressCount}</div><div class="text-[11px] text-spark-orangeDark font-medium">Chưa hoàn thành</div></div>
+                <div class="bg-spark-bg rounded-2xl px-4 py-3 text-center border border-gray-100"><div class="text-xl font-extrabold text-spark-navy">${participants.length}</div><div class="text-[11px] text-spark-text font-medium">${isGame ? 'Đang chơi' : 'Đang tham gia'}</div></div>
+                <div class="bg-emerald-50 rounded-2xl px-4 py-3 text-center border border-emerald-100"><div class="text-xl font-extrabold text-emerald-600">${completedCount}</div><div class="text-[11px] text-emerald-700 font-medium">${isGame ? 'Đã chấm điểm' : 'Đã hoàn thành'}</div></div>
+                <div class="bg-spark-orangePastel/60 rounded-2xl px-4 py-3 text-center border border-spark-orange/20"><div class="text-xl font-extrabold text-spark-orangeDark">${inProgressCount}</div><div class="text-[11px] text-spark-orangeDark font-medium">${isGame ? 'Đang thi đấu' : 'Chưa hoàn thành'}</div></div>
               </div>
             </div>
 
@@ -3720,7 +3948,45 @@ END $$;`;
               <button type="button" onclick="PracticeRoomManager.switchTab('scoreboard')" class="px-4 py-2 rounded-xl bg-spark-orangePastel hover:bg-spark-orange text-spark-orangeDark hover:text-white text-xs font-bold transition-colors">BẢNG ĐIỂM</button>
             </div>
 
-            ${shareUrl ? `<div class="mt-4 p-3 rounded-2xl bg-spark-bg border border-gray-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"><div class="truncate text-spark-navy"><span class="font-bold text-spark-pink">Link học sinh:</span> <span class="font-mono select-all">${escapeHtml(shareUrl)}</span></div><label class="inline-flex items-center gap-2 cursor-pointer shrink-0 font-medium text-spark-text"><input type="checkbox" ${room.allowRejoin ? 'checked' : ''} onchange="PracticeRoomManager.toggleAllowRejoin(this.checked)" class="rounded text-spark-pink focus:ring-spark-pink" /> Cho phép HS vào lại</label></div>` : ''}
+            ${shareUrl ? `<div class="mt-4 p-3 rounded-2xl bg-spark-bg border border-gray-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"><div class="truncate text-spark-navy"><span class="font-bold ${isGame ? 'text-indigo-600' : 'text-spark-pink'}">Link học sinh:</span> <span class="font-mono select-all">${escapeHtml(shareUrl)}</span></div><label class="inline-flex items-center gap-2 cursor-pointer shrink-0 font-medium text-spark-text"><input type="checkbox" ${room.allowRejoin ? 'checked' : ''} onchange="PracticeRoomManager.toggleAllowRejoin(this.checked)" class="rounded text-spark-pink focus:ring-spark-pink" /> Cho phép HS vào lại</label></div>` : ''}
+
+            ${
+              isGame
+                ? `<div class="mt-5 pt-5 border-t border-indigo-100 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-extrabold text-indigo-700">🔗 Nhúng link trò chơi bên ngoài vào phòng</span>
+                        <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold">Wordwall • Quizizz • Kahoot • Blooket • HTML Game</span>
+                      </div>
+                      <button type="button" onclick="SupabaseEngine.copyGameRoomSQLPatch()" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-bold" title="Sao chép lệnh SQL nếu Supabase báo lỗi constraint room_number">SQL mở rộng DB (1..5)</button>
+                    </div>
+
+                    <form onsubmit="PracticeRoomManager.saveExternalGameLink(event)" class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                      <input id="game-embed-title-input" type="text" placeholder="Tên trò chơi (VD: Wordwall - Trục đối xứng)" class="md:col-span-3 px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 bg-white focus:border-indigo-500 outline-none font-medium" />
+                      <input id="game-embed-url-input" type="url" required placeholder="Dán link trò chơi tại đây (https://wordwall.net/... hoặc link game HTML)" class="md:col-span-5 px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 bg-white focus:border-indigo-500 outline-none font-mono" />
+                      <select id="game-embed-mode-select" class="md:col-span-2 px-3 py-2.5 text-xs rounded-xl border border-gray-200 bg-white focus:border-indigo-500 outline-none font-semibold text-spark-navy">
+                        <option value="game_embed">Nhúng khung trực tiếp</option>
+                        <option value="game_newtab">Mở tab mới + Giám sát</option>
+                      </select>
+                      <button type="submit" class="md:col-span-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-extrabold shadow-sm">🚀 NHÚNG & PHÁT</button>
+                    </form>
+
+                    ${
+                      embeddedGames.length > 0
+                        ? `<div class="flex flex-wrap items-center gap-2 pt-1">
+                            <span class="text-[11px] font-bold text-spark-text">Trò chơi trong phòng:</span>
+                            ${embeddedGames.map((g, idx) => `
+                              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs ${idx === 0 ? 'bg-indigo-50 border-indigo-300 text-indigo-800 font-extrabold' : 'bg-white border-gray-200 text-spark-navy font-semibold'}">
+                                <span>${idx === 0 ? '▶ Đang phát:' : '🎮'} ${escapeHtml(g.title)}</span>
+                                ${idx !== 0 ? `<button type="button" onclick="PracticeRoomManager.activateGame('${g.id}')" class="ml-1 px-2 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold">Phát</button>` : ''}
+                                <button type="button" onclick="PracticeRoomManager.deleteExercise('${g.id}')" class="ml-1 text-rose-500 hover:text-rose-700 font-bold" title="Xóa link trò chơi">✕</button>
+                              </div>`).join('')}
+                          </div>`
+                        : ''
+                    }
+                  </div>`
+                : ''
+            }
           `;
         }
 
@@ -3737,41 +4003,47 @@ END $$;`;
         const exercises = AppState.getRoomExercises(room.id);
         const submissions = AppState.getRoomSubmissions(room.id);
 
+        const isGame = isGameRoom(room);
+
         if (activeTab === 'dashboard') {
           bodyEl.innerHTML = `
             <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border border-gray-100 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 class="text-base font-extrabold text-spark-navy">Danh sách học sinh trong phòng (${participants.length})</h3>
-                  <p class="text-xs text-spark-text">Theo dõi tiến độ, xem màn hình trực tiếp, chấm điểm hoặc xóa học sinh khỏi phòng.</p>
+                  <h3 class="text-base font-extrabold text-spark-navy">${isGame ? `Quan sát học sinh chơi trực tiếp (${participants.length} HS)` : `Danh sách học sinh trong phòng (${participants.length})`}</h3>
+                  <p class="text-xs text-spark-text">${isGame ? 'Theo dõi màn hình học sinh đang chơi trò chơi bên ngoài, phóng to xem trực tiếp qua WebRTC và cộng điểm thưởng nhanh.' : 'Theo dõi tiến độ, xem màn hình trực tiếp, chấm điểm hoặc xóa học sinh khỏi phòng.'}</p>
                 </div>
-                <div class="inline-flex items-center gap-1 bg-spark-bg p-1 rounded-xl border border-gray-200 text-[11px] font-bold">
-                  <span class="px-2 text-spark-text hidden sm:inline">Cỡ khung:</span>
-                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(1)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 1 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">1 cột lớn</button>
-                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(2)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 2 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">2 cột</button>
-                  <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(3)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 3 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">3 cột</button>
+                <div class="flex flex-wrap items-center gap-2">
+                  ${isGame && participants.length > 0 ? `<button type="button" onclick="PracticeRoomManager.requestAllStudentsScreen()" class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 text-[11px] font-bold transition-colors">🖥️ Yêu cầu tất cả HS chia sẻ MH</button>` : ''}
+                  <div class="inline-flex items-center gap-1 bg-spark-bg p-1 rounded-xl border border-gray-200 text-[11px] font-bold">
+                    <span class="px-2 text-spark-text hidden sm:inline">Cỡ khung:</span>
+                    <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(1)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 1 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">1 cột lớn</button>
+                    <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(2)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 2 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">2 cột</button>
+                    <button type="button" onclick="PracticeRoomManager.setDashboardGridCols(3)" class="px-2.5 py-1 rounded-lg transition-all ${dashboardGridCols === 3 ? 'bg-spark-gradient text-white shadow-sm' : 'text-spark-navy hover:bg-white'}">3 cột</button>
+                  </div>
                 </div>
               </div>
               ${
                 room.status === 'closed'
-                  ? `<div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-8 text-center text-xs sm:text-sm text-spark-navy space-y-2"><div class="font-extrabold text-rose-600">🔒 Phòng luyện tập đã đóng</div><p class="text-spark-text">Toàn bộ học sinh đã được ngắt kết nối. Giáo viên có thể xem hoặc xuất điểm đã lưu tại tab <strong>Bảng điểm phòng</strong>.</p></div>`
+                  ? `<div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-8 text-center text-xs sm:text-sm text-spark-navy space-y-2"><div class="font-extrabold text-rose-600">🔒 ${isGame ? 'Phòng trò chơi đã đóng' : 'Phòng luyện tập đã đóng'}</div><p class="text-spark-text">Toàn bộ học sinh đã được ngắt kết nối. Giáo viên có thể xem hoặc xuất điểm đã lưu tại tab <strong>Bảng điểm</strong>.</p></div>`
                   : participants.length === 0
                   ? `<div class="rounded-2xl border border-dashed border-gray-200 bg-spark-bg/60 p-8 text-center text-xs sm:text-sm text-spark-text">Chưa có học sinh nào tham gia phòng này. Hãy nhấn <strong>PHÁT LINK CHO HỌC SINH</strong> để gửi link tham gia.</div>`
                   : `<div class="grid gap-5 ${dashboardGridCols === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : dashboardGridCols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}">
                       ${participants.map((p) => {
                         const pSubs = submissions.filter((s) => s.studentId === p.studentId);
                         const latestSub = pSubs[0] || null;
+                        const totalPts = pSubs.reduce((acc, s) => acc + (typeof s.teacherScore === 'number' ? s.teacherScore : (typeof s.autoScore === 'number' ? s.autoScore : 0)), 0);
                         const statusPill = p.status === 'graded'
                           ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">Đã chấm</span>`
                           : p.status === 'submitted'
                           ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">Đã nộp bài</span>`
-                          : `<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">Đang làm</span>`;
+                          : `<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">${isGame ? 'Đang chơi' : 'Đang làm'}</span>`;
                         const screenPill = p.screenStatus === 'sharing'
-                          ? `<span class="px-2 py-0.5 rounded-full bg-spark-pinkPastel text-spark-pink text-[10px] font-bold">Đang chia sẻ MH</span>`
+                          ? `<span class="px-2 py-0.5 rounded-full bg-spark-pinkPastel text-spark-pink text-[10px] font-bold">● Đang chia sẻ MH</span>`
                           : p.screenStatus === 'mobile_photo'
                           ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">📱 Đã gửi ảnh bài</span>`
                           : p.screenStatus === 'mobile_live'
-                          ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">📱 ĐT/Tablet đang làm</span>`
+                          ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">📱 ĐT/Tablet đang chơi</span>`
                           : `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-spark-text text-[10px] font-medium">Chưa chia sẻ MH</span>`;
 
                         const liveThumb = p.latestCanvasUrl || p.latestPhotoUrl || '';
@@ -3783,28 +4055,39 @@ END $$;`;
                                 <span class="text-sm font-extrabold text-spark-navy truncate">${escapeHtml(p.studentName || p.studentId)}</span>
                                 ${statusPill}
                               </div>
-                              <div class="flex flex-wrap items-center gap-1.5 mb-2.5">${screenPill}</div>
+                              <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2.5">
+                                ${screenPill}
+                                ${isGame ? `<span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-extrabold">🏆 ${totalPts} điểm</span>` : ''}
+                              </div>
 
-                              <!-- Live Screen Preview directly on card -->
-                              <div onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="relative rounded-xl overflow-hidden bg-spark-navy aspect-video mb-2.5 cursor-pointer group border border-gray-200/80 flex items-center justify-center" title="Bấm để phóng to &amp; chấm điểm">
+                              <div onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="relative rounded-xl overflow-hidden bg-spark-navy aspect-video mb-2.5 cursor-pointer group border border-gray-200/80 flex items-center justify-center" title="Bấm để xem màn hình trực tiếp &amp; chấm điểm">
                                 ${
                                   liveThumb
                                     ? `<img src="${liveThumb}" alt="Màn hình trực tiếp của ${escapeHtml(p.studentName || p.studentId)}" class="w-full h-full object-contain bg-white group-hover:scale-[1.02] transition-transform duration-200" />
                                        <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold shadow">● LIVE${lastTime ? ' • ' + lastTime : ''}</span>`
                                     : `<div class="text-center px-3 py-4">
-                                         <div class="text-[11px] font-semibold text-white/80">Chờ khung hình từ học sinh...</div>
-                                         <div class="text-[10px] text-white/50 mt-0.5">Tự hiển thị khi HS mở bài tập</div>
+                                         <div class="text-[11px] font-semibold text-white/80">${isGame ? 'Bấm để xem màn hình WebRTC trực tiếp' : 'Chờ khung hình từ học sinh...'}</div>
+                                         <div class="text-[10px] text-white/50 mt-0.5">${isGame ? 'Hoặc yêu cầu HS bật "Chia sẻ màn hình"' : 'Tự hiển thị khi HS mở bài tập'}</div>
                                        </div>`
                                 }
                               </div>
 
                               <div class="text-[11px] text-spark-text">
                                 <div>Vào lúc: ${formatDateVN(p.joinedAt)}</div>
-                                <div>Số bài đã nộp: <strong>${pSubs.length}</strong>${latestSub && latestSub.teacherScore !== null && latestSub.teacherScore !== undefined ? ` • Điểm: <strong class="text-spark-pink">${latestSub.teacherScore}</strong>` : ''}</div>
+                                ${
+                                  isGame
+                                    ? `<div class="flex items-center gap-1.5 mt-1.5">
+                                         <span class="font-semibold text-spark-navy">Thưởng nhanh:</span>
+                                         <button type="button" onclick="PracticeRoomManager.quickAwardPoints('${p.studentId}', 1)" class="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white font-bold border border-emerald-200 transition-colors">+1đ</button>
+                                         <button type="button" onclick="PracticeRoomManager.quickAwardPoints('${p.studentId}', 5)" class="px-2 py-0.5 rounded-md bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold border border-indigo-200 transition-colors">+5đ</button>
+                                         <button type="button" onclick="PracticeRoomManager.quickAwardPoints('${p.studentId}', 10)" class="px-2 py-0.5 rounded-md bg-spark-orangePastel hover:bg-spark-orange text-spark-orangeDark hover:text-white font-bold transition-colors">+10đ</button>
+                                       </div>`
+                                    : `<div>Số bài đã nộp: <strong>${pSubs.length}</strong>${latestSub && latestSub.teacherScore !== null && latestSub.teacherScore !== undefined ? ` • Điểm: <strong class="text-spark-pink">${latestSub.teacherScore}</strong>` : ''}</div>`
+                                }
                               </div>
                             </div>
                             <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
-                              <button type="button" onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="flex-1 py-1.5 px-3 rounded-xl btn-gradient text-white text-xs font-bold">Phóng to &amp; Chấm</button>
+                              <button type="button" onclick="PracticeRoomManager.openStudentMonitor('${p.studentId}')" class="flex-1 py-1.5 px-3 rounded-xl btn-gradient text-white text-xs font-bold">${isGame ? 'Xem MH & Chấm' : 'Phóng to & Chấm'}</button>
                               <button type="button" onclick="PracticeRoomManager.removeStudent('${p.studentId}')" class="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold transition-colors">Xóa</button>
                             </div>
                           </div>`;
@@ -3816,6 +4099,46 @@ END $$;`;
         }
 
         if (activeTab === 'exercises') {
+          if (isGame) {
+            bodyEl.innerHTML = `
+              <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border border-gray-100 space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 class="text-base font-extrabold text-spark-navy">Danh sách link trò chơi đã nhúng (${exercises.length})</h3>
+                    <p class="text-xs text-spark-text">Học sinh sẽ thấy trò chơi được đánh dấu <strong>"Đang phát"</strong> ngay khi vào phòng.</p>
+                  </div>
+                  ${
+                    isAdmin
+                      ? `<button type="button" onclick="ModalManager.openUploadModal({ scope: 'exercise', roomId: '${AppState.getBaseRoomKey(room.lessonId, room.roomNumber)}', lessonId: '${room.lessonId}', roomNumber: ${room.roomNumber}, defaultTab: 'file' })" class="px-4 py-2 rounded-xl bg-spark-bg border border-gray-200 hover:border-indigo-400 text-spark-navy text-xs font-bold">+ Tải tệp HTML Game (Admin)</button>`
+                      : ''
+                  }
+                </div>
+                ${
+                  exercises.length === 0
+                    ? `<div class="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/30 p-8 text-center text-xs sm:text-sm text-spark-text">Chưa có link trò chơi nào được nhúng. Hãy dán link trò chơi ở thanh phía trên và bấm <strong>NHÚNG &amp; PHÁT</strong>.</div>`
+                    : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${exercises.map((ex, idx) => `
+                          <div class="rounded-2xl p-4 border ${idx === 0 ? 'border-indigo-400 bg-indigo-50/30' : 'border-gray-200 bg-white'} flex flex-col justify-between gap-3">
+                            <div class="space-y-1.5">
+                              <div class="flex items-center justify-between gap-2">
+                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${idx === 0 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-spark-navy'}">${idx === 0 ? '▶ ĐANG PHÁT CHO HS' : '🎮 GAME LINK'}</span>
+                                <span class="text-[11px] font-bold text-indigo-700">${ex.format === 'game_newtab' ? 'Mở tab mới' : 'Nhúng Iframe'}</span>
+                              </div>
+                              <div class="text-sm font-extrabold text-spark-navy">${escapeHtml(ex.title)}</div>
+                              ${ex.url ? `<div class="text-[11px] font-mono text-spark-text truncate">${escapeHtml(ex.url)}</div>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                              ${idx !== 0 ? `<button type="button" onclick="PracticeRoomManager.activateGame('${ex.id}')" class="flex-1 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">Phát trò chơi này</button>` : `<span class="flex-1 text-center py-1.5 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-bold">Đang hiển thị cho HS</span>`}
+                              <button type="button" onclick="ModalManager.openPreviewModal('${ex.id}', 'exercise')" class="px-3 py-1.5 rounded-xl bg-spark-bg text-spark-navy text-xs font-bold">Thử</button>
+                              <button type="button" onclick="PracticeRoomManager.deleteExercise('${ex.id}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold">Xóa</button>
+                            </div>
+                          </div>`).join('')}
+                      </div>`
+                }
+              </div>`;
+            return;
+          }
+
           bodyEl.innerHTML = `
             <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border border-gray-100 space-y-5">
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -4149,7 +4472,7 @@ END $$;`;
 
       return {
         openZoomModal, closeZoomModal, setZoomScale, setDashboardGridCols,
-        isOpen, getActiveRoom, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher,
+        isOpen, isGameRoom, getActiveRoom, getMonitoringStudentId, openRoomView, closeRoomView, switchTab, changeRoomTeacher, saveExternalGameLink, activateGame, requestAllStudentsScreen, quickAwardPoints,
         createOrResetRoom, setRoomStatus, toggleAllowRejoin, publishAndCopyLink,
         copyRoomLink, previewStudentInterface, renderRoomView, openStudentMonitor,
         closeStudentMonitor, requestStudentScreen, refreshStudentMonitor, saveGrade, removeStudent,
@@ -4812,9 +5135,14 @@ END $$;`;
           }
         }, 5000);
 
-        // Sau khi tham gia phòng, tự mở bài tập đầu tiên ngay trong trang.
-        // Ưu tiên bài tập gắn trực tiếp với Practice Room; nếu phòng chưa có
-        // bài tập riêng thì dùng tài liệu của bài học làm phương án dự phòng.
+        const isGame = Number(currentRoom.roomNumber) === 5 || String(currentRoom.id || '').includes('__r5') || /-G-/.test(currentRoom.roomCode || '');
+        if (isGame) {
+          installLiveObservation();
+          startLiveMirrorLoop();
+          Toast.show(`Chào ${name}! Đã vào Phòng Trò Chơi.`, 'success');
+          return;
+        }
+
         let assignedItems = AppState.getRoomExercises(currentRoom.id) || [];
         let firstItem = assignedItems[0] || null;
         let firstScope = 'exercise';
@@ -4831,7 +5159,7 @@ END $$;`;
             Toast.show(`Chào ${name}! Bài tập đã được mở.`, 'success');
           } catch (err) {
             console.error('Không thể tự mở bài tập sau khi tham gia phòng:', err);
-            Toast.show('Đã vào phòng. Em nhấn “Xem ngay” để mở bài tập nhé.', 'info');
+            Toast.show('Đã vào phòng. Em nhấn “Mở bài tập” để bắt đầu nhé.', 'info');
           }
         } else {
           Toast.show('Đã vào phòng. Hiện phòng chưa có link bài tập được gắn.', 'info');
@@ -5084,8 +5412,9 @@ END $$;`;
           return;
         }
 
+        const isGame = Number(currentRoom.roomNumber) === 5 || String(currentRoom.id || '').includes('__r5') || /-G-/.test(currentRoom.roomCode || '');
+
         if (!currentStudent) {
-          // Không vẽ lại form nhập tên khi ô nhập đã hiển thị (tránh mất chữ do Realtime từ phòng khác đồng bộ nền)
           const existingJoinInput = document.getElementById('stu-join-name');
           if (existingJoinInput && container.contains(existingJoinInput)) {
             return;
@@ -5093,12 +5422,12 @@ END $$;`;
           container.innerHTML = `
             <div class="bg-white rounded-3xl p-8 shadow-soft border border-gray-100 max-w-md mx-auto space-y-5">
               <div class="text-center">
-                <span class="px-3 py-1 rounded-full bg-spark-pinkPastel text-spark-pink text-xs font-extrabold">MÃ PHÒNG: ${escapeHtml(currentRoom.roomCode)}</span>
-                <h2 class="text-xl font-extrabold text-spark-navy mt-3">Tham gia Phòng Luyện Tập</h2>
+                <span class="px-3 py-1 rounded-full ${isGame ? 'bg-indigo-100 text-indigo-700' : 'bg-spark-pinkPastel text-spark-pink'} text-xs font-extrabold">MÃ PHÒNG: ${escapeHtml(currentRoom.roomCode)}</span>
+                <h2 class="text-xl font-extrabold text-spark-navy mt-3">${isGame ? '🎮 Tham gia Phòng Trò Chơi' : 'Tham gia Phòng Luyện Tập'}</h2>
               </div>
               <form onsubmit="StudentRoomManager.joinRoom(event)" class="space-y-4">
                 <input id="stu-join-name" type="text" required placeholder="Nhập họ và tên của em..." class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:border-spark-pink outline-none" />
-                <button type="submit" class="w-full btn-gradient py-3 rounded-xl text-white font-bold text-sm">VÀO PHÒNG NGAY</button>
+                <button type="submit" class="w-full btn-gradient py-3 rounded-xl text-white font-bold text-sm">${isGame ? 'VÀO PHÒNG CHƠI NGAY' : 'VÀO PHÒNG NGAY'}</button>
               </form>
             </div>`;
           return;
@@ -5109,6 +5438,80 @@ END $$;`;
         }
 
         let exercises = AppState.getRoomExercises(currentRoom.id);
+
+        if (isGame) {
+          const activeGame = exercises.find((x) => x.id === activeExerciseId) || exercises[0] || null;
+          const isWebRTCActive = WebRTCManager.isStudentSharing();
+          const existingGameFrame = document.getElementById('student-embedded-game-frame');
+          if (existingGameFrame && activeGame && existingGameFrame.dataset.gameId === activeGame.id && existingGameFrame.dataset.gameUrl === (activeGame.url || '')) {
+            const shareBtn = document.getElementById('stu-game-share-btn');
+            if (shareBtn) {
+              shareBtn.className = isWebRTCActive
+                ? 'px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm'
+                : 'px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm transition-colors';
+              shareBtn.textContent = isWebRTCActive ? '● Đang chia sẻ màn hình với GV' : '🖥️ Chia sẻ màn hình cho GV xem chơi';
+            }
+            return;
+          }
+
+          container.innerHTML = `
+            <div class="space-y-4 max-w-6xl mx-auto">
+              <div class="bg-white rounded-3xl p-4 sm:p-5 border border-indigo-100 shadow-soft flex flex-wrap items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold">🎮 GAME ROOM • ${escapeHtml(currentRoom.roomCode)}</span>
+                    <span class="text-xs font-bold text-spark-navy truncate">Người chơi: ${escapeHtml(currentStudent.studentName)}</span>
+                  </div>
+                  <h2 class="text-base sm:text-lg font-extrabold text-spark-navy truncate mt-1">${activeGame ? escapeHtml(activeGame.title) : 'Đang chờ giáo viên nhúng link trò chơi...'}</h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" id="stu-game-share-btn" onclick="WebRTCManager.startStudentScreenShare('${currentRoom.id}', '${currentStudent.studentId}')" class="${isWebRTCActive ? 'px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm' : 'px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm transition-colors'}">
+                    ${isWebRTCActive ? '● Đang chia sẻ màn hình với GV' : '🖥️ Chia sẻ màn hình cho GV xem chơi'}
+                  </button>
+                  ${
+                    activeGame && activeGame.url
+                      ? `<button type="button" onclick="StudentRoomManager.toggleGameFullscreen()" class="px-3 py-2 rounded-xl bg-spark-bg border border-gray-200 hover:border-indigo-400 text-spark-navy text-xs font-bold">⛶ Toàn màn hình</button>
+                         <a href="${escapeHtml(activeGame.url)}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-spark-orangePastel hover:bg-spark-orange text-spark-orangeDark hover:text-white text-xs font-bold transition-colors">↗ Mở tab mới</a>`
+                      : ''
+                  }
+                </div>
+              </div>
+
+              ${
+                exercises.length > 1
+                  ? `<div class="flex flex-wrap items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm text-xs">
+                      <span class="font-bold text-spark-text">Chọn trò chơi:</span>
+                      ${exercises.map((g) => `<button type="button" onclick="StudentRoomManager.selectEmbeddedGame('${g.id}')" class="px-3 py-1 rounded-xl font-bold transition-all ${activeGame && activeGame.id === g.id ? 'bg-indigo-600 text-white' : 'bg-spark-bg text-spark-navy hover:bg-indigo-50'}">🎮 ${escapeHtml(g.title)}</button>`).join('')}
+                    </div>`
+                  : ''
+              }
+
+              ${
+                !activeGame || !activeGame.url
+                  ? `<div class="bg-white rounded-3xl p-12 text-center space-y-3 border border-dashed border-indigo-200 shadow-soft">
+                      <div class="text-3xl">🎮</div>
+                      <div class="text-base font-extrabold text-spark-navy">Giáo viên chưa phát link trò chơi nào</div>
+                      <p class="text-xs text-spark-text max-w-md mx-auto">Ngay khi giáo viên nhúng link trò chơi vào phòng, trò chơi sẽ tự động xuất hiện tại đây.</p>
+                      <button type="button" onclick="StudentRoomManager.openStudentRoomByCode('${escapeHtml(currentRoom.roomCode)}')" class="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold">Làm mới phòng</button>
+                    </div>`
+                  : `<div id="student-game-stage-wrap" class="bg-white rounded-3xl overflow-hidden border-2 border-indigo-200/80 shadow-soft">
+                      ${
+                        activeGame.format === 'game_newtab'
+                          ? `<div class="p-10 text-center space-y-4">
+                              <div class="text-4xl">🚀</div>
+                              <h3 class="text-lg font-extrabold text-spark-navy">${escapeHtml(activeGame.title)}</h3>
+                              <p class="text-xs text-spark-text max-w-md mx-auto">Trò chơi này được cấu hình mở ở tab trình duyệt mới. Em hãy bấm nút <strong>"🖥️ Chia sẻ màn hình cho GV xem chơi"</strong> ở trên rồi mở trò chơi nhé!</p>
+                              <a href="${escapeHtml(activeGame.url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 btn-gradient px-6 py-3 rounded-2xl text-white text-sm font-extrabold shadow-md">🎮 MỞ TRÒ CHƠI NGAY ↗</a>
+                            </div>`
+                          : `<iframe id="student-embedded-game-frame" data-game-id="${escapeHtml(activeGame.id)}" data-game-url="${escapeHtml(activeGame.url)}" src="${escapeHtml(activeGame.url)}" allow="fullscreen; autoplay; microphone; camera" allowfullscreen class="w-full h-[76vh] min-h-[520px] bg-white border-0 block"></iframe>`
+                      }
+                    </div>`
+              }
+            </div>`;
+          return;
+        }
+
         if ((!exercises || exercises.length === 0) && currentRoom.lessonId) {
           const fallbackMats = AppState.getMaterialsForLesson(currentRoom.lessonId).filter((m) => m.url || m.blobKey);
           if (fallbackMats.length > 0) {
@@ -5174,7 +5577,22 @@ END $$;`;
         sendObservation({ type: 'sync', label: 'Đồng bộ lại màn hình theo yêu cầu GV' }, null, true);
       }
 
-      return { isOpen, isMatchingStudent, handleTeacherSyncRequest, handleRoomStatusSignal, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink, startAndOpenExercise };
+            function selectEmbeddedGame(gameId) {
+        activeExerciseId = gameId;
+        renderStudentView();
+      }
+
+      function toggleGameFullscreen() {
+        const wrap = document.getElementById('student-game-stage-wrap');
+        if (!wrap) return;
+        if (!document.fullscreenElement) {
+          wrap.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      }
+
+      return { isOpen, isMatchingStudent, handleTeacherSyncRequest, handleRoomStatusSignal, openStudentRoomByCode, joinRoom, handleLiveDraftInput, handlePhotoUpload, submitExercise, handleRemovedSignal, renderStudentView, openDirectHtmlLink, startAndOpenExercise, selectEmbeddedGame, toggleGameFullscreen };
     })();
 
     /* =====================================================================
@@ -5494,7 +5912,7 @@ END $$;`;
               <div class="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="space-y-1 min-w-0">
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="px-2.5 py-0.5 rounded-full bg-spark-gradient text-white text-[10px] font-extrabold">PRACTICE ROOM ${r.roomNumber}</span>
+                    <span class="px-2.5 py-0.5 rounded-full ${Number(r.roomNumber) === 5 ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-spark-gradient'} text-white text-[10px] font-extrabold">${Number(r.roomNumber) === 5 ? '🎮 GAME ROOM' : `PRACTICE ROOM ${r.roomNumber}`}</span>
                     <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">● ĐANG MỞ</span>
                     <span class="font-mono text-[11px] font-bold text-spark-pink">${escapeHtml(r.roomCode || '—')}</span>
                   </div>
@@ -6482,4 +6900,4 @@ END $$;`;
 </body>
 
 </html>
-Processed and analyzed in code
+
