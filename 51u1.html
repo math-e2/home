@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tính giá trị biểu thức A = 2x − [3y − (x + y)]</title>
+    <style>
+        /* =====================================================================
+           1. THIẾT LẬP CHUNG & SÂN KHẤU 16:9 (1280x720) — CHẠY HOÀN TOÀN OFFLINE
+           ===================================================================== */
+        :root {
+            --paper-bg: #FAF7F2;
+            --paper-line: #EFE9DF;
+            --text-dark: #1E293B;
+            --text-muted: #475569;
+
+            /* Hệ màu phân lớp nhất quán xuyên suốt 7 slide */
+            --purple-main: #7C3AED;
+            --purple-bg: #F3E8FF;
+            --purple-border: #A78BFA;
+
+            --blue-main: #0284C7;
+            --blue-bg: #E0F2FE;
+            --blue-border: #38BDF8;
+
+            --teal-main: #0D9488;
+            --teal-text: #0F766E;
+            --teal-bg: #CCFBF1;
+            --teal-border: #14B8A6;
+
+            --orange-main: #EA580C;
+            --orange-bar: #F37021;
+            --orange-text: #C2410C;
+            --orange-bg: #FFEDD5;
+            --orange-border: #FDBA74;
+
+            --red-main: #DC2626;
+            --red-bg: #FEF2F2;
+            --red-border: #FCA5A5;
+
+            --green-main: #15803D;
+            --green-bg: #ECFDF5;
+            --green-border: #6EE7B7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
+            font-family: inherit;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #E4DFD7;
+            font-family: Verdana, Geneva, sans-serif;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sân khấu cố định 1280x720, tự động scale vừa mọi màn hình */
+        #stage {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            transform-origin: center center;
+            background-color: var(--paper-bg);
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 43px,
+                var(--paper-line) 43px,
+                var(--paper-line) 44px
+            );
+            border-radius: 12px;
+            box-shadow: 0 24px 60px rgba(30, 20, 10, 0.18);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* =====================================================================
+           2. THANH 7 TAB ĐIỀU HƯỚNG PASTEL TRÊN CÙNG
+           ===================================================================== */
+        .top-tabs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 5px;
+            padding: 0 16px;
+        }
+
+        .nav-tab {
+            border: none;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1E293B;
+            padding: 8px 20px;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            cursor: pointer;
+            opacity: 0.84;
+            transition: padding 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .nav-tab:hover {
+            opacity: 1;
+            padding-bottom: 11px;
+        }
+
+        .nav-tab.active {
+            opacity: 1;
+            padding-top: 12px;
+            padding-bottom: 13px;
+            box-shadow: 0 5px 14px rgba(0, 0, 0, 0.14);
+            z-index: 10;
+        }
+
+        .tab-0 { background-color: #F7C9C9; }
+        .tab-1 { background-color: #E58A8A; }
+        .tab-2 { background-color: #FFAB8E; }
+        .tab-3 { background-color: #FF8282; }
+        .tab-4 { background-color: #FFD0AE; }
+        .tab-5 { background-color: #C5E8C8; }
+        .tab-6 { background-color: #FFE89E; }
+
+        /* Thanh cam đậm ở cạnh dưới cùng */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background-color: var(--orange-bar);
+            z-index: 20;
+        }
+
+        /* =====================================================================
+           3. KHUNG NỘI DUNG SLIDE & HIỆU ỨNG CLICK-TO-REVEAL
+           ===================================================================== */
+        .slides-viewport {
+            width: 100%;
+            height: 100%;
+            padding: 58px 52px 24px;
+            position: relative;
+        }
+
+        .slide-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .slide-panel.active {
+            display: flex;
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-bar {
+            width: 6px;
+            height: 38px;
+            border-radius: 99px;
+            background-color: var(--orange-bar);
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 31px;
+            font-weight: 700;
+            color: var(--orange-bar);
+            letter-spacing: -0.01em;
+        }
+
+        .problem-pinned {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-top: 8px;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1.5px solid #FDE2CF;
+            border-radius: 14px;
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        /* Hiệu ứng xuất hiện mượt mà */
+        .reveal {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+            transition: opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* =====================================================================
+           4. HỆ THỐNG NHÃN TÔ MÀU PHÂN LỚP (TÍM / XANH DƯƠNG / XANH NGỌC / CAM)
+           ===================================================================== */
+        .chip {
+            display: inline-block;
+            border-radius: 10px;
+            padding: 2px 10px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .chip-purple {
+            background-color: var(--purple-bg);
+            border: 2px solid var(--purple-border);
+            color: var(--purple-main);
+        }
+
+        .chip-blue {
+            background-color: var(--blue-bg);
+            border: 2px solid var(--blue-border);
+            color: var(--blue-main);
+        }
+
+        .chip-teal {
+            background-color: var(--teal-bg);
+            border: 2px solid var(--teal-border);
+            color: var(--teal-text);
+        }
+
+        .chip-orange {
+            background-color: var(--orange-bg);
+            border: 2px solid var(--orange-main);
+            color: var(--orange-text);
+        }
+
+        /* =====================================================================
+           5. SLIDE 1: ĐỀ BÀI
+           ===================================================================== */
+        .s1-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 26px;
+            padding-bottom: 18px;
+        }
+
+        .s1-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 3px solid #FBD3B6;
+            border-radius: 26px;
+            padding: 36px 52px;
+            box-shadow: 0 16px 40px rgba(120, 60, 10, 0.08);
+            text-align: center;
+            width: 100%;
+            max-width: 1040px;
+        }
+
+        .s1-prompt {
+            font-size: 25px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 20px;
+        }
+
+        .s1-equation {
+            display: inline-block;
+            font-size: 36px;
+            font-weight: 700;
+            color: #0F172A;
+            background: #FFF6EE;
+            border: 2px solid #FDE2CF;
+            border-radius: 18px;
+            padding: 22px 36px;
+            line-height: 1.4;
+        }
+
+        .s1-english {
+            margin-top: 22px;
+            font-size: 20px;
+            font-style: italic;
+            font-weight: 700;
+            color: #9A3412;
+        }
+
+        /* =====================================================================
+           6. SLIDE 2: TÌM HIỂU (5 NHỊP CLICK — TÔ TỪNG LỚP NGOẶC KHÔNG XÔ LỆCH)
+           ===================================================================== */
+        .s2-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+            padding: 8px 0 6px;
+        }
+
+        .s2-question {
+            background: #FFFBEB;
+            border: 2.5px solid #F59E0B;
+            border-radius: 20px;
+            padding: 18px 28px;
+            font-size: 21px;
+            font-weight: 700;
+            color: #92400E;
+            box-shadow: 0 6px 18px rgba(245, 158, 11, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .s2-q-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #F59E0B;
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .s2-layers-card {
+            background: #FFFFFF;
+            border: 2.5px solid #E2E8F0;
+            border-radius: 22px;
+            padding: 22px 28px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .nested-expr {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: #0F172A;
+            gap: 10px;
+        }
+
+        .layer-outer {
+            background-color: transparent;
+            border: 3px solid transparent;
+            border-radius: 18px;
+            padding: 10px 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #0F172A;
+            transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+        }
+
+        .layer-outer.highlighted {
+            background-color: var(--orange-bg);
+            border-color: var(--orange-main);
+            color: var(--orange-text);
+        }
+
+        .layer-mid {
+            background-color: transparent;
+            border: 3px solid transparent;
+            border-radius: 14px;
+            padding: 8px 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #0F172A;
+            transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+        }
+
+        .layer-mid.highlighted {
+            background-color: var(--teal-bg);
+            border-color: var(--teal-main);
+            color: var(--teal-text);
+        }
+
+        .layer-inner {
+            background-color: transparent;
+            border: 3px solid transparent;
+            border-radius: 11px;
+            padding: 5px 14px;
+            color: #0F172A;
+            transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+        }
+
+        .layer-inner.highlighted {
+            background-color: var(--blue-bg);
+            border-color: var(--blue-main);
+            color: var(--blue-main);
+        }
+
+        .s2-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            min-height: 44px;
+        }
+
+        .legend-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 7px 16px;
+            border-radius: 999px;
+        }
+
+        .legend-pill.blue   { background: var(--blue-bg); color: var(--blue-main); border: 2px solid var(--blue-border); }
+        .legend-pill.teal   { background: var(--teal-bg); color: var(--teal-text); border: 2px solid var(--teal-border); }
+        .legend-pill.orange { background: var(--orange-bg); color: var(--orange-text); border: 2px solid var(--orange-main); }
+
+        .legend-arrow {
+            font-size: 20px;
+            font-weight: 700;
+            color: #94A3B8;
+        }
+
+        .s2-tip-purple {
+            background: var(--purple-bg);
+            border: 3px solid var(--purple-main);
+            border-radius: 20px;
+            padding: 18px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 22px rgba(124, 58, 237, 0.14);
+        }
+
+        .s2-tip-badge {
+            background: var(--purple-main);
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .s2-tip-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4C1D95;
+            line-height: 1.45;
+        }
+
+        /* =====================================================================
+           7. SLIDE 3: LÀM THỬ
+           ===================================================================== */
+        .s3-pad {
+            flex: 1;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            background: #FFFFFF;
+            border: 2.5px solid #E8DFD1;
+            border-radius: 24px;
+            padding: 24px 28px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            display: flex;
+            cursor: text;
+        }
+
+        .s3-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font-size: 23px;
+            font-weight: 700;
+            line-height: 1.75;
+            color: #1E293B;
+        }
+
+        .s3-textarea::placeholder {
+            color: #CBD5E1;
+            font-weight: 400;
+        }
+
+        /* =====================================================================
+           8. SLIDE 4: QUYẾT ĐỊNH (3 BƯỚC CLICK — SƠ ĐỒ NGANG NGẮN GỌN)
+           ===================================================================== */
+        .s4-banner {
+            margin-top: 16px;
+            background: linear-gradient(90deg, #C00000 0%, #EA580C 100%);
+            color: #FFFFFF;
+            border-radius: 16px;
+            padding: 14px 26px;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.03em;
+            box-shadow: 0 6px 18px rgba(192, 0, 0, 0.2);
+        }
+
+        .s4-flow {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding-bottom: 16px;
+        }
+
+        .flow-card {
+            flex: 1;
+            min-height: 290px;
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 26px 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 18px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        }
+
+        .flow-card.purple { border: 3.5px solid var(--purple-main); }
+        .flow-card.teal   { border: 3.5px solid var(--teal-main); }
+        .flow-card.orange { border: 3.5px solid var(--orange-main); }
+
+        .flow-badge {
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 10px 22px;
+            border-radius: 14px;
+            letter-spacing: 0.01em;
+        }
+
+        .flow-badge.purple { background: var(--purple-main); }
+        .flow-badge.teal   { background: linear-gradient(135deg, var(--blue-main) 0%, var(--teal-main) 100%); }
+        .flow-badge.orange { background: var(--orange-main); }
+
+        .flow-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0F172A;
+            line-height: 1.45;
+        }
+
+        .flow-sub {
+            font-size: 19px;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 12px;
+        }
+
+        .flow-sub.purple { background: var(--purple-bg); color: var(--purple-main); border: 2px solid var(--purple-border); }
+        .flow-sub.teal   { background: var(--teal-bg); color: var(--teal-text); border: 2px solid var(--teal-border); }
+        .flow-sub.orange { background: var(--orange-bg); color: var(--orange-text); border: 2px solid var(--orange-border); }
+
+        .flow-arrow {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--orange-bar);
+            flex-shrink: 0;
+        }
+
+        /* =====================================================================
+           9. SLIDE 5: CÁCH GIẢI (2 CỘT: BÊN TRÁI THẲNG DẤU "=", BÊN PHẢI TAG MÀU)
+           ===================================================================== */
+        .s5-card {
+            flex: 1;
+            margin-top: 12px;
+            background: #FFFFFF;
+            border: 2.5px solid #EAE2D6;
+            border-radius: 24px;
+            padding: 18px 34px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sol-row {
+            display: grid;
+            grid-template-columns: 44px 36px 535px 1fr;
+            align-items: center;
+            font-size: 23px;
+            font-weight: 700;
+            color: #0F172A;
+            padding: 4px 0;
+        }
+
+        .sol-var {
+            text-align: right;
+            color: #334155;
+        }
+
+        .sol-eq {
+            text-align: center;
+        }
+
+        .sol-expr {
+            padding-left: 6px;
+            white-space: nowrap;
+        }
+
+        .sol-tag {
+            justify-self: start;
+            font-size: 16.5px;
+            font-weight: 700;
+            padding: 8px 18px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .tag-purple { background: var(--purple-bg); color: var(--purple-main); border: 2px solid var(--purple-border); }
+        .tag-blue   { background: var(--blue-bg); color: var(--blue-main); border: 2px solid var(--blue-border); }
+        .tag-teal   { background: var(--teal-bg); color: var(--teal-text); border: 2px solid var(--teal-border); }
+        .tag-orange { background: var(--orange-bg); color: var(--orange-text); border: 2px solid var(--orange-main); }
+
+        .final-result-box {
+            justify-self: start;
+            background: linear-gradient(135deg, #EA580C 0%, #F37021 100%);
+            color: #FFFFFF;
+            font-size: 22px;
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(234, 88, 12, 0.3);
+        }
+
+        /* =====================================================================
+           10. SLIDE 6: TỰ GIẢI (ĐIỀN TỪNG BƯỚC + DUY NHẤT 1 NÚT KIỂM TRA)
+           ===================================================================== */
+        .s6-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .s6-card {
+            background: #FFFFFF;
+            border: 2.5px solid #FBD3B6;
+            border-radius: 24px;
+            padding: 24px 44px;
+            width: 100%;
+            max-width: 980px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+            cursor: default;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .prac-row {
+            display: grid;
+            grid-template-columns: 50px 38px 1fr;
+            align-items: center;
+            font-size: 25px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        .prac-var {
+            text-align: right;
+            color: #334155;
+        }
+
+        .prac-eq {
+            text-align: center;
+        }
+
+        .prac-rhs {
+            padding-left: 8px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .prac-rhs-last {
+            padding-left: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .prac-input {
+            width: 105px;
+            height: 44px;
+            padding: 0 10px;
+            text-align: center;
+            border-radius: 10px;
+            border: 2.5px solid #CBD5E1;
+            background: #FFFBF7;
+            font-size: 23px;
+            font-weight: 700;
+            color: #0F172A;
+            outline: none;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .prac-input:focus {
+            border-color: var(--orange-bar);
+            background: #FFFFFF;
+        }
+
+        .prac-input.correct {
+            border-color: #16A34A;
+            background: #ECFDF5;
+            color: #15803D;
+        }
+
+        .prac-input.wrong {
+            border-color: #DC2626;
+            background: #FEF2F2;
+            color: #B91C1C;
+            animation: shakeX 0.35s ease;
+        }
+
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        .check-btn {
+            background: var(--orange-bar);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 28px;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 14px rgba(243, 112, 33, 0.28);
+            transition: background-color 0.18s ease, transform 0.12s ease;
+        }
+
+        .check-btn:hover {
+            background: #D95D14;
+        }
+
+        .check-btn:active {
+            transform: scale(0.96);
+        }
+
+        .prac-feedback {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .prac-feedback.ok  { color: #15803D; }
+        .prac-feedback.err { color: #DC2626; }
+
+        /* =====================================================================
+           11. SLIDE 7: ÔN TẬP (2 CỘT GỌN GÀNG, 3 NHỊP CLICK)
+           ===================================================================== */
+        .s7-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1.12fr;
+            gap: 24px;
+            margin-top: 14px;
+            padding-bottom: 4px;
+        }
+
+        .s7-col-left {
+            background: #FFFFFF;
+            border: 2.5px solid #FBD3B6;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s7-head-orange {
+            background: var(--orange-bar);
+            color: #FFFFFF;
+            padding: 16px 24px;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .mantra-list {
+            flex: 1;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .mantra-step {
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 19px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .mantra-step.purple { background: var(--purple-bg); border: 2px solid var(--purple-border); color: var(--purple-main); }
+        .mantra-step.blue   { background: var(--blue-bg); border: 2px solid var(--blue-border); color: var(--blue-main); }
+        .mantra-step.teal   { background: var(--teal-bg); border: 2px solid var(--teal-border); color: var(--teal-text); }
+        .mantra-step.orange { background: var(--orange-bg); border: 2px solid var(--orange-main); color: var(--orange-text); }
+
+        .mantra-num {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .mantra-step.purple .mantra-num { background: var(--purple-main); }
+        .mantra-step.blue .mantra-num   { background: var(--blue-main); }
+        .mantra-step.teal .mantra-num   { background: var(--teal-main); }
+        .mantra-step.orange .mantra-num { background: var(--orange-main); }
+
+        .mantra-arrow {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #94A3B8;
+            line-height: 1;
+        }
+
+        .s7-col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .s7-box {
+            flex: 1;
+            background: #FFFFFF;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s7-box.warn  { border: 2.5px solid var(--red-border); }
+        .s7-box.think { border: 2.5px solid #F59E0B; }
+
+        .s7-head-red {
+            background: var(--red-main);
+            color: #FFFFFF;
+            padding: 13px 22px;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .s7-head-amber {
+            background: #D97706;
+            color: #FFFFFF;
+            padding: 13px 22px;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .s7-box-body {
+            flex: 1;
+            padding: 16px 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+            font-size: 17.5px;
+            line-height: 1.55;
+            color: #1E293B;
+        }
+
+        .warn-box-text {
+            background: var(--red-bg);
+            border: 1.5px solid var(--red-border);
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-weight: 700;
+            color: #991B1B;
+            font-size: 17.5px;
+            line-height: 1.55;
+        }
+
+        .think-box-text {
+            background: #FFFBEB;
+            border: 1.5px solid #FCD34D;
+            border-radius: 14px;
+            padding: 18px 20px;
+            font-size: 18.5px;
+            font-weight: 700;
+            color: #92400E;
+            line-height: 1.55;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SÂN KHẤU TRÌNH CHIẾU 16:9 -->
+    <div id="stage" role="application" aria-label="Bài giảng tương tác Tính giá trị biểu thức A">
+
+        <!-- THANH 7 TAB ĐIỀU HƯỚNG PASTEL -->
+        <nav class="top-tabs" aria-label="Điều hướng 7 slide">
+            <button type="button" class="nav-tab tab-0 active" data-slide="0">Đề bài</button>
+            <button type="button" class="nav-tab tab-1" data-slide="1">Tìm hiểu</button>
+            <button type="button" class="nav-tab tab-2" data-slide="2">Làm thử</button>
+            <button type="button" class="nav-tab tab-3" data-slide="3">Quyết định</button>
+            <button type="button" class="nav-tab tab-4" data-slide="4">Cách Giải</button>
+            <button type="button" class="nav-tab tab-5" data-slide="5">Tự giải</button>
+            <button type="button" class="nav-tab tab-6" data-slide="6">Ôn tập</button>
+        </nav>
+
+        <main class="slides-viewport">
+
+            <!-- =========================================================
+                 SLIDE 1: ĐỀ BÀI (Song ngữ, hiển thị ngay lập tức)
+            ========================================================== -->
+            <section class="slide-panel active" data-index="0" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+
+                <div class="s1-body">
+                    <div class="s1-card">
+                        <div class="s1-equation">
+                            Tính giá trị biểu thức A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                        </div>
+                        <div class="s1-english">
+                            Evaluate the expression A = 2x − [3y − (x + y)] for x = −2 and y = 3.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 2: TÌM HIỂU (5 bước click — Tô sáng lần lượt từng lớp ngoặc)
+            ========================================================== -->
+            <section class="slide-panel" data-index="1" data-max-step="5">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div class="s2-body">
+                    <!-- Click 1: Câu hỏi gợi mở -->
+                    <div class="s2-question reveal" data-step="1">
+                        <span class="s2-q-icon">?</span>
+                        <span>Biểu thức có những loại dấu ngoặc nào? Ta nên tính theo thứ tự nào để không bị rối dấu?</span>
+                    </div>
+
+                    <!-- Click 1 hiện biểu thức đen bình thường; Click 2-3-4 tô sáng dần từng lớp ngoặc -->
+                    <div class="s2-layers-card reveal" data-step="1">
+                        <div class="nested-expr">
+                            <span>A =</span>
+                            <span class="layer-outer" data-highlight-step="4">
+                                <span>2x −</span>
+                                <span class="layer-mid" data-highlight-step="3">
+                                    <span>[3y −</span>
+                                    <span class="layer-inner" data-highlight-step="2">(x + y)</span>
+                                    <span>]</span>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="s2-legend">
+                            <span class="legend-pill blue reveal" data-step="2">1. Ngoặc tròn (x + y)</span>
+                            <span class="legend-arrow reveal" data-step="3">→</span>
+                            <span class="legend-pill teal reveal" data-step="3">2. Ngoặc vuông [3y − ...]</span>
+                            <span class="legend-arrow reveal" data-step="4">→</span>
+                            <span class="legend-pill orange reveal" data-step="4">3. Ngoài ngoặc 2x − ...</span>
+                        </div>
+                    </div>
+
+                    <!-- Click 5: Hộp lưu ý nổi bật màu tím -->
+                    <div class="s2-tip-purple reveal" data-step="5">
+                        <span class="s2-tip-badge">Mẹo chống nhầm dấu</span>
+                        <span class="s2-tip-text">
+                            Khi thay số âm x = −2, luôn mặc áo ngoặc tròn (−2)!
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 3: LÀM THỬ (Khung giấy trắng sạch để gõ nháp)
+            ========================================================== -->
+            <section class="slide-panel" data-index="2" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div id="scratch-wrap" class="s3-pad">
+                    <textarea id="scratch-area" class="s3-textarea" placeholder="Em hãy thử tự tính nháp tại đây..."></textarea>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 4: QUYẾT ĐỊNH (3 bước click — Ngắn gọn, dễ nhớ)
+            ========================================================== -->
+            <section class="slide-panel" data-index="3" data-max-step="3">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div class="s4-banner">
+                    QUY TRÌNH GIẢI NHANH
+                </div>
+
+                <div class="s4-flow">
+                    <!-- Click 1: Thẻ 1 (Tím) -->
+                    <div class="flow-card purple reveal" data-step="1">
+                        <span class="flow-badge purple">Bước 1: Thay số</span>
+                        <div class="flow-text">Nhớ bọc ngoặc số âm</div>
+                        <div class="flow-sub purple">x = (−2)</div>
+                    </div>
+
+                    <!-- Click 2: Mũi tên + Thẻ 2 (Xanh dương/ngọc) -->
+                    <div class="flow-arrow reveal" data-step="2">⇒</div>
+                    <div class="flow-card teal reveal" data-step="2">
+                        <span class="flow-badge teal">Bước 2: Trong ngoặc</span>
+                        <div class="flow-text">Tính theo thứ tự</div>
+                        <div class="flow-sub teal">( ) → [ ]</div>
+                    </div>
+
+                    <!-- Click 3: Mũi tên + Thẻ 3 (Cam) -->
+                    <div class="flow-arrow reveal" data-step="3">⇒</div>
+                    <div class="flow-card orange reveal" data-step="3">
+                        <span class="flow-badge orange">Bước 3: Ngoài ngoặc</span>
+                        <div class="flow-text">Nhân/chia trước,<br>cộng/trừ sau</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 5: CÁCH GIẢI (Dòng 0 hiện sẵn + 6 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="4" data-max-step="6">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div class="s5-card">
+                    <!-- Dòng 0: Hiện sẵn -->
+                    <div class="sol-row">
+                        <div class="sol-var">A</div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr">2x − [3y − (x + y)]</div>
+                        <div></div>
+                    </div>
+
+                    <!-- Click 1 (Tím) -->
+                    <div class="sol-row reveal" data-step="1">
+                        <div class="sol-var">A</div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr">2 · <span class="chip chip-purple">(−2)</span> − [3 · <span class="chip chip-purple">3</span> − (<span class="chip chip-purple">(−2)</span> + <span class="chip chip-purple">3</span>)]</div>
+                        <span class="sol-tag tag-purple">Thay x = (−2), y = 3</span>
+                    </div>
+
+                    <!-- Click 2 (Xanh dương — Ngoặc tròn) -->
+                    <div class="sol-row reveal" data-step="2">
+                        <div class="sol-var"></div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr">2 · (−2) − [3 · 3 − <span class="chip chip-blue">1</span>]</div>
+                        <span class="sol-tag tag-blue">Ngoặc tròn</span>
+                    </div>
+
+                    <!-- Click 3 (Xanh ngọc — Ngoặc vuông) -->
+                    <div class="sol-row reveal" data-step="3">
+                        <div class="sol-var"></div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr">2 · (−2) − [<span class="chip chip-teal">9</span> − 1]</div>
+                        <span class="sol-tag tag-teal">Ngoặc vuông</span>
+                    </div>
+
+                    <!-- Click 4 (Xanh ngọc — Ngoặc vuông) -->
+                    <div class="sol-row reveal" data-step="4">
+                        <div class="sol-var"></div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr">2 · (−2) − <span class="chip chip-teal">8</span></div>
+                        <span class="sol-tag tag-teal">Ngoặc vuông</span>
+                    </div>
+
+                    <!-- Click 5 (Cam — Ngoài ngoặc) -->
+                    <div class="sol-row reveal" data-step="5">
+                        <div class="sol-var"></div>
+                        <div class="sol-eq">=</div>
+                        <div class="sol-expr"><span class="chip chip-orange">(−4)</span> − 8</div>
+                        <span class="sol-tag tag-orange">Ngoài ngoặc</span>
+                    </div>
+
+                    <!-- Click 6 (Cam — Kết quả) -->
+                    <div class="sol-row reveal" data-step="6">
+                        <div class="sol-var"></div>
+                        <div class="sol-eq" style="color:var(--orange-text);">=</div>
+                        <div class="sol-expr" style="color:var(--orange-text);">−12</div>
+                        <div class="final-result-box">Kết quả: A = −12</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 6: TỰ GIẢI (Điền từng bước + Duy nhất 1 nút Kiểm tra)
+            ========================================================== -->
+            <section class="slide-panel" data-index="5" data-max-step="0">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div class="s6-wrap">
+                    <div id="practice-card" class="s6-card">
+                        <!-- Dòng 1 (mẫu) -->
+                        <div class="prac-row">
+                            <div class="prac-var">A</div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <span>2 · (−2) − [3 · 3 − ((−2) + 3)]</span>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 2: đáp án 1 -->
+                        <div class="prac-row">
+                            <div class="prac-var"></div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <span>2 · (−2) − [3 · 3 −</span>
+                                <input type="text" class="prac-input" data-answer="1" autocomplete="off">
+                                <span>]</span>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 3: đáp án 9 -->
+                        <div class="prac-row">
+                            <div class="prac-var"></div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <span>2 · (−2) − [</span>
+                                <input type="text" class="prac-input" data-answer="9" autocomplete="off">
+                                <span>− 1]</span>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 4: đáp án 8 -->
+                        <div class="prac-row">
+                            <div class="prac-var"></div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <span>2 · (−2) −</span>
+                                <input type="text" class="prac-input" data-answer="8" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Dòng 5: đáp án -4 hoặc (-4) -->
+                        <div class="prac-row">
+                            <div class="prac-var"></div>
+                            <div class="prac-eq">=</div>
+                            <div class="prac-rhs">
+                                <input type="text" class="prac-input" data-answer="-4|(-4)" autocomplete="off">
+                                <span>− 8</span>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 6: đáp án -12 + Duy nhất 1 nút Kiểm tra -->
+                        <div class="prac-row">
+                            <div class="prac-var"></div>
+                            <div class="prac-eq" style="color:var(--orange-bar);">=</div>
+                            <div class="prac-rhs-last">
+                                <input type="text" class="prac-input" data-answer="-12" autocomplete="off" style="width:130px;color:var(--orange-text);">
+                                <div style="display:flex;align-items:center;gap:16px;">
+                                    <span id="practice-feedback" class="prac-feedback"></span>
+                                    <button id="check-btn" type="button" class="check-btn">Kiểm tra</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 7: ÔN TẬP (2 cột, 3 bước click)
+            ========================================================== -->
+            <section class="slide-panel" data-index="6" data-max-step="3">
+                <div class="slide-header">
+                    <div class="title-bar"></div>
+                    <h1 class="slide-title">Tính giá trị biểu thức</h1>
+                </div>
+                <div class="problem-pinned">
+                    A = 2x − [3y − (x + y)] với x = −2, y = 3.
+                </div>
+
+                <div class="s7-grid">
+                    <!-- Click 1 (Cột trái): Ghi nhớ 3 bước -->
+                    <div class="s7-col-left reveal" data-step="1">
+                        <div class="s7-head-orange">Ghi nhớ 3 bước</div>
+                        <div class="mantra-list">
+                            <div class="mantra-step purple">
+                                <span class="mantra-num">1</span>
+                                <span>Thay số — nhớ bọc ngoặc số âm</span>
+                            </div>
+                            <div class="mantra-arrow">↓</div>
+                            <div class="mantra-step teal">
+                                <span class="mantra-num">2</span>
+                                <span>Trong ngoặc — theo thứ tự ( ) → [ ]</span>
+                            </div>
+                            <div class="mantra-arrow">↓</div>
+                            <div class="mantra-step orange">
+                                <span class="mantra-num">3</span>
+                                <span>Ngoài ngoặc — nhân/chia trước, cộng/trừ sau</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: Lỗi sai thường gặp + Câu hỏi tư duy -->
+                    <div class="s7-col-right">
+                        <!-- Click 2 (Cột phải trên): Lỗi sai thường gặp -->
+                        <div class="s7-box warn reveal" data-step="2">
+                            <div class="s7-head-red">⚠ Lỗi sai thường gặp</div>
+                            <div class="s7-box-body">
+                                <div class="warn-box-text">
+                                    Quên bọc ngoặc số âm (viết 2 · −2) hoặc tính sai dấu khi bỏ ngoặc.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Click 3 (Cột phải dưới): Câu hỏi tư duy -->
+                        <div class="s7-box think reveal" data-step="3">
+                            <div class="s7-head-amber">💡 Câu hỏi tư duy</div>
+                            <div class="s7-box-body">
+                                <div class="think-box-text">
+                                    Nếu trong biểu thức có thêm ngoặc nhọn { } thì thứ tự tính sẽ như thế nào?
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- THANH VIỀN CAM DƯỚI CÙNG -->
+        <div class="bottom-bar"></div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // =========================================================================
+            // 1. TỰ ĐỘNG CO GIÃN SÂN KHẤU 16:9 (1280x720) VỪA VẶN MỌI MÀN HÌNH
+            // =========================================================================
+            const stage = document.getElementById('stage');
+            const BASE_W = 1280;
+            const BASE_H = 720;
+
+            function fitStage() {
+                const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+                stage.style.transform = `scale(${scale})`;
+            }
+            window.addEventListener('resize', fitStage);
+            fitStage();
+
+            // =========================================================================
+            // 2. QUẢN LÝ 7 SLIDE & CƠ CHẾ CLICK-TO-REVEAL
+            // =========================================================================
+            const panels = Array.from(document.querySelectorAll('.slide-panel'));
+            const tabs = Array.from(document.querySelectorAll('.nav-tab'));
+
+            let currentSlide = 0;
+            let currentStep = 0;
+
+            function getMaxStep(idx) {
+                return parseInt(panels[idx].getAttribute('data-max-step') || '0', 10);
+            }
+
+            /**
+             * Cập nhật slide hiện tại và hiển thị các khối nội dung tương ứng với currentStep
+             */
+            function render() {
+                panels.forEach((panel, idx) => {
+                    if (idx === currentSlide) {
+                        panel.classList.add('active');
+                        panel.querySelectorAll('.reveal').forEach((el) => {
+                            const step = parseInt(el.getAttribute('data-step') || '0', 10);
+                            el.classList.toggle('visible', step <= currentStep);
+                        });
+                        panel.querySelectorAll('[data-highlight-step]').forEach((el) => {
+                            const step = parseInt(el.getAttribute('data-highlight-step') || '0', 10);
+                            el.classList.toggle('highlighted', step <= currentStep);
+                        });
+                    } else {
+                        panel.classList.remove('active');
+                    }
+                });
+
+                tabs.forEach((tab, idx) => {
+                    tab.classList.toggle('active', idx === currentSlide);
+                });
+            }
+
+            function goToSlide(idx, step) {
+                if (idx < 0 || idx >= panels.length) return;
+                currentSlide = idx;
+                currentStep = typeof step === 'number' ? step : 0;
+                render();
+            }
+
+            function next() {
+                const maxStep = getMaxStep(currentSlide);
+                if (currentStep < maxStep) {
+                    currentStep += 1;
+                    render();
+                } else if (currentSlide < panels.length - 1) {
+                    currentSlide += 1;
+                    currentStep = 0;
+                    render();
+                }
+            }
+
+            function prev() {
+                if (currentStep > 0) {
+                    currentStep -= 1;
+                    render();
+                } else if (currentSlide > 0) {
+                    currentSlide -= 1;
+                    currentStep = getMaxStep(currentSlide);
+                    render();
+                }
+            }
+
+            // Nhấp tab để chuyển slide trực tiếp
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(tab.getAttribute('data-slide') || '0', 10);
+                    goToSlide(idx, 0);
+                });
+            });
+
+            // Nhấp vào vùng trống trên slide để hiện bước tiếp theo / sang slide kế tiếp
+            stage.addEventListener('click', next);
+
+            // Phím tắt Space, Mũi tên phải, Mũi tên trái
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement ? document.activeElement.tagName : '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                    if (tag === 'INPUT' && e.key === 'Enter') {
+                        e.preventDefault();
+                        checkPractice();
+                    }
+                    return;
+                }
+
+                if (e.key === ' ' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    next();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prev();
+                }
+            });
+
+            // =========================================================================
+            // 3. CHẶN LAN TRUYỀN CLICK CHO SLIDE 3 (LÀM THỬ)
+            // =========================================================================
+            const scratchWrap = document.getElementById('scratch-wrap');
+            const scratchArea = document.getElementById('scratch-area');
+            if (scratchWrap) {
+                scratchWrap.addEventListener('click', (e) => e.stopPropagation());
+            }
+            if (scratchArea) {
+                scratchArea.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            // =========================================================================
+            // 4. ÂM THANH PHẢN HỒI NHẸ BẰNG WEB AUDIO API (OFFLINE)
+            // =========================================================================
+            let audioCtx = null;
+
+            function playTone(isSuccess) {
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) return;
+                    if (!audioCtx) audioCtx = new AudioContextClass();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                    const now = audioCtx.currentTime;
+                    const freqs = isSuccess ? [523.25, 659.25, 783.99] : [220, 180];
+                    freqs.forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = isSuccess ? 'sine' : 'triangle';
+                        osc.frequency.setValueAtTime(f, now + i * 0.09);
+                        gain.gain.setValueAtTime(0.1, now + i * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.09);
+                        osc.stop(now + i * 0.09 + 0.22);
+                    });
+                } catch (err) {
+                    // Bỏ qua nếu trình duyệt không hỗ trợ
+                }
+            }
+
+            // =========================================================================
+            // 5. CHẤM BÀI SLIDE 6 (TỰ GIẢI)
+            // =========================================================================
+            const practiceCard = document.getElementById('practice-card');
+            const practiceInputs = Array.from(document.querySelectorAll('.prac-input'));
+            const checkBtn = document.getElementById('check-btn');
+            const feedbackEl = document.getElementById('practice-feedback');
+
+            practiceCard.addEventListener('click', (e) => e.stopPropagation());
+
+            practiceInputs.forEach((inp) => {
+                inp.addEventListener('click', (e) => e.stopPropagation());
+                inp.addEventListener('input', () => {
+                    inp.classList.remove('correct', 'wrong');
+                    feedbackEl.textContent = '';
+                    feedbackEl.className = 'prac-feedback';
+                });
+            });
+
+            /**
+             * Chuẩn hóa chuỗi người dùng nhập: bỏ khoảng trắng thừa, đổi mọi dấu trừ về "-"
+             */
+            function normalizeAnswer(str) {
+                return str
+                    .replace(/\s+/g, '')
+                    .replace(/[−–—]/g, '-');
+            }
+
+            function checkPractice() {
+                let okCount = 0;
+
+                practiceInputs.forEach((inp) => {
+                    const accepted = (inp.getAttribute('data-answer') || '').split('|');
+                    const actual = normalizeAnswer(inp.value);
+
+                    inp.classList.remove('correct', 'wrong');
+                    if (accepted.includes(actual)) {
+                        okCount += 1;
+                        inp.classList.add('correct');
+                    } else {
+                        void inp.offsetWidth;
+                        inp.classList.add('wrong');
+                    }
+                });
+
+                if (okCount === practiceInputs.length) {
+                    feedbackEl.textContent = 'Chính xác hoàn toàn!';
+                    feedbackEl.className = 'prac-feedback ok';
+                    playTone(true);
+                } else {
+                    feedbackEl.textContent = `Đúng ${okCount}/${practiceInputs.length} ô`;
+                    feedbackEl.className = 'prac-feedback err';
+                    playTone(false);
+                }
+            }
+
+            checkBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                checkPractice();
+            });
+
+            // Khởi tạo slide đầu tiên
+            render();
+        })();
+    </script>
+</body>
+</html>
