@@ -354,6 +354,23 @@
     ::-webkit-scrollbar-track { background: #FFF9F5; }
     ::-webkit-scrollbar-thumb { background: #D8DCE6; border-radius: 999px; }
     ::-webkit-scrollbar-thumb:hover { background: #F26419; }
+
+    /* Lesson workspace: left accordion + right content pane */
+    .lesson-workspace{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
+    .lesson-sidebar{background:#fff;border:1px solid #f0e4df;border-radius:22px;padding:14px;box-shadow:0 8px 24px rgba(28,39,60,.05);position:sticky;top:100px}
+    .lesson-sidebar-heading{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8b95a7;padding:5px 9px 12px}
+    .example-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-radius:13px;background:#fff7f2;color:#243047;font-size:13px;font-weight:800;margin:5px 0;text-align:left;border:1px solid #f8e6dc}
+    .example-toggle[aria-expanded="true"]{background:#e85a14;color:#fff;border-color:#e85a14}
+    .example-children{padding:4px 0 7px 12px}
+    .example-child{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:10px 11px;border-radius:11px;color:#536075;font-size:12px;font-weight:650;margin:2px 0;transition:.15s}
+    .example-child:hover{background:#fff1e9;color:#d94e0d}
+    .example-child.active{background:#fff0e7;color:#d94e0d;font-weight:850;box-shadow:inset 3px 0 #e85a14}
+    .lesson-content-pane{min-width:0;min-height:460px;background:#f7f8fc;border:1px solid #e9edf4;border-radius:22px;padding:18px}
+    .lesson-content-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:2px 2px 14px;border-bottom:1px solid #e7eaf0}
+    .lesson-content-title h2{font-size:17px;font-weight:900;color:#243047}
+    .lesson-content-title p{font-size:11px;color:#8791a3;margin-top:3px}
+    .lesson-content-pane>.bg-white,.lesson-content-pane>.space-y-4{margin:0!important}
+    @media(max-width:800px){.lesson-workspace{grid-template-columns:1fr}.lesson-sidebar{position:static}.lesson-content-pane{padding:12px}.lesson-sidebar nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}}
   </style>
 </head>
 <body class="antialiased selection:bg-spark-pinkPastel selection:text-spark-pink">
@@ -375,7 +392,7 @@
           <text x="19" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.2" fill="#FFFFFF">Spark</text>
           <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FFE7D9">Education</text>
         </svg>
-        <span class="ml-2 px-2 py-0.5 rounded-full bg-emerald-400/25 border border-emerald-200/50 text-[10px] font-extrabold tracking-wide text-white" title="Phiên bản tối ưu Egress & 1-WebSocket">⚡ OPT-v3 (≤5GB)</span>
+        <span class="ml-2 px-2 py-0.5 rounded-full bg-emerald-400/25 border border-emerald-200/50 text-[10px] font-extrabold tracking-wide text-white" title="Phiên bản tối ưu Egress & 1-WebSocket">⚡ OPT-v2</span>
       </button>
 
       <!-- Center: Desktop Navigation -->
@@ -741,7 +758,7 @@
             <text x="150" y="47" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="40" font-weight="800" letter-spacing="-1.1" fill="#FFE7D9">Education</text>
           </svg>
           <span class="hidden sm:inline-block px-2.5 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold">PHÒNG LUYỆN TẬP HỌC SINH</span>
-          <span class="px-2 py-0.5 rounded-full bg-emerald-400/25 border border-emerald-200/50 text-[10px] font-extrabold text-white">⚡ OPT-v3 (≤5GB)</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-400/25 border border-emerald-200/50 text-[10px] font-extrabold text-white">⚡ OPT-v2</span>
         </div>
         <div id="student-topbar-right" class="flex items-center gap-2"></div>
       </div>
@@ -1977,93 +1994,30 @@ END $$;`;
         } catch {}
       }
 
-      let teacherWatchHeartbeatTimer = null;
-      let teacherWatchActive = true;
-      let teacherVisListenerBound = false;
-
-      function setTeacherWatchActive(active) {
-        teacherWatchActive = Boolean(active);
-        if (!activeTeacherRoomId || !client) return;
-        sendOnRoomCtrlChannel(activeTeacherRoomId, {
-          eventType: 'TEACHER_WATCH_ROOM',
-          payload: { roomId: activeTeacherRoomId, active: teacherWatchActive && !document.hidden },
-          ts: Date.now(),
-        });
-        if (teacherWatchActive && !document.hidden) {
-          sendOnRoomCtrlChannel(activeTeacherRoomId, {
-            eventType: 'TEACHER_SYNC_REQUEST',
-            payload: { roomId: activeTeacherRoomId, ts: Date.now() },
-            ts: Date.now(),
-          });
-        }
-      }
-
-      function startTeacherWatchHeartbeat() {
-        if (teacherWatchHeartbeatTimer) clearInterval(teacherWatchHeartbeatTimer);
-        if (!teacherVisListenerBound && !isStudentUrlMode()) {
-          teacherVisListenerBound = true;
-          document.addEventListener('visibilitychange', () => {
-            if (!activeTeacherRoomId || !client) return;
-            const watchingNow = teacherWatchActive && !document.hidden;
-            sendOnRoomCtrlChannel(activeTeacherRoomId, {
-              eventType: 'TEACHER_WATCH_ROOM',
-              payload: { roomId: activeTeacherRoomId, active: watchingNow },
-              ts: Date.now(),
-            });
-          });
-        }
-        teacherWatchHeartbeatTimer = setInterval(() => {
-          if (!activeTeacherRoomId || !client) return;
-          if (teacherWatchActive && !document.hidden) {
-            sendOnRoomCtrlChannel(activeTeacherRoomId, {
-              eventType: 'TEACHER_WATCH_ROOM',
-              payload: { roomId: activeTeacherRoomId, active: true },
-              ts: Date.now(),
-            });
-          }
-        }, 45000);
-      }
-
-      function stopTeacherWatchHeartbeat() {
-        if (teacherWatchHeartbeatTimer) {
-          clearInterval(teacherWatchHeartbeatTimer);
-          teacherWatchHeartbeatTimer = null;
-        }
-      }
-
       async function attachTeacherToRoom(roomId) {
         if (!client || !roomId) return;
         if (activeTeacherRoomId && activeTeacherRoomId !== roomId) {
           detachTeacherFromRoom();
         }
         activeTeacherRoomId = roomId;
-        teacherWatchActive = true;
         getOrJoinRoomCtrlChannel(roomId, false);
         await syncSingleRoomData(roomId);
         const parts = AppState.getRoomParticipants(roomId, false);
         parts.forEach((p) => ensureStudentLiveChannel(roomId, p.studentId, 'teacher'));
         sendOnRoomCtrlChannel(roomId, {
-          eventType: 'TEACHER_WATCH_ROOM',
-          payload: { roomId, active: !document.hidden },
-          ts: Date.now(),
-        });
-        sendOnRoomCtrlChannel(roomId, {
           eventType: 'TEACHER_SYNC_REQUEST',
           payload: { roomId, ts: Date.now() },
           ts: Date.now(),
         });
-        startTeacherWatchHeartbeat();
       }
 
       function detachTeacherFromRoom() {
-        stopTeacherWatchHeartbeat();
         if (!activeTeacherRoomId || !client) {
           activeTeacherRoomId = null;
           return;
         }
         const oldRoomId = activeTeacherRoomId;
         activeTeacherRoomId = null;
-        teacherWatchActive = false;
         sendOnRoomCtrlChannel(oldRoomId, {
           eventType: 'TEACHER_WATCH_ROOM',
           payload: { roomId: oldRoomId, active: false },
@@ -2405,12 +2359,8 @@ END $$;`;
             StudentRoomManager.handleTeacherSyncRequest(payload?.roomId, payload?.studentId || null, Boolean(payload?.highRes));
           }
         } else if (eventType === 'TEACHER_WATCH_ROOM') {
-          if (typeof StudentRoomManager !== 'undefined' && StudentRoomManager.handleTeacherSyncRequest) {
-            if (payload?.active === false) {
-              StudentRoomManager.handleTeacherSyncRequest(payload?.roomId, '__ROOM_IDLE__', false);
-            } else if (payload?.active === true) {
-              StudentRoomManager.handleTeacherSyncRequest(payload?.roomId, '__ROOM_ALIVE__', null);
-            }
+          if (typeof StudentRoomManager !== 'undefined' && StudentRoomManager.handleTeacherSyncRequest && payload?.active === false) {
+            StudentRoomManager.handleTeacherSyncRequest(payload?.roomId, '__ROOM_IDLE__', false);
           }
         } else if (eventType === 'STUDENT_LIVE_PROGRESS') {
           const roomObj = AppState.state.practiceRooms[payload.roomId];
@@ -2540,6 +2490,16 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         }
       }
 
+      function encodeMaterialSlotName(title, workspaceKey) {
+        const key = workspaceKey && /^(intro|udsc)-[1-4]$/.test(workspaceKey) ? workspaceKey : '';
+        return key ? `[[SPARKLE_SLOT:${key}]] ${title || 'Tài liệu'}` : (title || 'Tài liệu');
+      }
+      function decodeMaterialSlotName(fileName) {
+        const raw = String(fileName || '');
+        const match = raw.match(/^\[\[SPARKLE_SLOT:(intro|udsc)-([1-4])\]\]\s*/);
+        return { workspaceKey: match ? `${match[1]}-${match[2]}` : '', title: match ? raw.slice(match[0].length) : raw };
+      }
+
       async function fetchMaterialsForLesson(lessonId) {
         if (!lessonId || !client) return [];
         try {
@@ -2550,9 +2510,11 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           if (!error && Array.isArray(data)) {
             data.forEach((m) => {
               const idx = AppState.state.materials.findIndex((x) => x.id === m.id);
+              const slotMeta = decodeMaterialSlotName(m.file_name);
               const mapped = {
                 id: m.id, lessonId: m.lesson_id, materialType: m.material_type,
-                title: m.file_name, format: m.file_type || detectFormatFromNameOrUrl(m.file_url || m.file_name),
+                title: slotMeta.title, workspaceKey: slotMeta.workspaceKey,
+                format: m.file_type || detectFormatFromNameOrUrl(m.file_url || m.file_name),
                 sourceType: m.file_url ? 'link' : 'file', blobKey: m.storage_path || null,
                 url: m.file_url || '', updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
               };
@@ -2569,7 +2531,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       return {
         MIGRATION_SQL, GAME_ROOM_SQL_PATCH, copyGameRoomSQLPatch, init, connectSupabaseFromConfig,
         syncFromSupabase, syncRoomLiveSessions, syncSingleRoomData, fetchRoomDirectly, fetchExercisesForRoom, fetchMaterialsForLesson,
-        attachTeacherToRoom, detachTeacherFromRoom, setTeacherWatchActive, focusStudentStream, attachStudentToRoom,
+        attachTeacherToRoom, detachTeacherFromRoom, focusStudentStream, attachStudentToRoom,
         getLastError, upsertRecord, updateRecord, deleteRecord, uploadToSupabaseStorage, broadcast, copyMigrationSQL, getStatus,
       };
     })();
@@ -2996,7 +2958,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         persist();
         SupabaseEngine.upsertRecord('lesson_materials', {
           id: material.id, lesson_id: material.lessonId, material_type: material.materialType,
-          file_name: material.title, file_type: material.format, file_url: material.url || null,
+          file_name: encodeMaterialSlotName(material.title, material.workspaceKey), file_type: material.format, file_url: material.url || null,
           storage_path: material.blobKey || null, updated_at: material.updatedAt,
         });
       }
@@ -3633,12 +3595,56 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
               <button type="button" onclick="ModalManager.openMaterialInNewTab('${mat.id}', 'material')" class="px-2.5 py-1.5 rounded-lg bg-spark-orangePastel hover:bg-spark-orange text-spark-orangeDark hover:text-white text-[11px] font-bold transition-colors">${mat.sourceType === 'file' ? 'TẢI XUỐNG' : 'MỞ TÀI LIỆU'}</button>
               ${
                 isAdmin
-                  ? `<button type="button" onclick="ModalManager.openUploadModal({ scope: 'material', lessonId: '${lessonId}', materialType: '${materialType}', replaceId: '${mat.id}' })" class="px-2.5 py-1.5 rounded-lg bg-spark-bg hover:bg-gray-200 text-spark-navy text-[11px] font-semibold transition-colors">THAY THẾ</button>
+                  ? `<button type="button" onclick="ModalManager.openUploadModal({ scope: 'material', lessonId: '${lessonId}', materialType: '${materialType}', workspaceKey: '${mat.workspaceKey || ''}', replaceId: '${mat.id}' })" class="px-2.5 py-1.5 rounded-lg bg-spark-bg hover:bg-gray-200 text-spark-navy text-[11px] font-semibold transition-colors">THAY THẾ</button>
                      <button type="button" onclick="UIActions.deleteMaterial('${mat.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-[11px] font-semibold transition-colors ml-auto">XÓA</button>`
                   : ''
               }
             </div>
           </div>`;
+      }
+
+      function buildLessonAccordionWorkspace(sectionsEl, lesson) {
+        if (!sectionsEl) return;
+        const original = Array.from(sectionsEl.children);
+        if (original.length < 4) return;
+        const lectureCard = original[0];
+        const practiceGroup = original[1];
+        const gameCard = original[2];
+        const homeworkCard = original[3];
+        const practiceCards = practiceGroup.querySelectorAll('.grid > div');
+        const shell = document.createElement('div');
+        shell.className = 'lesson-workspace';
+        shell.innerHTML = `
+          <aside class="lesson-sidebar" aria-label="Điều hướng nội dung bài học">
+            <div class="lesson-sidebar-heading">NỘI DUNG BÀI HỌC</div>
+            <nav id="lesson-example-nav"></nav>
+            <button type="button" class="example-child w-full mt-3" data-workspace="homework" onclick="UIActions.selectLessonWorkspace('homework')">📚 <span>Bài tập về nhà</span></button>
+          </aside>
+          <section class="lesson-content-pane" aria-live="polite">
+            <div class="lesson-content-title"><div><h2 id="lesson-workspace-title">Intro 1</h2><p id="lesson-workspace-subtitle">Nội dung bài học</p></div><span class="text-[10px] font-extrabold text-spark-orangeDark bg-spark-orangePastel px-3 py-1.5 rounded-full">BÀI ${lesson.num}</span></div>
+            <div id="lesson-workspace-body"></div>
+          </section>`;
+        sectionsEl.innerHTML = '';
+        sectionsEl.appendChild(shell);
+        const nav = shell.querySelector('#lesson-example-nav');
+        const body = shell.querySelector('#lesson-workspace-body');
+        const title = shell.querySelector('#lesson-workspace-title');
+        const subtitle = shell.querySelector('#lesson-workspace-subtitle');
+        const targets = { lecture: lectureCard, game: gameCard, homework: homeworkCard };
+        for (let i=1;i<=4;i++) if (practiceCards[i-1]) targets['practice-'+i]=practiceCards[i-1];
+        const examples = Array.from({length:4},(_,i)=>i+1);
+        nav.innerHTML = examples.map(n=>`<div class="example-group">
+          <button type="button" class="example-toggle" aria-expanded="${n===1?'true':'false'}" onclick="UIActions.toggleLessonExample(${n})" id="example-toggle-${n}"><span>Example ${n}</span><span class="example-chevron">${n===1?'−':'+'}</span></button>
+          <div class="example-children ${n===1?'':'hidden'}" id="example-children-${n}">
+            <button type="button" class="example-child" data-workspace="intro-${n}" onclick="UIActions.selectLessonWorkspace('intro-${n}')">✦ <span>Intro ${n}</span></button>
+            <button type="button" class="example-child" data-workspace="udsc-${n}" onclick="UIActions.selectLessonWorkspace('udsc-${n}')">◇ <span>UDSC ${n}</span></button>
+            <button type="button" class="example-child" data-workspace="practice-${n}" onclick="UIActions.selectLessonWorkspace('practice-${n}')">▦ <span>Practice Room ${n}</span></button>
+            <button type="button" class="example-child" data-workspace="game-${n}" onclick="UIActions.selectLessonWorkspace('game-${n}')">🎮 <span>Game ${n}</span></button>
+          </div></div>`).join('');
+        const previousWorkspace = window.__sparkleLessonWorkspace?.current || 'intro-1';
+        window.__sparkleLessonWorkspace = { targets, body, title, subtitle, nav, shell, current: previousWorkspace };
+        sectionsEl.dataset.workspaceBuilt = '1';
+        UIActions.selectLessonWorkspace(previousWorkspace);
       }
 
       function renderLessonDetail() {
@@ -3880,6 +3886,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
               </div>
             </div>
           `;
+          buildLessonAccordionWorkspace(sectionsEl, lesson);
         }
       }
 
@@ -3960,9 +3967,6 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             ? 'px-5 py-2.5 rounded-2xl text-sm font-bold transition-all bg-spark-gradient text-white shadow-sm'
             : 'px-5 py-2.5 rounded-2xl text-sm font-bold transition-all bg-white text-spark-text border border-gray-200 hover:border-spark-pink';
         });
-        if (SupabaseEngine.setTeacherWatchActive) {
-          SupabaseEngine.setTeacherWatchActive(tab === 'dashboard');
-        }
         renderRoomBody();
       }
 
@@ -4818,7 +4822,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         return /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua) || isTouchMac || !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
       }
 
-      function compressImageToDataUrl(file, maxDim = 768, quality = 0.56) {
+      function compressImageToDataUrl(file, maxDim = 1024, quality = 0.72) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (ev) => {
@@ -4834,10 +4838,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
               canvas.height = h;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, w, h);
-              let out = encodeCanvasOptimized(canvas, quality);
-              if (out.length > 56000) out = encodeCanvasOptimized(canvas, 0.42);
-              if (out.length > 56000) out = encodeCanvasOptimized(canvas, 0.30);
-              resolve(out);
+              resolve(canvas.toDataURL('image/jpeg', quality));
             };
             img.onerror = reject;
             img.src = ev.target.result;
@@ -4995,9 +4996,9 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       });
 
       let highResFocus = false;
-      let teacherWatchingRoom = true;
-      let lastTeacherAliveAt = Date.now();
+      let teacherWatchingRoom = false;
       let lastCaptureAt = 0;
+      let lastActivitySentAt = 0;
       let trailingCaptureTimer = null;
       let lastSentFrameSig = '';
       let lastDomDigest = '';
@@ -5034,8 +5035,8 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       function buildRichFallbackSnapshot(doc, fieldsObj, isHighRes = false) {
         try {
           const canvas = document.createElement('canvas');
-          canvas.width = isHighRes ? 860 : 440;
-          canvas.height = isHighRes ? 484 : 250;
+          canvas.width = isHighRes ? 1040 : 580;
+          canvas.height = isHighRes ? 585 : 330;
           const k = canvas.width / 1120;
           const ctx = canvas.getContext('2d');
           ctx.scale(k, k);
@@ -5098,7 +5099,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             });
           }
 
-          return encodeCanvasOptimized(canvas, isHighRes ? 0.58 : 0.44);
+          return encodeCanvasOptimized(canvas, isHighRes ? 0.75 : 0.58);
         } catch {
           return null;
         }
@@ -5190,10 +5191,10 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             const h = Math.max(Math.round(rawH), 360);
             const winW = Math.max(w, frameWin?.innerWidth || 1280);
             const winH = Math.max(h, frameWin?.innerHeight || 720);
-            // TỐI ƯU <= 5GB/tháng (150 HS/tuần): Lưới <= 22KB (440px), Xem chi tiết <= 45KB (860px)
-            const scale = wantHighRes ? (isMobileOrTablet() ? 0.90 : 1.0) : 0.65;
-            const targetMaxWidth = wantHighRes ? 860 : 440;
-            const quality = wantHighRes ? 0.62 : 0.48;
+            // Chế độ lưới: scale 0.85 + rộng 580px (~14KB WebP). Chế độ cô bấm xem chi tiết: scale 1.35 + rộng 1180px (~50KB WebP)
+            const scale = wantHighRes ? (isMobileOrTablet() ? 1.15 : 1.35) : 0.85;
+            const targetMaxWidth = wantHighRes ? 1180 : 580;
+            const quality = wantHighRes ? 0.76 : 0.58;
 
             const sourceCanvases = Array.from(targetEl.querySelectorAll('canvas'));
 
@@ -5245,12 +5246,9 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
               });
 
               const cropped = trimWhiteMarginsAndCap(rendered, targetMaxWidth);
-              const maxChars = wantHighRes ? 46000 : 22500;
               dataUrl = encodeCanvasOptimized(cropped, quality);
-              const qSteps = wantHighRes ? [0.50, 0.40, 0.32] : [0.38, 0.30, 0.24];
-              for (const qStep of qSteps) {
-                if (dataUrl.length <= maxChars) break;
-                dataUrl = encodeCanvasOptimized(cropped, qStep);
+              if (wantHighRes && dataUrl.length > 115000) {
+                dataUrl = encodeCanvasOptimized(cropped, 0.64);
               }
             } catch {}
 
@@ -5271,15 +5269,8 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       // TỐI ƯU 3: Chỉ chụp khi thực sự có thao tác/yêu cầu đồng bộ và KHÔNG BAO GIỜ gửi lặp lại ảnh cũ
       async function sendObservation(activity, canvasDataUrl = null, forceCapture = false) {
         if (!currentRoom || !currentStudent || removed || currentRoom.status !== 'open') return;
-        if (document.hidden && !forceCapture && !canvasDataUrl) return;
-        if (teacherWatchingRoom && (Date.now() - lastTeacherAliveAt > 95000) && !forceCapture) {
-          teacherWatchingRoom = false;
-          highResFocus = false;
-        }
-        if (!teacherWatchingRoom && !forceCapture && !canvasDataUrl) return;
-
         let frameUrl = canvasDataUrl;
-        const shouldCaptureScreen = !frameUrl && (teacherWatchingRoom || forceCapture) && (
+        const shouldCaptureScreen = !frameUrl && teacherWatchingRoom && (
           forceCapture ||
           (activity && activity.type !== 'join' && activity.type !== 'rejoin' && document.querySelector('#preview-modal:not(.hidden) iframe, #student-room-view iframe'))
         );
@@ -5296,8 +5287,13 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           }
         }
 
-        // Không gửi gói tin rỗng nếu khung hình không đổi và không phải yêu cầu bắt buộc
-        if (!frameUrl && !forceCapture) return;
+        if (!frameUrl && !activity && !forceCapture) return;
+        // Gom/giới hạn sự kiện thao tác thường: tối đa khoảng 1 sự kiện / 1.8 giây / học sinh.
+        // Nộp bài, đồng bộ bắt buộc và ảnh giám sát vẫn được ưu tiên gửi ngay.
+        const nowMs = Date.now();
+        const isCriticalActivity = forceCapture || ['submit', 'submitted', 'complete', 'join', 'rejoin'].includes(activity?.type);
+        if (!frameUrl && !isCriticalActivity && nowMs - lastActivitySentAt < 1800) return;
+        if (activity && !frameUrl) lastActivitySentAt = nowMs;
 
         const payload = {
           roomId: currentRoom.id,
@@ -5327,7 +5323,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         if (observationTimer) clearTimeout(observationTimer);
         observationTimer = setTimeout(() => {
           const elapsed = Date.now() - lastCaptureAt;
-          const minGap = highResFocus ? 4000 : 8000;
+          const minGap = highResFocus ? 1400 : 2000;
           if (elapsed < minGap && !canvasDataUrl) {
             if (!trailingCaptureTimer) {
               trailingCaptureTimer = setTimeout(() => {
@@ -5342,7 +5338,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           const act = lastObservedActivity;
           lastObservedActivity = null;
           sendObservation(act, canvasDataUrl, false);
-        }, 1500);
+        }, 900);
       }
 
       function computeExerciseDomDigest() {
@@ -5368,26 +5364,24 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             return;
           }
           tickCount++;
-          // Kiểm tra dự phòng trạng thái đóng phòng mỗi 100s (Realtime UPDATE đã báo đóng tức thời)
-          if (tickCount % 4 === 0 && SupabaseEngine.fetchRoomDirectly && currentRoom.roomCode) {
+          // Kiểm tra dự phòng trạng thái đóng phòng mỗi 45s (thông thường đã nhận tức thời qua Realtime)
+          if (tickCount % 3 === 0 && SupabaseEngine.fetchRoomDirectly && currentRoom.roomCode) {
             const freshRoom = await SupabaseEngine.fetchRoomDirectly(currentRoom.roomCode);
             if (freshRoom && freshRoom.status !== 'open') {
               handleRoomStatusSignal(freshRoom.id, freshRoom.roomCode, freshRoom.status);
               return;
             }
           }
-          // Chỉ kiểm tra hoàn thành bài & chụp ảnh NẾU giáo viên đang xem và DOM thực sự thay đổi
+          // Chỉ kiểm tra hoàn thành bài; ảnh chỉ được chụp khi giáo viên đang mở giám sát chi tiết học sinh đã chọn.
           if (document.querySelector('#preview-modal:not(.hidden) iframe')) {
             detectAndSyncIframeCompletion();
-            if (teacherWatchingRoom && !document.hidden) {
-              const digest = computeExerciseDomDigest();
-              if (digest && digest !== lastDomDigest) {
-                lastDomDigest = digest;
-                sendObservation({ type: 'dom_change', label: 'Chuyển nội dung bài tập' }, null, false);
-              }
+            const digest = computeExerciseDomDigest();
+            if (digest && digest !== lastDomDigest) {
+              lastDomDigest = digest;
+              sendObservation({ type: 'dom_change', label: 'Chuyển nội dung bài tập' }, null, false);
             }
           }
-        }, 25000);
+        }, 15000);
       }
 
       function attachObservationToDocument(doc) {
@@ -5615,7 +5609,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         if (!currentRoom || !currentStudent || !files || !files[0]) return;
         Toast.show('Đang xử lý & gửi ảnh bài làm lên giáo viên...', 'info');
         try {
-          const dataUrl = await compressImageToDataUrl(files[0], 768, 0.56);
+          const dataUrl = await compressImageToDataUrl(files[0], 1024, 0.74);
           if (!currentStudent.livePhotos) currentStudent.livePhotos = {};
           currentStudent.livePhotos[exId] = dataUrl;
           currentStudent.latestPhotoUrl = dataUrl;
@@ -5998,24 +5992,28 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           highResFocus = false;
           return;
         }
-        lastTeacherAliveAt = Date.now();
+        // Không chụp/gửi ảnh hàng loạt khi giáo viên vừa mở phòng.
+        // Chỉ học sinh được giáo viên chọn mới bật luồng ảnh chi tiết.
+        if (!targetStudentId) {
+          teacherWatchingRoom = false;
+          highResFocus = false;
+          SupabaseEngine.broadcast('STUDENT_ONLINE', {
+            roomId: currentRoom.id,
+            studentId: currentStudent.studentId,
+            studentName: currentStudent.studentName,
+          });
+          return;
+        }
+        if (targetStudentId !== currentStudent.studentId) return;
         teacherWatchingRoom = true;
-        if (targetStudentId === '__ROOM_ALIVE__') {
-          return;
-        }
-        if (typeof highRes === 'boolean') {
-          highResFocus = Boolean(highRes && targetStudentId === currentStudent.studentId);
-          if (!highRes || (targetStudentId && targetStudentId !== currentStudent.studentId)) return;
-        } else if (targetStudentId && targetStudentId !== currentStudent.studentId) {
-          return;
-        }
+        highResFocus = Boolean(highRes);
         SupabaseEngine.broadcast('STUDENT_ONLINE', {
           roomId: currentRoom.id,
           studentId: currentStudent.studentId,
           studentName: currentStudent.studentName,
         });
         lastSentFrameSig = '';
-        const delayMs = targetStudentId ? 120 : Math.floor(Math.random() * 450) + 200;
+        const delayMs = 120;
         setTimeout(() => {
           sendObservation({ type: 'sync', label: highResFocus ? 'Truyền ảnh rõ nét cho GV' : 'Đồng bộ màn hình cho GV' }, null, true);
         }, delayMs);
@@ -6128,7 +6126,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           const customTitle = document.getElementById('file-custom-title').value.trim();
           item = {
             id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
-            materialType: uploadCtx.materialType || 'exercise',
+            materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
             title: customTitle || selectedFile.name,
             format: detectFormatFromNameOrUrl(selectedFile.name),
             sourceType: 'file', blobKey, url: remoteUrl || '',
@@ -6141,7 +6139,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           if (!url || !title) { errEl.textContent = 'Vui lòng nhập đầy đủ URL và Tên tài liệu.'; errEl.classList.remove('hidden'); return; }
           item = {
             id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
-            materialType: uploadCtx.materialType || 'exercise',
+            materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
             title, format, sourceType: 'link', url, updatedAt: new Date().toISOString(),
           };
         }
@@ -6459,6 +6457,59 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         document.getElementById('home-view').classList.remove('hidden');
         UIRenderer.renderAll();
       }
+      function toggleLessonExample(n) {
+        const children = document.getElementById(`example-children-${n}`);
+        const toggle = document.getElementById(`example-toggle-${n}`);
+        if (!children || !toggle) return;
+        const willOpen = children.classList.contains('hidden');
+        children.classList.toggle('hidden', !willOpen);
+        toggle.setAttribute('aria-expanded', String(willOpen));
+        const chevron = toggle.querySelector('.example-chevron');
+        if (chevron) chevron.textContent = willOpen ? '−' : '+';
+      }
+      function selectLessonWorkspace(key) {
+        const ws = window.__sparkleLessonWorkspace;
+        if (!ws) return;
+        let targetKey = key;
+        let label = key.replace(/-([0-9])/g,' $1').replace(/^./,c=>c.toUpperCase());
+        const isIndependentMaterialSlot = key.startsWith('intro-') || key.startsWith('udsc-');
+        if (key.startsWith('game-')) targetKey = 'game';
+        else if (key === 'homework') targetKey = 'homework';
+        ws.body.innerHTML = '';
+        if (isIndependentMaterialSlot) {
+          const lessonId = AppState.state.activeLessonId;
+          const items = AppState.getMaterialsForLesson(lessonId, 'lecture').filter(m => (m.workspaceKey || (!m.workspaceKey ? 'intro-1' : '')) === key);
+          const isAdmin = AppState.isAdmin();
+          const slotLabel = key.toUpperCase().replace('-', ' ');
+          ws.body.innerHTML = `
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-soft p-5 sm:p-6">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div><h3 class="text-base font-extrabold text-spark-navy">${slotLabel}</h3><p class="text-xs text-spark-text mt-1">Link và tài liệu được lưu riêng cho mục ${slotLabel}.</p></div>
+                ${isAdmin ? `<div class="flex flex-wrap gap-2"><button type="button" onclick="ModalManager.openUploadModal({scope:'material',lessonId:'${lessonId}',materialType:'lecture',workspaceKey:'${key}',defaultTab:'file'})" class="btn-gradient px-3 py-2 rounded-xl text-white text-xs font-bold">+ Tải file</button><button type="button" onclick="ModalManager.openUploadModal({scope:'material',lessonId:'${lessonId}',materialType:'lecture',workspaceKey:'${key}',defaultTab:'link'})" class="px-3 py-2 rounded-xl bg-white border border-spark-pink/40 text-spark-pink text-xs font-bold">+ Gắn link</button></div>` : ''}
+              </div>
+              ${items.length ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${items.map(m => renderMaterialRowCard(m, lessonId, 'lecture')).join('')}</div>` : `<div class="rounded-xl border border-dashed border-gray-200 bg-spark-bg/60 p-6 text-center text-sm text-spark-text">${isAdmin ? `Chưa có tài liệu trong ${slotLabel}. Hãy tải file hoặc gắn một đường link riêng.` : `Chưa có tài liệu cho ${slotLabel}.`}</div>`}
+            </div>`;
+        } else {
+          const target = ws.targets[targetKey];
+          if (!target) return;
+          ws.body.appendChild(target);
+        }
+        ws.title.textContent = key === 'homework' ? 'Bài tập về nhà' : label;
+        ws.subtitle.textContent = (key.startsWith('intro-') || key.startsWith('udsc-'))
+          ? 'Quản lý tài liệu độc lập cho từng mục Intro và UDSC.'
+          : key.startsWith('practice-') ? 'Khu vực luyện tập và giám sát học sinh.'
+          : key.startsWith('game-') ? 'Khu vực trò chơi tương tác.' : 'Tài liệu và hướng dẫn bài tập về nhà.';
+        ws.nav.querySelectorAll('.example-child').forEach(btn=>btn.classList.toggle('active', btn.dataset.workspace===key));
+        document.querySelectorAll('.lesson-sidebar > .example-child').forEach(btn=>btn.classList.toggle('active', btn.dataset.workspace===key));
+        const groupMatch = key.match(/-(\d)$/);
+        if (groupMatch) {
+          const n = Number(groupMatch[1]);
+          const children = document.getElementById(`example-children-${n}`);
+          const toggle = document.getElementById(`example-toggle-${n}`);
+          if (children && children.classList.contains('hidden')) toggleLessonExample(n);
+        }
+        ws.current = key;
+      }
       function deleteMaterial(matId) {
         ModalManager.openConfirmModal('Xóa tài liệu', 'Bạn có chắc chắn muốn xóa tài liệu này không?', async () => {
           await AppState.removeMaterial(matId);
@@ -6483,7 +6534,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       return {
         goHome, navigateSection, toggleMobileMenu, selectTopicFromCard, handleSearchChange, clearSearch,
         handleTopicFilter, handleStatusFilter, setLessonViewMode, resetAllFilters, setLibraryFilter,
-        openLessonDetail, closeLessonDetail, deleteMaterial, saveHomeworkSettings, confirmClearAllData,
+        openLessonDetail, closeLessonDetail, toggleLessonExample, selectLessonWorkspace, deleteMaterial, saveHomeworkSettings, confirmClearAllData,
       };
     })();
 
@@ -7343,827 +7394,8 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
   });
 })();
 </script>
-
-<!-- ===================================================================== -->
-<!-- SPARKLE SPLIT-SCREEN LESSON WORKSPACE (FIXED LEFT CATALOG SIDEBAR v2) -->
-<!-- ===================================================================== -->
-<style>
-  #lesson-detail-view.sp-workspace-mode {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 45 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #0F172A;
-    overflow: hidden !important;
-  }
-  .sp-ws-shell {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-  }
-  .sp-ws-sidebar-wrap {
-    display: flex;
-    flex-shrink: 0;
-    height: 100%;
-    position: relative;
-    z-index: 30;
-  }
-  .sp-ws-sidebar {
-    width: 268px;
-    height: 100%;
-    background: #FFFFFF;
-    border-right: 1px solid #E5E7EB;
-    display: flex;
-    flex-direction: column;
-    transition: width 0.22s ease, opacity 0.18s ease;
-    overflow: hidden;
-  }
-  .sp-ws-sidebar.collapsed {
-    width: 0;
-    border-right: none;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .sp-ws-top-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid #ECEEF3;
-    background: #FFFFFF;
-    padding: 0 4px;
-    flex-shrink: 0;
-  }
-  .sp-ws-top-tab {
-    padding: 10px 4px;
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #7A6B63;
-    text-align: center;
-    border-bottom: 2.5px solid transparent;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .sp-ws-top-tab:hover { color: #2B211B; }
-  .sp-ws-top-tab.active {
-    color: #E04819;
-    border-bottom-color: #F26419;
-  }
-  .sp-ws-cols {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .sp-ws-col-main {
-    width: 112px;
-    background: #F7F8FA;
-    border-right: 1px solid #ECEEF3;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-  .sp-ws-main-item {
-    width: 100%;
-    text-align: left;
-    padding: 11px 9px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #4B5563;
-    border-left: 3px solid transparent;
-    transition: all 0.18s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .sp-ws-main-item:hover {
-    background: #FFF4ED;
-    color: #2B211B;
-  }
-  .sp-ws-main-item.active {
-    background: #FFFFFF;
-    color: #2B211B;
-    font-weight: 800;
-    border-left-color: #F26419;
-  }
-  .sp-ws-col-sub {
-    flex: 1;
-    background: #FFFFFF;
-    overflow-y: auto;
-    padding: 10px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .sp-ws-sub-item {
-    width: 100%;
-    text-align: left;
-    padding: 9px 8px;
-    border-radius: 10px;
-    background: #F8F9FB;
-    border: 1px solid #ECEEF3;
-    font-size: 12px;
-    font-weight: 600;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px;
-    transition: all 0.18s ease;
-  }
-  .sp-ws-sub-item:hover {
-    border-color: #F7D2BC;
-    background: #FFF7F2;
-  }
-  .sp-ws-sub-item.active {
-    background: #FFF1E8;
-    border-color: #F26419;
-    color: #D94E0F;
-    font-weight: 700;
-  }
-  .sp-ws-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: #D1D5DB;
-    flex-shrink: 0;
-  }
-  .sp-ws-sub-item.active .sp-ws-dot { background: #E04819; }
-  .sp-ws-sub-item.has-content .sp-ws-dot { background: #10B981; }
-
-  /* Thẻ Catalog nổi ở mép phải sidebar để KHÔNG chiếm chiều ngang khung bài giảng */
-  .sp-ws-catalog-tab {
-    position: absolute;
-    left: 100%;
-    top: 52px;
-    z-index: 35;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid #E5E7EB;
-    border-left: none;
-    border-radius: 0 10px 10px 0;
-    padding: 12px 5px;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: #2B211B;
-    cursor: pointer;
-    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.12);
-    transition: all 0.2s ease;
-  }
-  .sp-ws-catalog-tab:hover {
-    background: #FFF1E8;
-    color: #E04819;
-  }
-
-  .sp-ws-stage {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: #F4F5F7;
-    overflow: hidden;
-  }
-  .sp-ws-stage-bar {
-    height: 40px;
-    background: #FFFFFF;
-    border-bottom: 1px solid #E5E7EB;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .sp-ws-stage-body {
-    flex: 1;
-    min-height: 0;
-    height: calc(100% - 40px);
-    width: 100%;
-    position: relative;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .sp-ws-stage-body.is-iframe-mode {
-    overflow: hidden !important;
-    padding: 0 !important;
-    background: #0F172A;
-  }
-  .sp-ws-iframe-wrap {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #FFFFFF;
-  }
-  .sp-ws-iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
-    background: #FFFFFF;
-    transform-origin: top left;
-  }
-  #practice-room-view.sp-docked-room {
-    min-height: 0 !important;
-    padding-bottom: 24px !important;
-    background: transparent !important;
-    width: 100%;
-  }
-  #practice-room-view.sp-docked-room > div {
-    max-width: none !important;
-    padding: 14px 18px !important;
-  }
-  #practice-room-view.sp-docked-room .sp-hide-when-docked {
-    display: none !important;
-  }
-</style>
-
-<script>
-(function () {
-  'use strict';
-
-  const SECTIONS = [
-    {
-      id: 'activate',
-      label: 'Activate thinking',
-      items: [
-        { id: 'act_intro', tag: '[ACT-INTRO]', group: 'Activate thinking', label: 'Intro / Animation', kind: 'material' },
-        { id: 'act_ex',    tag: '[ACT-EX]',    group: 'Activate thinking', label: 'Exercise',          kind: 'material' },
-      ],
-    },
-    ...[1, 2, 3, 4].map((n) => ({
-      id: `ex${n}`,
-      label: `Example ${n}`,
-      items: [
-        { id: `ex${n}_intro`, tag: `[EX${n}-INTRO]`, group: `Example ${n}`, label: `Intro ${n}`,          kind: 'material' },
-        { id: `ex${n}_udsc`,  tag: `[EX${n}-UDSC]`,  group: `Example ${n}`, label: `UDSC ${n}`,           kind: 'material' },
-        { id: `ex${n}_room`,  roomNumber: n,         group: 'Luyện tập',    label: `Practice Room ${n}`,  kind: 'room' },
-      ],
-    })),
-    {
-      id: 'game',
-      label: 'Game Room',
-      items: [
-        { id: 'game_room', roomNumber: 5, group: 'Game Room', label: 'Phòng Trò Chơi', kind: 'room' },
-      ],
-    },
-  ];
-
-  const ALL_KNOWN_TAGS = SECTIONS.flatMap((s) => s.items.map((i) => i.tag).filter(Boolean));
-
-  const wsState = {
-    topTab: 'lesson',          // 'lesson' | 'homework' | 'bonus'
-    sectionId: 'ex1',
-    itemId: 'ex1_intro',
-    selectedMatId: null,
-    sidebarCollapsed: false,
-    iframeZoom: 1,
-    pendingTag: null,
-    origRoomParent: null,
-    origRoomNext: null,
-    dockedRoomSig: null,
-    activeStageSig: null,
-    shellBuilt: false,
-  };
-
-  function stripTag(title) {
-    return String(title || '').replace(/^\[[A-Z0-9\-_]+\]\s*/i, '').trim();
-  }
-
-  function hasKnownTag(title) {
-    const t = String(title || '').trim();
-    return ALL_KNOWN_TAGS.some((tag) => t.startsWith(tag));
-  }
-
-  function getMaterialsForTag(lessonId, tag) {
-    return AppState.getMaterialsForLesson(lessonId, 'lecture').filter((m) =>
-      String(m.title || '').trim().startsWith(tag)
-    );
-  }
-
-  function getUntaggedLectures(lessonId) {
-    return AppState.getMaterialsForLesson(lessonId, 'lecture').filter((m) => !hasKnownTag(m.title));
-  }
-
-  function getActiveSection() {
-    return SECTIONS.find((s) => s.id === wsState.sectionId) || SECTIONS[1];
-  }
-
-  function getActiveItem() {
-    const sec = getActiveSection();
-    return sec.items.find((i) => i.id === wsState.itemId) || sec.items[0];
-  }
-
-  function undockPracticeRoom() {
-    if (typeof SupabaseEngine !== 'undefined' && SupabaseEngine.detachTeacherFromRoom) {
-      SupabaseEngine.detachTeacherFromRoom();
-    }
-    const roomView = document.getElementById('practice-room-view');
-    if (!roomView) return;
-    roomView.classList.remove('sp-docked-room');
-    roomView.classList.add('hidden');
-    if (wsState.origRoomParent && roomView.parentElement !== wsState.origRoomParent) {
-      if (wsState.origRoomNext && wsState.origRoomNext.parentElement === wsState.origRoomParent) {
-        wsState.origRoomParent.insertBefore(roomView, wsState.origRoomNext);
-      } else {
-        wsState.origRoomParent.appendChild(roomView);
-      }
-    }
-    wsState.dockedRoomSig = null;
-  }
-
-  function dockPracticeRoomIntoStage() {
-    const roomView = document.getElementById('practice-room-view');
-    const mount = document.getElementById('sp-stage-room-mount');
-    if (!roomView || !mount) return;
-    if (!wsState.origRoomParent) {
-      wsState.origRoomParent = roomView.parentElement;
-      wsState.origRoomNext = roomView.nextElementSibling;
-    }
-    const backBtn = roomView.querySelector('button[onclick*="closeRoomView"]');
-    if (backBtn) backBtn.classList.add('sp-hide-when-docked');
-
-    roomView.classList.add('sp-docked-room');
-    roomView.classList.remove('hidden');
-    if (roomView.parentElement !== mount) {
-      mount.appendChild(roomView);
-    }
-  }
-
-  function ensureShellBuilt() {
-    const viewEl = document.getElementById('lesson-detail-view');
-    if (!viewEl) return false;
-    viewEl.classList.add('sp-workspace-mode');
-    if (wsState.shellBuilt && document.getElementById('sp-ws-sidebar') && document.getElementById('sp-stage-room-mount')) {
-      return true;
-    }
-    undockPracticeRoom();
-    viewEl.innerHTML = `
-      <div class="sp-ws-shell">
-        <aside class="sp-ws-sidebar-wrap">
-          <div id="sp-ws-sidebar" class="sp-ws-sidebar ${wsState.sidebarCollapsed ? 'collapsed' : ''}"></div>
-          <button type="button" onclick="SparkleSplitWorkspace.toggleSidebar()" class="sp-ws-catalog-tab" title="Thu gọn / Mở rộng mục lục">Catalog</button>
-        </aside>
-        <div id="sp-ws-stage" class="sp-ws-stage">
-          <div id="sp-stage-bar" class="sp-ws-stage-bar"></div>
-          <div id="sp-stage-content" class="sp-ws-stage-body"></div>
-          <div id="sp-stage-room-mount" class="sp-ws-stage-body hidden"></div>
-        </div>
-      </div>
-    `;
-    wsState.shellBuilt = true;
-    wsState.activeStageSig = null;
-    return true;
-  }
-
-  function applyIframeZoom() {
-    const iframe = document.getElementById('sp-ws-active-iframe');
-    const label = document.getElementById('sp-ws-zoom-label');
-    const z = wsState.iframeZoom || 1;
-    if (label) label.textContent = `${Math.round(z * 100)}%`;
-    if (!iframe) return;
-    if (z === 1) {
-      iframe.style.transform = 'none';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-    } else {
-      iframe.style.transform = `scale(${z})`;
-      iframe.style.width = `${(100 / z).toFixed(4)}%`;
-      iframe.style.height = `${(100 / z).toFixed(4)}%`;
-    }
-  }
-
-  async function resolveMaterialHref(mat) {
-    if (!mat) return '';
-    if (mat.sourceType === 'file' && mat.blobKey) {
-      const blob = await StorageAdapter.getFileBlob(mat.blobKey);
-      if (blob) return URL.createObjectURL(blob);
-    }
-    return mat.url || '';
-  }
-
-  function renderSidebar(lesson) {
-    const sb = document.getElementById('sp-ws-sidebar');
-    if (!sb) return;
-    sb.classList.toggle('collapsed', wsState.sidebarCollapsed);
-
-    const activeSec = getActiveSection();
-    const activeItem = getActiveItem();
-    const legacyCount = getUntaggedLectures(lesson.id).length;
-    const hwCount = AppState.getMaterialsForLesson(lesson.id, 'homework').length;
-
-    sb.innerHTML = `
-      <div class="px-2.5 py-2 border-b border-gray-100 bg-spark-bg/70 flex items-center justify-between gap-1.5 shrink-0">
-        <button type="button" onclick="UIActions.closeLessonDetail()" class="inline-flex items-center gap-1 text-xs font-extrabold text-spark-navy hover:text-spark-pink shrink-0">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-          <span>DS Bài</span>
-        </button>
-        <span class="text-[11px] font-extrabold text-spark-orangeDark truncate" title="Bài ${lesson.num} - ${escapeHtml(lesson.title)}">Bài ${lesson.num}: ${escapeHtml(lesson.title)}</span>
-      </div>
-
-      <div class="sp-ws-top-tabs">
-        <button type="button" onclick="SparkleSplitWorkspace.setTopTab('lesson')" class="sp-ws-top-tab ${wsState.topTab === 'lesson' ? 'active' : ''}">• Lesson</button>
-        <button type="button" onclick="SparkleSplitWorkspace.setTopTab('homework')" class="sp-ws-top-tab ${wsState.topTab === 'homework' ? 'active' : ''}">BTVN (${hwCount})</button>
-        <button type="button" onclick="SparkleSplitWorkspace.setTopTab('bonus')" class="sp-ws-top-tab ${wsState.topTab === 'bonus' ? 'active' : ''}">Thêm (${legacyCount})</button>
-      </div>
-
-      ${
-        wsState.topTab === 'lesson'
-          ? `<div class="sp-ws-cols">
-              <div class="sp-ws-col-main">
-                ${SECTIONS.map((sec) => `
-                  <button type="button" onclick="SparkleSplitWorkspace.selectSection('${sec.id}')" class="sp-ws-main-item ${sec.id === wsState.sectionId ? 'active' : ''}">
-                    <span>${escapeHtml(sec.label)}</span>
-                  </button>
-                `).join('')}
-              </div>
-              <div class="sp-ws-col-sub">
-                ${activeSec.items.map((it) => {
-                  const isActive = it.id === activeItem.id;
-                  let badge = '';
-                  let hasContent = false;
-                  if (it.kind === 'material') {
-                    const cnt = getMaterialsForTag(lesson.id, it.tag).length;
-                    hasContent = cnt > 0;
-                    if (cnt > 0) badge = `<span class="text-[10px] font-bold text-emerald-600">${cnt}</span>`;
-                  } else {
-                    const room = AppState.getOrInitRoom(lesson.id, it.roomNumber, AppState.getCurrentAccount()?.id);
-                    hasContent = room && room.status === 'open';
-                    badge = hasContent
-                      ? `<span class="text-[10px] font-extrabold text-emerald-600">MỞ</span>`
-                      : `<span class="text-[10px] text-gray-400">R${it.roomNumber}</span>`;
-                  }
-                  return `
-                    <button type="button" onclick="SparkleSplitWorkspace.selectItem('${it.id}')" class="sp-ws-sub-item ${isActive ? 'active' : ''} ${hasContent ? 'has-content' : ''}">
-                      <span class="flex items-center gap-1.5 min-w-0">
-                        <span class="sp-ws-dot"></span>
-                        <span class="truncate">${escapeHtml(it.label)}</span>
-                      </span>
-                      ${badge}
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            </div>`
-          : wsState.topTab === 'bonus'
-          ? `<div class="p-2.5 overflow-y-auto flex-1 space-y-2">
-              <div class="text-[11px] font-bold text-spark-text px-1">Bài giảng cũ / chưa gắn thẻ (${legacyCount})</div>
-              ${getUntaggedLectures(lesson.id).map((m) => `
-                <button type="button" onclick="SparkleSplitWorkspace.selectMaterial('${m.id}')" class="sp-ws-sub-item ${wsState.selectedMatId === m.id ? 'active' : ''} has-content">
-                  <span class="truncate">${escapeHtml(m.title)}</span>
-                </button>
-              `).join('') || `<div class="text-xs text-spark-text p-3 bg-spark-bg rounded-xl">Không có tài liệu cũ nào.</div>`}
-            </div>`
-          : `<div class="p-3.5 text-xs text-spark-text leading-relaxed">
-              Đang mở mục <strong>Bài tập về nhà</strong> của Bài ${lesson.num}. Chọn tab <strong>Lesson</strong> để quay lại cấu trúc Example 1–4.
-            </div>`
-      }
-    `;
-  }
-
-  async function renderStageContent(lesson, forceReload = false) {
-    const stageBar = document.getElementById('sp-stage-bar');
-    const stageContent = document.getElementById('sp-stage-content');
-    const roomMount = document.getElementById('sp-stage-room-mount');
-    if (!stageBar || !stageContent || !roomMount) return;
-
-    const isAdmin = AppState.isAdmin();
-
-    // 1. Tab BTVN
-    if (wsState.topTab === 'homework') {
-      undockPracticeRoom();
-      roomMount.classList.add('hidden');
-      stageContent.classList.remove('hidden', 'is-iframe-mode');
-      wsState.activeStageSig = `hw:${lesson.id}`;
-
-      const homeworks = AppState.getMaterialsForLesson(lesson.id, 'homework');
-      const hwMeta = AppState.getHomeworkMeta(lesson.id);
-
-      stageBar.innerHTML = `
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="px-2 py-0.5 rounded-lg bg-spark-orangePastel text-spark-orangeDark text-[11px] font-extrabold">BÀI ${lesson.num}</span>
-          <span class="text-xs sm:text-sm font-extrabold text-spark-navy truncate">Bài tập về nhà</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          ${isAdmin ? `
-            <button type="button" onclick="SparkleSplitWorkspace.openUploadForHomework('${lesson.id}', 'file')" class="btn-gradient px-3 py-1 rounded-lg text-white text-xs font-bold">+ Tải file BTVN</button>
-            <button type="button" onclick="SparkleSplitWorkspace.openUploadForHomework('${lesson.id}', 'link')" class="px-3 py-1 rounded-lg bg-white border border-spark-orange/50 text-spark-orangeDark text-xs font-bold">+ Dán link BTVN</button>
-          ` : ''}
-        </div>
-      `;
-
-      stageContent.innerHTML = `
-        <div class="p-5 max-w-5xl w-full mx-auto space-y-5">
-          <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-4">
-            <h3 class="text-sm font-extrabold text-spark-navy">Tài liệu Bài tập về nhà (${homeworks.length})</h3>
-            ${
-              homeworks.length === 0
-                ? `<div class="p-6 text-center text-xs text-spark-text bg-spark-bg rounded-xl border border-dashed border-gray-200">Chưa có tài liệu BTVN cho Bài ${lesson.num}.</div>`
-                : `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${homeworks.map((m) => `
-                      <div class="p-3.5 rounded-xl border border-gray-200 flex items-center justify-between gap-3">
-                        <div class="min-w-0">
-                          <div class="text-xs font-bold text-spark-navy truncate">${escapeHtml(m.title)}</div>
-                          <div class="text-[11px] text-spark-text">${formatDateVN(m.updatedAt)}</div>
-                        </div>
-                        <div class="flex items-center gap-1.5 shrink-0">
-                          <button type="button" onclick="ModalManager.openPreviewModal('${m.id}', 'material')" class="px-2.5 py-1 rounded-lg bg-spark-pinkPastel text-spark-pink text-[11px] font-bold">Xem</button>
-                          <button type="button" onclick="ModalManager.openMaterialInNewTab('${m.id}', 'material')" class="px-2.5 py-1 rounded-lg bg-spark-orangePastel text-spark-orangeDark text-[11px] font-bold">Mở</button>
-                          ${isAdmin ? `<button type="button" onclick="UIActions.deleteMaterial('${m.id}')" class="px-2 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold">Xóa</button>` : ''}
-                        </div>
-                      </div>`).join('')}
-                  </div>`
-            }
-          </div>
-
-          <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div class="${isAdmin ? 'md:col-span-7' : 'md:col-span-8'}">
-              <label class="block text-xs font-bold text-spark-navy mb-1">Hướng dẫn BTVN</label>
-              <textarea id="hw-instructions-${lesson.id}" rows="3" ${isAdmin ? '' : 'readonly'} class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-spark-bg outline-none">${escapeHtml(hwMeta.instructions)}</textarea>
-            </div>
-            <div class="${isAdmin ? 'md:col-span-3' : 'md:col-span-4'}">
-              <label class="block text-xs font-bold text-spark-navy mb-1">Hạn nộp</label>
-              <input id="hw-duedate-${lesson.id}" type="datetime-local" ${isAdmin ? '' : 'disabled'} value="${escapeHtml(hwMeta.dueDate)}" class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-spark-bg outline-none" />
-            </div>
-            ${isAdmin ? `<div class="md:col-span-2 flex items-end"><button type="button" onclick="UIActions.saveHomeworkSettings('${lesson.id}')" class="w-full py-2.5 rounded-xl bg-spark-navy text-white text-xs font-bold">Lưu</button></div>` : ''}
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    // 2. Tab Tài liệu cũ
-    if (wsState.topTab === 'bonus') {
-      undockPracticeRoom();
-      roomMount.classList.add('hidden');
-      stageContent.classList.remove('hidden');
-
-      const legacy = getUntaggedLectures(lesson.id);
-      const activeMat = legacy.find((m) => m.id === wsState.selectedMatId) || legacy[0] || null;
-      await renderEmbeddedMaterialPane(lesson, activeMat, legacy, 'Tài liệu bổ sung / Bài giảng cũ', null, forceReload);
-      return;
-    }
-
-    // 3. Tab Bài học (Lesson)
-    const item = getActiveItem();
-    if (item.kind === 'room') {
-      stageContent.classList.add('hidden');
-      stageContent.classList.remove('is-iframe-mode');
-      roomMount.classList.remove('hidden');
-
-      stageBar.innerHTML = `
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="px-2 py-0.5 rounded-lg bg-spark-gradient text-white text-[11px] font-extrabold">BÀI ${lesson.num}</span>
-          <span class="text-xs sm:text-sm font-extrabold text-spark-navy truncate">${escapeHtml(getActiveSection().label)} • ${escapeHtml(item.label)}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">Đang mở trực tiếp trong trang</span>
-        </div>
-      `;
-
-      const teacherId = AppState.getCurrentAccount()?.id || 'admin_sparkle';
-      const roomSig = `${lesson.id}__r${item.roomNumber}__${teacherId}`;
-      wsState.activeStageSig = `room:${roomSig}`;
-
-      if (wsState.dockedRoomSig !== roomSig || !PracticeRoomManager.isOpen()) {
-        _origOpenRoomView(lesson.id, item.roomNumber, teacherId);
-        document.getElementById('lesson-detail-view').classList.remove('hidden');
-        dockPracticeRoomIntoStage();
-        wsState.dockedRoomSig = roomSig;
-      } else {
-        dockPracticeRoomIntoStage();
-      }
-      return;
-    }
-
-    // Mục con dạng tài liệu (Intro 1, UDSC 1, ...)
-    undockPracticeRoom();
-    roomMount.classList.add('hidden');
-    stageContent.classList.remove('hidden');
-
-    const slotMats = getMaterialsForTag(lesson.id, item.tag);
-    const activeMat = slotMats.find((m) => m.id === wsState.selectedMatId) || slotMats[0] || null;
-    await renderEmbeddedMaterialPane(lesson, activeMat, slotMats, `${getActiveSection().label} • ${item.label}`, item.tag, forceReload);
-  }
-
-  async function renderEmbeddedMaterialPane(lesson, activeMat, listMats, breadcrumb, slotTag, forceReload) {
-    const stageBar = document.getElementById('sp-stage-bar');
-    const stageContent = document.getElementById('sp-stage-content');
-    const isAdmin = AppState.isAdmin();
-    const href = activeMat ? await resolveMaterialHref(activeMat) : '';
-
-    stageBar.innerHTML = `
-      <div class="flex items-center gap-2 min-w-0">
-        <span class="px-2 py-0.5 rounded-lg bg-spark-pinkPastel text-spark-pink text-[11px] font-extrabold shrink-0">BÀI ${lesson.num}</span>
-        <span class="text-xs sm:text-sm font-extrabold text-spark-navy truncate">${escapeHtml(breadcrumb)}</span>
-        ${listMats.length > 1 ? `
-          <select onchange="SparkleSplitWorkspace.selectMaterial(this.value)" class="ml-1 px-2 py-0.5 text-xs rounded-lg border border-gray-200 bg-spark-bg font-semibold text-spark-navy max-w-[190px]">
-            ${listMats.map((m) => `<option value="${m.id}" ${activeMat && m.id === activeMat.id ? 'selected' : ''}>${escapeHtml(stripTag(m.title))}</option>`).join('')}
-          </select>
-        ` : ''}
-      </div>
-      <div class="flex items-center gap-1 shrink-0">
-        ${activeMat && href ? `
-          <div class="inline-flex items-center bg-spark-bg border border-gray-200 rounded-lg overflow-hidden mr-1">
-            <button type="button" onclick="SparkleSplitWorkspace.stepZoom(-0.1)" class="px-2 py-1 hover:bg-gray-200 text-spark-navy text-xs font-extrabold" title="Thu nhỏ nội dung">−</button>
-            <button type="button" id="sp-ws-zoom-label" onclick="SparkleSplitWorkspace.setZoom(1)" class="px-1.5 py-1 hover:bg-gray-200 text-spark-navy text-[11px] font-bold min-w-[42px]" title="Đặt lại 100%">${Math.round((wsState.iframeZoom || 1) * 100)}%</button>
-            <button type="button" onclick="SparkleSplitWorkspace.stepZoom(0.1)" class="px-2 py-1 hover:bg-gray-200 text-spark-navy text-xs font-extrabold" title="Phóng to nội dung">+</button>
-          </div>
-          <button type="button" onclick="SparkleSplitWorkspace.toggleSidebar()" class="px-2.5 py-1 rounded-lg bg-spark-bg hover:bg-gray-200 text-spark-navy text-[11px] font-bold" title="Ẩn/hiện thanh mục lục để mở rộng tối đa">◧ Mở rộng</button>
-          <button type="button" onclick="SparkleSplitWorkspace.toggleStageFullscreen()" class="px-2.5 py-1 rounded-lg bg-spark-bg hover:bg-gray-200 text-spark-navy text-[11px] font-bold">⛶ Toàn MH</button>
-          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-spark-orangePastel hover:bg-spark-orange text-spark-orangeDark hover:text-white text-[11px] font-bold">↗ Tab mới</a>
-        ` : ''}
-        ${isAdmin && slotTag ? `
-          <button type="button" onclick="SparkleSplitWorkspace.openUploadForTag('${lesson.id}', '${slotTag}', 'link')" class="btn-gradient px-2.5 py-1 rounded-lg text-white text-[11px] font-bold">+ Link</button>
-          <button type="button" onclick="SparkleSplitWorkspace.openUploadForTag('${lesson.id}', '${slotTag}', 'file')" class="px-2.5 py-1 rounded-lg bg-white border border-spark-pink/40 text-spark-pink text-[11px] font-bold">+ File</button>
-        ` : ''}
-        ${isAdmin && activeMat ? `
-          <button type="button" onclick="UIActions.deleteMaterial('${activeMat.id}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white text-[11px] font-bold">Xóa</button>
-        ` : ''}
-      </div>
-    `;
-
-    const nextSig = `mat:${lesson.id}:${slotTag || 'bonus'}:${activeMat ? activeMat.id : 'empty'}:${href}`;
-    if (!forceReload && wsState.activeStageSig === nextSig) {
-      applyIframeZoom();
-      return;
-    }
-    wsState.activeStageSig = nextSig;
-
-    if (!activeMat || !href) {
-      stageContent.classList.remove('is-iframe-mode');
-      stageContent.innerHTML = `
-        <div class="flex-1 flex items-center justify-center p-6">
-          <div class="bg-white rounded-3xl p-8 border border-dashed border-gray-300 text-center max-w-md space-y-3 shadow-sm">
-            <div class="text-3xl">📂</div>
-            <h3 class="text-base font-extrabold text-spark-navy">Chưa có nội dung cho "${escapeHtml(breadcrumb)}"</h3>
-            <p class="text-xs text-spark-text">${isAdmin ? 'Admin hãy bấm nút <strong>+ Link</strong> hoặc <strong>+ File</strong> ở góc trên bên phải để gắn bài giảng HTML / PDF / Slide vào mục này.' : 'Admin chưa gắn tài liệu cho mục này.'}</p>
-            ${isAdmin && slotTag ? `
-              <div class="flex justify-center gap-2 pt-2">
-                <button type="button" onclick="SparkleSplitWorkspace.openUploadForTag('${lesson.id}', '${slotTag}', 'link')" class="btn-gradient px-4 py-2 rounded-xl text-white text-xs font-bold">+ Dán link bài giảng</button>
-                <button type="button" onclick="SparkleSplitWorkspace.openUploadForTag('${lesson.id}', '${slotTag}', 'file')" class="px-4 py-2 rounded-xl bg-white border border-gray-200 text-spark-navy text-xs font-bold">+ Tải file lên</button>
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (activeMat.format === 'image') {
-      stageContent.classList.add('is-iframe-mode');
-      stageContent.innerHTML = `<div class="w-full h-full flex items-center justify-center p-2 bg-slate-950"><img src="${href}" alt="${escapeHtml(stripTag(activeMat.title))}" class="max-h-full max-w-full object-contain rounded-lg shadow-lg" /></div>`;
-    } else if (activeMat.format === 'video' && !href.includes('youtube')) {
-      stageContent.classList.add('is-iframe-mode');
-      stageContent.innerHTML = `<div class="w-full h-full flex items-center justify-center p-2 bg-black"><video src="${href}" controls class="max-h-full max-w-full rounded-lg"></video></div>`;
-    } else {
-      stageContent.classList.add('is-iframe-mode');
-      stageContent.innerHTML = `
-        <div class="sp-ws-iframe-wrap">
-          <iframe id="sp-ws-active-iframe" src="${escapeHtml(href)}" allow="fullscreen; autoplay; microphone; camera" allowfullscreen class="sp-ws-iframe"></iframe>
-        </div>
-      `;
-      applyIframeZoom();
-    }
-  }
-
-  function renderSplitLessonDetail(forceReload = false) {
-    const lessonId = AppState.state.activeLessonId;
-    if (!lessonId) return;
-    const lesson = CurriculumData.getLessonById(lessonId);
-    if (!lesson) return;
-    if (!ensureShellBuilt()) return;
-
-    renderSidebar(lesson);
-    renderStageContent(lesson, forceReload);
-  }
-
-  const _origRenderAll = UIRenderer.renderAll;
-  const _origOpenRoomView = PracticeRoomManager.openRoomView;
-  const _origCloseRoomView = PracticeRoomManager.closeRoomView;
-  const _origCloseLessonDetail = UIActions.closeLessonDetail;
-  const _origAddOrReplaceMaterial = AppState.addOrReplaceMaterial;
-  const _origCloseUploadModal = ModalManager.closeUploadModal;
-
-  UIRenderer.renderLessonDetail = function () {
-    renderSplitLessonDetail(false);
-  };
-
-  UIRenderer.renderAll = function () {
-    _origRenderAll();
-    if (AppState.state.activeLessonId) {
-      renderSplitLessonDetail(false);
-    }
-  };
-
-  AppState.addOrReplaceMaterial = function (material, replaceId) {
-    if (wsState.pendingTag && material && material.materialType === 'lecture') {
-      const clean = stripTag(material.title);
-      material.title = `${wsState.pendingTag} ${clean}`;
-      wsState.pendingTag = null;
-    }
-    return _origAddOrReplaceMaterial(material, replaceId);
-  };
-
-  ModalManager.closeUploadModal = function () {
-    wsState.pendingTag = null;
-    return _origCloseUploadModal();
-  };
-
-  UIActions.closeLessonDetail = function () {
-    undockPracticeRoom();
-    if (PracticeRoomManager.isOpen()) {
-      _origCloseRoomView();
-    }
-    const viewEl = document.getElementById('lesson-detail-view');
-    if (viewEl) viewEl.classList.remove('sp-workspace-mode');
-    wsState.activeStageSig = null;
-    return _origCloseLessonDetail();
-  };
-
-  PracticeRoomManager.openRoomView = function (lessonId, roomNumber, teacherId) {
-    AppState.state.activeLessonId = lessonId;
-    wsState.topTab = 'lesson';
-    if (Number(roomNumber) === 5) {
-      wsState.sectionId = 'game';
-      wsState.itemId = 'game_room';
-    } else {
-      wsState.sectionId = `ex${roomNumber}`;
-      wsState.itemId = `ex${roomNumber}_room`;
-    }
-    document.getElementById('home-view').classList.add('hidden');
-    document.getElementById('lesson-detail-view').classList.remove('hidden');
-    renderSplitLessonDetail(true);
-  };
-
-  window.SparkleSplitWorkspace = {
-    setTopTab(tab) {
-      wsState.topTab = tab;
-      wsState.selectedMatId = null;
-      renderSplitLessonDetail(true);
-    },
-    selectSection(sectionId) {
-      wsState.sectionId = sectionId;
-      const sec = getActiveSection();
-      wsState.itemId = sec.items[0].id;
-      wsState.selectedMatId = null;
-      renderSplitLessonDetail(true);
-    },
-    selectItem(itemId) {
-      wsState.itemId = itemId;
-      wsState.selectedMatId = null;
-      renderSplitLessonDetail(true);
-    },
-    selectMaterial(matId) {
-      wsState.selectedMatId = matId;
-      renderSplitLessonDetail(true);
-    },
-    toggleSidebar() {
-      wsState.sidebarCollapsed = !wsState.sidebarCollapsed;
-      const sb = document.getElementById('sp-ws-sidebar');
-      if (sb) sb.classList.toggle('collapsed', wsState.sidebarCollapsed);
-    },
-    setZoom(val) {
-      wsState.iframeZoom = Math.min(1.8, Math.max(0.7, Math.round(val * 100) / 100));
-      applyIframeZoom();
-    },
-    stepZoom(delta) {
-      this.setZoom((wsState.iframeZoom || 1) + delta);
-    },
-    openUploadForTag(lessonId, tag, defaultTab) {
-      wsState.pendingTag = tag;
-      ModalManager.openUploadModal({ scope: 'material', lessonId, materialType: 'lecture', defaultTab });
-    },
-    openUploadForHomework(lessonId, defaultTab) {
-      wsState.pendingTag = null;
-      ModalManager.openUploadModal({ scope: 'material', lessonId, materialType: 'homework', defaultTab });
-    },
-    toggleStageFullscreen() {
-      const stage = document.getElementById('sp-ws-stage');
-      if (!stage) return;
-      if (!document.fullscreenElement) stage.requestFullscreen?.().catch(() => {});
-      else document.exitFullscreen?.().catch(() => {});
-    },
-  };
-})();
-</script>
-
 </body>
 
 </html>
 
-Optimizing Supabase bandwidth limits
+Đang hiển thị sparkle-teacher-toan6_realtime_toi_uu.html.
