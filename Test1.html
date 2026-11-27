@@ -2941,13 +2941,13 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         return state.materials.filter((m) => m.lessonId === lessonId && (!materialType || m.materialType === materialType));
       }
 
-      function addOrReplaceMaterial(material, replaceId = null) {
-        if (!requireAdmin('đăng tải hoặc chỉnh sửa học liệu')) return;
+      async function addOrReplaceMaterial(material, replaceId = null) {
+        if (!requireAdmin('đăng tải hoặc chỉnh sửa học liệu')) return { error: { message: 'Không có quyền Admin.' } };
         if (replaceId) {
           const idx = state.materials.findIndex((m) => m.id === replaceId);
           if (idx !== -1) {
             const old = state.materials[idx];
-            if (old.sourceType === 'file' && old.blobKey) StorageAdapter.deleteFileBlob(old.blobKey).catch(() => {});
+            if (old.sourceType === 'file' && old.blobKey) await StorageAdapter.deleteFileBlob(old.blobKey).catch(() => {});
             state.materials[idx] = material;
           } else {
             state.materials.unshift(material);
@@ -2955,12 +2955,15 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         } else {
           state.materials.unshift(material);
         }
-        persist();
-        SupabaseEngine.upsertRecord('lesson_materials', {
+        persist(false);
+        const result = await SupabaseEngine.upsertRecord('lesson_materials', {
           id: material.id, lesson_id: material.lessonId, material_type: material.materialType,
           file_name: encodeMaterialSlotName(material.title, material.workspaceKey), file_type: material.format, file_url: material.url || null,
           storage_path: material.blobKey || null, updated_at: material.updatedAt,
         });
+        if (result?.error) return result;
+        SupabaseEngine.broadcast('DATA_SYNC', { ts: Date.now() });
+        return { data: material };
       }
 
       async function removeMaterial(materialId) {
@@ -6108,58 +6111,68 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
       async function saveMaterial() {
         if (!uploadCtx || !AppState.requireAdmin('lưu học liệu')) return;
         const errEl = document.getElementById('upload-modal-error');
+        const saveBtn = document.getElementById('upload-save-btn');
+        const spinner = document.getElementById('upload-save-spinner');
+        const saveLabel = document.getElementById('upload-save-label');
         errEl.classList.add('hidden');
+        if (saveBtn?.dataset.saving === '1') return;
+        if (saveBtn) { saveBtn.dataset.saving = '1'; saveBtn.disabled = true; saveBtn.classList.add('opacity-70', 'cursor-wait'); }
+        if (spinner) spinner.classList.remove('hidden');
+        if (saveLabel) saveLabel.textContent = 'ĐANG LƯU...';
+        try {
+          const id = uploadCtx.replaceId || ('mat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+          let item = null;
 
-        const id = uploadCtx.replaceId || ('mat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
-        let item = null;
-
-        if (uploadTab === 'file') {
-          if (!selectedFile) { errEl.textContent = 'Vui lòng chọn một tệp để tải lên.'; errEl.classList.remove('hidden'); return; }
-          const blobKey = `blob_${id}`;
-          await StorageAdapter.saveFileBlob(blobKey, selectedFile);
-          const remoteUrl = await SupabaseEngine.uploadToSupabaseStorage(selectedFile, `${uploadCtx.lessonId}/${id}_${selectedFile.name}`);
-          if (!remoteUrl) {
-            errEl.textContent = 'Tệp chưa tải được lên Supabase Storage nên học sinh trên thiết bị khác sẽ không mở được. Hãy kiểm tra bucket/quyền Storage hoặc dán link HTML công khai ở tab Dán link.';
-            errEl.classList.remove('hidden');
-            return;
+          if (uploadTab === 'file') {
+            if (!selectedFile) throw new Error('Vui lòng chọn một tệp để tải lên.');
+            const blobKey = `blob_${id}`;
+            await StorageAdapter.saveFileBlob(blobKey, selectedFile);
+            const remoteUrl = await SupabaseEngine.uploadToSupabaseStorage(selectedFile, `${uploadCtx.lessonId}/${id}_${selectedFile.name}`);
+            if (!remoteUrl) throw new Error('Tệp chưa tải được lên Supabase Storage. Hãy kiểm tra bucket/quyền Storage hoặc dùng tab Dán link.');
+            const customTitle = document.getElementById('file-custom-title').value.trim();
+            item = {
+              id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
+              materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
+              title: customTitle || selectedFile.name,
+              format: detectFormatFromNameOrUrl(selectedFile.name),
+              sourceType: 'file', blobKey, url: remoteUrl,
+              size: selectedFile.size, updatedAt: new Date().toISOString(),
+            };
+          } else {
+            const url = document.getElementById('link-url-input').value.trim();
+            const title = document.getElementById('link-title-input').value.trim();
+            const format = document.getElementById('link-format-select').value;
+            if (!url || !title) throw new Error('Vui lòng nhập đầy đủ URL và Tên tài liệu.');
+            try { new URL(url); } catch (_) { throw new Error('Đường dẫn chưa đúng định dạng. Vui lòng nhập URL bắt đầu bằng https:// hoặc http://.'); }
+            item = {
+              id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
+              materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
+              title, format, sourceType: 'link', url, updatedAt: new Date().toISOString(),
+            };
           }
-          const customTitle = document.getElementById('file-custom-title').value.trim();
-          item = {
-            id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
-            materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
-            title: customTitle || selectedFile.name,
-            format: detectFormatFromNameOrUrl(selectedFile.name),
-            sourceType: 'file', blobKey, url: remoteUrl || '',
-            size: selectedFile.size, updatedAt: new Date().toISOString(),
-          };
-        } else {
-          const url = document.getElementById('link-url-input').value.trim();
-          const title = document.getElementById('link-title-input').value.trim();
-          const format = document.getElementById('link-format-select').value;
-          if (!url || !title) { errEl.textContent = 'Vui lòng nhập đầy đủ URL và Tên tài liệu.'; errEl.classList.remove('hidden'); return; }
-          item = {
-            id, lessonId: uploadCtx.lessonId, roomId: uploadCtx.roomId || null,
-            materialType: uploadCtx.materialType || 'exercise', workspaceKey: uploadCtx.workspaceKey || '',
-            title, format, sourceType: 'link', url, updatedAt: new Date().toISOString(),
-          };
-        }
 
-        if (uploadCtx.scope === 'exercise') {
-          item.answerKey = document.getElementById('exercise-answer-key').value.trim();
-          item.maxScore = Number(document.getElementById('exercise-max-score').value || 10);
-          const saveResult = await AppState.addOrReplaceExercise(item, uploadCtx.replaceId);
-          if (saveResult?.error) {
-            errEl.textContent = `Không lưu được bài tập vào phòng trên Supabase: ${saveResult.error.message || 'Lỗi quyền hoặc kết nối'}. Bài tập chưa được xác nhận lưu cho học sinh.`;
-            errEl.classList.remove('hidden');
-            return;
+          if (uploadCtx.scope === 'exercise') {
+            item.answerKey = document.getElementById('exercise-answer-key').value.trim();
+            item.maxScore = Number(document.getElementById('exercise-max-score').value || 10);
+            const saveResult = await AppState.addOrReplaceExercise(item, uploadCtx.replaceId);
+            if (saveResult?.error) throw new Error(`Không lưu được bài tập: ${saveResult.error.message || 'Lỗi quyền hoặc kết nối Supabase'}.`);
+          } else {
+            const saveResult = await AppState.addOrReplaceMaterial(item, uploadCtx.replaceId);
+            if (saveResult?.error) throw new Error(`Không lưu được tài liệu lên Supabase: ${saveResult.error.message || 'Lỗi quyền hoặc kết nối'}.`);
           }
-        } else {
-          AppState.addOrReplaceMaterial(item, uploadCtx.replaceId);
-        }
 
-        closeUploadModal();
-        UIRenderer.renderAll();
-        Toast.show('Đã lưu tài liệu thành công!', 'success');
+          closeUploadModal();
+          UIRenderer.renderAll();
+          Toast.show('Đã lưu tài liệu thành công!', 'success');
+        } catch (err) {
+          console.error('SPARKLE saveMaterial failed:', err);
+          errEl.textContent = err?.message || 'Có lỗi xảy ra khi lưu tài liệu. Vui lòng thử lại.';
+          errEl.classList.remove('hidden');
+        } finally {
+          if (saveBtn) { saveBtn.dataset.saving = '0'; saveBtn.disabled = false; saveBtn.classList.remove('opacity-70', 'cursor-wait'); }
+          if (spinner) spinner.classList.add('hidden');
+          if (saveLabel) saveLabel.textContent = 'LƯU TÀI LIỆU';
+        }
       }
 
       async function resolveItemUrl(id, scope) {
@@ -7398,4 +7411,3 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
 
 </html>
 
-Đang hiển thị sparkle-teacher-toan6_realtime_toi_uu.html.
