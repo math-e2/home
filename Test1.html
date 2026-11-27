@@ -3624,7 +3624,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             <button type="button" class="example-child w-full mt-3" data-workspace="homework" onclick="UIActions.selectLessonWorkspace('homework')">📚 <span>Bài tập về nhà</span></button>
           </aside>
           <section class="lesson-content-pane" aria-live="polite">
-            <div class="lesson-content-title"><div><h2 id="lesson-workspace-title">Intro 1</h2><p id="lesson-workspace-subtitle">Nội dung bài học</p></div><span class="text-[10px] font-extrabold text-spark-orangeDark bg-spark-orangePastel px-3 py-1.5 rounded-full">BÀI ${lesson.num}</span></div>
+            <div class="lesson-content-title"><div class="min-w-0"><h2 id="lesson-workspace-title">Intro 1</h2><p id="lesson-workspace-subtitle">Nội dung bài học</p></div><div class="flex items-center gap-2 flex-wrap justify-end"><div id="lesson-workspace-actions" class="flex items-center gap-2 flex-wrap"></div><span class="text-[10px] font-extrabold text-spark-orangeDark bg-spark-orangePastel px-3 py-1.5 rounded-full">BÀI ${lesson.num}</span></div></div>
             <div id="lesson-workspace-body"></div>
           </section>`;
         sectionsEl.innerHTML = '';
@@ -3633,6 +3633,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
         const body = shell.querySelector('#lesson-workspace-body');
         const title = shell.querySelector('#lesson-workspace-title');
         const subtitle = shell.querySelector('#lesson-workspace-subtitle');
+        const actions = shell.querySelector('#lesson-workspace-actions');
         const targets = { lecture: lectureCard, game: gameCard, homework: homeworkCard };
         for (let i=1;i<=4;i++) if (practiceCards[i-1]) targets['practice-'+i]=practiceCards[i-1];
         const examples = Array.from({length:4},(_,i)=>i+1);
@@ -3645,7 +3646,7 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
             <button type="button" class="example-child" data-workspace="game-${n}" onclick="UIActions.selectLessonWorkspace('game-${n}')">🎮 <span>Game ${n}</span></button>
           </div></div>`).join('');
         const previousWorkspace = window.__sparkleLessonWorkspace?.current || 'intro-1';
-        window.__sparkleLessonWorkspace = { targets, body, title, subtitle, nav, shell, current: previousWorkspace };
+        window.__sparkleLessonWorkspace = { targets, body, title, subtitle, actions, nav, shell, current: previousWorkspace };
         sectionsEl.dataset.workspaceBuilt = '1';
         UIActions.selectLessonWorkspace(previousWorkspace);
       }
@@ -6508,10 +6509,17 @@ ALTER TABLE public.practice_rooms ADD CONSTRAINT practice_rooms_room_number_chec
           ws.body.appendChild(target);
         }
         ws.title.textContent = key === 'homework' ? 'Bài tập về nhà' : label;
-        ws.subtitle.textContent = (key.startsWith('intro-') || key.startsWith('udsc-'))
-          ? 'Quản lý tài liệu độc lập cho từng mục Intro và UDSC.'
+        const isSlot = key.startsWith('intro-') || key.startsWith('udsc-');
+        ws.subtitle.textContent = isSlot
+          ? `Quản lý tài liệu riêng cho ${label}. Link và file của mục này không dùng chung với mục khác.`
           : key.startsWith('practice-') ? 'Khu vực luyện tập và giám sát học sinh.'
           : key.startsWith('game-') ? 'Khu vực trò chơi tương tác.' : 'Tài liệu và hướng dẫn bài tập về nhà.';
+        if (ws.actions) {
+          const isAdmin = AppState.isAdmin();
+          ws.actions.innerHTML = isSlot && isAdmin
+            ? `<button type="button" onclick="ModalManager.openUploadModal({scope:'material',lessonId:'${AppState.state.activeLessonId}',materialType:'lecture',workspaceKey:'${key}',defaultTab:'file'})" class="btn-gradient px-3 py-2 rounded-xl text-white text-xs font-bold">+ Tải file</button><button type="button" onclick="ModalManager.openUploadModal({scope:'material',lessonId:'${AppState.state.activeLessonId}',materialType:'lecture',workspaceKey:'${key}',defaultTab:'link'})" class="px-3 py-2 rounded-xl bg-white border border-spark-pink/40 text-spark-pink text-xs font-bold">+ Gắn link</button>`
+            : '';
+        }
         ws.nav.querySelectorAll('.example-child').forEach(btn=>btn.classList.toggle('active', btn.dataset.workspace===key));
         document.querySelectorAll('.lesson-sidebar > .example-child').forEach(btn=>btn.classList.toggle('active', btn.dataset.workspace===key));
         const groupMatch = key.match(/-(\d)$/);
