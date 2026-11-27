@@ -504,6 +504,309 @@
     overflow-y: auto;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   }
+
+  /* ==================== BÀI 49 – ĐỒNG BỘ GIAO DIỆN VỚI PHÒNG BÀI 48 ==================== */
+  :root {
+    --navy: #0f2942;
+    --navy-mid: #1b4332;
+    --jade: #16a34a;
+    --jade-dark: #166534;
+    --pastel-yellow: #fff3b0;
+    --pastel-yellow-deep: #fde68a;
+    --white: #ffffff;
+    --orange: #ea580c;
+    --orange-dark: #c2410c;
+    --red: #dc2626;
+    --slate: #475569;
+    --border: #a3bfb8;
+    --shadow: 0 8px 24px rgba(15, 41, 66, 0.14);
+    --board-bg-dark: #143828;
+    --board-bg-mid: #1b4332;
+    --wood-frame: #6f4518;
+    --wood-border: #432818;
+    --panel-bg: #dce8e5;
+    --panel-border: #a3bfb8;
+    --card-bg: #f6fbfa;
+  }
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0b1f13;
+    font-family: Verdana, Geneva, sans-serif;
+  }
+
+  #viewport-wrapper {
+    width: 100vw;
+    height: 100vh;
+    background:
+      radial-gradient(circle at 20% 25%, rgba(255,255,255,.05), transparent 35%),
+      linear-gradient(135deg, #1b4332 0%, #0b1f13 100%);
+  }
+
+  #app-stage {
+    width: 1440px;
+    height: 810px;
+    box-sizing: border-box;
+    padding: 16px 22px 12px;
+    background:
+      radial-gradient(circle at 20% 25%, rgba(255,255,255,.05) 0%, transparent 35%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,.04) 0%, transparent 40%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 2px, transparent 2px, transparent 8px),
+      linear-gradient(135deg, var(--board-bg-mid) 0%, var(--board-bg-dark) 100%);
+    border: 12px solid var(--wood-frame);
+    outline: 4px solid var(--wood-border);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.75), inset 0 0 40px rgba(0,0,0,.45);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transform-origin: center center;
+  }
+
+  .top-bar {
+    height: 66px;
+    min-height: 66px;
+    background: #0f2942;
+    color: #fff;
+    border: 2px solid #a3bfb8;
+    border-bottom: 3px solid #e09f3e;
+    border-radius: 13px 13px 0 0;
+    padding: 0 20px;
+  }
+  .brand-pill {
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    border: 2px solid #fff3b0;
+    color: #fff;
+  }
+  .lesson-title { color: #fff; }
+  .meta-badge {
+    background: rgba(255,255,255,.12);
+    border: 1.5px solid rgba(255,255,255,.28);
+    color: #fff;
+  }
+  .progress-track { background: rgba(255,255,255,.22); }
+  .progress-fill { background: #16a34a; }
+  .btn-mode-switch {
+    background: #ea580c;
+    border: 2px solid #fff3b0;
+    color: #fff;
+  }
+
+  .workspace {
+    background: rgba(220,232,229,.96);
+    border-left: 3px solid #a3bfb8;
+    border-right: 3px solid #a3bfb8;
+    padding: 12px 14px;
+    gap: 14px;
+    grid-template-columns: 440px minmax(0, 1fr);
+  }
+  .left-panel, .right-panel {
+    background: #f6fbfa;
+    border: 3px solid #a3bfb8;
+    border-radius: 18px;
+    box-shadow: inset 0 2px 8px rgba(255,255,255,.7), 0 8px 20px rgba(0,0,0,.12);
+  }
+  .left-panel { border-color: #a3bfb8; }
+  .right-panel { border-color: #a3bfb8; }
+  .q-badge {
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: #fff;
+    border: 1.5px solid #fff3b0;
+  }
+  .q-points-tag {
+    background: #fff3b0;
+    color: #92400e;
+    border: 1.5px solid #e09f3e;
+  }
+  .q-statement {
+    background: #fff3b0;
+    border: 2px solid #e09f3e;
+    border-left: 5px solid #ea580c;
+    border-radius: 12px;
+    color: #0f2942;
+  }
+  .ref-diagram-box {
+    background: #dce8e5;
+    border: 2px solid #a3bfb8;
+    border-radius: 14px;
+  }
+  .steps-card {
+    background: #eef5f2;
+    border: 1.5px solid #c1d4ce;
+    border-radius: 12px;
+  }
+  .feedback-box {
+    border-radius: 13px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.06);
+  }
+  .right-panel { padding: 12px 14px; }
+  .drawing-toolbar {
+    background: #eef5f2;
+    border: 1.5px solid #c1d4ce;
+    border-radius: 12px;
+    padding: 8px;
+  }
+  .tool-btn {
+    border-radius: 9px;
+    border-color: #a3bfb8;
+  }
+  .tool-btn.active {
+    background: #0f2942;
+    border-color: #0f2942;
+  }
+  .canvas-container {
+    background-color: #fff3b0;
+    border: 3px solid #e09f3e;
+    border-radius: 16px;
+  }
+  .bottom-bar {
+    height: 64px;
+    min-height: 64px;
+    background: #0f2942;
+    border: 2px solid #a3bfb8;
+    border-top: 3px solid #e09f3e;
+    border-radius: 0 0 13px 13px;
+  }
+  .btn-undo { background: #475569; }
+  .btn-erase { background: #64748b; }
+  .btn-reset { background: #dc2626; }
+  .btn-submit { background: #ea580c; }
+  .btn-next { background: #16a34a; }
+  .lock-hint-text { color: #fff3b0; }
+
+  .overlay-screen {
+    border-radius: 4px;
+    background: #dce8e5;
+  }
+  .login-card, .card-box {
+    border: 3px solid #a3bfb8;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(15,41,66,.2);
+  }
+  .login-card { border-color: #e09f3e; }
+  .login-card input {
+    border: 2px solid #a3bfb8;
+    font-family: Verdana, sans-serif;
+  }
+  .modal-dialog {
+    border-color: #e09f3e;
+    border-radius: 18px;
+  }
+
+  @media (max-width: 700px) {
+    #app-stage { transform-origin: center center; }
+  }
+
+
+  /* Tinh gọn màn hình vào phòng: không yêu cầu nhập tên, bỏ phần chú thích */
+  .login-card {
+    width: 650px;
+    padding: 26px 34px;
+  }
+  .login-card h1 {
+    font-size: 22px !important;
+    margin: 8px 0 6px !important;
+  }
+  .login-card p {
+    margin-bottom: 18px !important;
+    font-size: 14px !important;
+  }
+  .login-card > div[style*="background:var(--orange)"] {
+    margin-bottom: 6px !important;
+  }
+  .login-card .btn-ctrl {
+    min-width: 210px;
+    justify-content: center;
+  }
+  .ref-diagram-box {
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    min-height: 118px;
+  }
+  .steps-card {
+    padding: 7px 10px;
+    line-height: 1.35;
+  }
+  .feedback-box {
+    min-height: 46px;
+    padding: 7px 10px;
+    margin-top: 6px;
+  }
+  .ref-caption { display: none !important; }
+
+
+  /* Tối giản chú thích trên màn hình làm bài: ưu tiên đề và vùng thao tác */
+  .steps-card,
+  .feedback-box,
+  .board-status-strip,
+  .lock-hint-text,
+  .ref-caption {
+    display: none !important;
+  }
+  .left-panel {
+    justify-content: flex-start !important;
+    gap: 10px;
+  }
+  .left-panel > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .q-statement { margin-bottom: 0 !important; }
+  .ref-diagram-box { margin-bottom: 0 !important; }
+  .right-panel { gap: 8px; }
+  .canvas-container {
+    flex: 1;
+    min-height: 0;
+    margin: 2px 0 !important;
+  }
+  .bottom-bar { justify-content: space-between; }
+
+
+  /* Điểm số luôn nổi bật; cảnh báo sai ngắn gọn, dễ nhận biết */
+  .score-highlight {
+    background: #fff3b0 !important;
+    color: #0f2942 !important;
+    border: 2px solid #e09f3e !important;
+    font-size: 14px !important;
+    padding: 7px 13px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .score-highlight #hdr-score-text {
+    color: #c2410c !important;
+    font-size: 19px;
+    font-weight: 900;
+    margin-left: 5px;
+  }
+  .attempt-toast {
+    position: absolute;
+    z-index: 25;
+    left: 50%;
+    bottom: 82px;
+    transform: translate(-50%, 12px);
+    max-width: min(760px, 88%);
+    padding: 12px 22px;
+    border: 2px solid #dc2626;
+    border-radius: 14px;
+    background: #fff1f2;
+    color: #991b1b;
+    box-shadow: 0 8px 24px rgba(127,29,29,.24);
+    font: 700 15px/1.35 Verdana, sans-serif;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease, visibility .2s;
+  }
+  .attempt-toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+  }
+
 </style>
 </head>
 <body>
@@ -520,13 +823,6 @@
         <p style="color:var(--jade-dark); font-weight:bold; font-size:15px; margin-bottom:14px;">
           Bài 49: Luyện tập dựng hình đối xứng (Slide 33–44)
         </p>
-        <div style="text-align:left; font-size:13px; color:var(--slate); background:var(--pastel-yellow); padding:10px 12px; border-radius:10px; border:1.5px solid #eab308;">
-          <strong>Quy tắc phòng luyện tập:</strong><br>
-          • Học sinh tự xác định điểm và dựng hình đối xứng trực tiếp trên lưới ô vuông.<br>
-          • Hệ thống chấm tự động theo dữ liệu tọa độ &amp; quan hệ đối xứng (thang 10 điểm).<br>
-          • Hoàn thành đúng câu hiện tại mới mở khóa câu tiếp theo.
-        </div>
-        <input type="text" id="student-name-input" placeholder="Nhập họ và tên học sinh..." maxlength="36">
         <div style="display:flex; gap:12px; justify-content:center; margin-top:6px;">
           <button class="btn-ctrl btn-submit" style="font-size:15px; padding:12px 28px;" onclick="App.startPractice()">BẮT ĐẦU LÀM BÀI</button>
           <button class="btn-ctrl btn-undo" style="font-size:14px; padding:12px 20px;" onclick="App.openTeacherDashboard()">CHẾ ĐỘ GIÁO VIÊN</button>
@@ -544,7 +840,7 @@
       <div class="student-meta">
         <div class="meta-badge">Học sinh: <span id="hdr-student-name" style="color:var(--pastel-yellow);">---</span></div>
         <div class="meta-badge">Tiến độ: <span id="hdr-progress-text" style="color:var(--pastel-yellow);">Câu 1/6</span></div>
-        <div class="meta-badge">Điểm hiện tại: <span id="hdr-score-text" style="color:#4ade80;">0/10</span></div>
+        <div class="meta-badge score-highlight">⭐ ĐIỂM CỦA EM: <span id="hdr-score-text">0/10</span></div>
 
         <div class="progress-track-wrap">
           <div class="progress-track-label" id="hdr-percent-label">Hoàn thành: 0%</div>
@@ -571,7 +867,6 @@
 
           <div class="ref-diagram-box">
             <div id="ref-svg-container"></div>
-            <div class="ref-caption" id="ref-caption">Hình minh họa đề bài gốc (PPTX Bài 49)</div>
           </div>
 
           <div class="steps-card" id="q-steps"></div>
@@ -613,6 +908,7 @@
     </main>
 
     <!-- ==================== ZONE 3: BOTTOM CONTROL BAR ==================== -->
+    <div id="attempt-toast" class="attempt-toast" role="status" aria-live="polite"></div>
     <footer class="bottom-bar">
       <div class="ctrl-group">
         <button class="btn-ctrl btn-undo" onclick="Board.undo()">↩ HOÀN TÁC</button>
@@ -1473,6 +1769,50 @@ function renderFlowerPetalSVG(gx1, gy1, gx2, gy2, fillColor, strokeColor) {
   return `<path d="M ${p1.px} ${p1.py} Q ${c1x} ${c1y} ${p2.px} ${p2.py} Q ${c2x} ${c2y} ${p1.px} ${p1.py} Z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="3"/>`;
 }
 
+
+/* Cảnh báo âm thanh + thông báo trực quan khi nộp bài sai */
+function playWrongAnswerAlert() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.connect(ctx.destination);
+
+    // Hai tiếng bíp ngắn, âm trầm cảnh báo; phát sinh từ thao tác bấm NỘP BÀI.
+    [0, 0.22].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const voice = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(420, now + offset);
+      osc.frequency.exponentialRampToValueAtTime(260, now + offset + 0.14);
+      voice.gain.setValueAtTime(0.0001, now + offset);
+      voice.gain.exponentialRampToValueAtTime(0.12, now + offset + 0.015);
+      voice.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.16);
+      osc.connect(voice);
+      voice.connect(gain);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.17);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 650);
+  } catch (e) {
+    // Âm thanh có thể bị trình duyệt chặn; phản hồi trực quan vẫn hoạt động.
+  }
+}
+
+function showAttemptToast(message) {
+  const toast = document.getElementById("attempt-toast");
+  if (!toast) return;
+  toast.textContent = message || "Chưa chính xác! Em hãy kiểm tra lại hình vẽ nhé.";
+  toast.classList.remove("show");
+  void toast.offsetWidth;
+  toast.classList.add("show");
+  clearTimeout(window.__attemptToastTimer);
+  window.__attemptToastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
 /* ==========================================================================
    5. GEOMETRIC GRADING ENGINE (COORDINATE, EDGE & SYMMETRY VERIFICATION)
    ========================================================================== */
@@ -1542,6 +1882,9 @@ const Grader = {
   },
 
   failAttempt(qState, badPoints, level, title, hint) {
+    playWrongAnswerAlert();
+    const scoreNow = session ? String(session.totalScore).replace(".", ",") : "0";
+    showAttemptToast(`⚠ CHƯA CHÍNH XÁC! ${title}  •  ĐIỂM HIỆN TẠI: ${scoreNow}/10`);
     qState.fixedErrorsCount += 1;
     qState.errorHistory.push({
       questionId: qState.id,
@@ -1697,7 +2040,6 @@ const App = {
     Board.init();
 
     if (loadSession()) {
-      document.getElementById("student-name-input").value = session.studentName;
       document.getElementById("screen-login").classList.remove("active");
       if (session.finishedAt) {
         this.showSummaryScreen();
@@ -1709,17 +2051,13 @@ const App = {
 
   fitViewport() {
     const stage = document.getElementById("app-stage");
-    const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    const scale = Math.min(window.innerWidth / 1440, window.innerHeight / 810);
     stage.style.transform = `scale(${scale})`;
   },
 
   startPractice() {
-    const name = document.getElementById("student-name-input").value.trim();
-    if (!name) {
-      document.getElementById("student-name-input").focus();
-      return;
-    }
-    if (!session || session.studentName !== name) {
+    const name = (session && session.studentName) ? session.studentName : "Học sinh";
+    if (!session) {
       session = createEmptyProgress(name);
       saveSession();
     }
