@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài giảng tương tác UDSCR – Tìm x sao cho x + 15 là bội của x + 3 | Toán 6</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* =====================================================================
+     * BOTANICAL NATURE GLASSMORPHISM – UDSCR TEMPLATE V2
+     * ===================================================================== */
+    :root {
+      --bg-dark: #08140C;
+      --text-main: #FFFFFF;
+      --text-muted: #D5E2CF;
+      --accent-lemon: #E3DE62;
+      --olive-grad: linear-gradient(90deg, #BCC876 0%, #6A8535 55%, #49661F 100%);
+      --olive-grad-hover: linear-gradient(90deg, #CAD684 0%, #78963E 55%, #557526 100%);
+      --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.17) 0%, rgba(132, 158, 102, 0.18) 55%, rgba(22, 40, 25, 0.46) 100%);
+      --glass-dark: linear-gradient(155deg, rgba(18, 34, 21, 0.72) 0%, rgba(10, 22, 13, 0.84) 100%);
+      --glass-border: rgba(255, 255, 255, 0.34);
+      --ok-color: #4ADE80;
+      --err-color: #FB7185;
+      --fern-bg-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201600%201000%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bgG%22%20cx%3D%2250%25%22%20cy%3D%2245%25%22%20r%3D%2272%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231D3822%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%230E2013%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23061009%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh1%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220.28%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh2%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220.22%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafL%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%234A7A3A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23284A24%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23142914%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafBright%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2376A84C%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2265%25%22%20stop-color%3D%22%233B642D%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231B3418%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3Cg%20id%3D%22frond%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-12%20420%2C-4%22%20stroke%3D%22%235A8A40%22%20stroke-width%3D%224%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafL%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%22-22%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2045%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2045%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%22-26%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%28-36%2095%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%2224%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%2836%2095%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%22-28%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-34%20150%20-28%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%2225%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2834%20150%2025%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%22-26%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%28-32%20205%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%2224%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%2832%20205%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%22-23%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%28-30%20258%20-23%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%2830%20258%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%22-19%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%28-28%20308%20-19%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%2216%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%2828%20308%2016%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%22-14%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-25%20352%20-14%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%2211%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%2825%20352%2011%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%22-8%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20390%20-8%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%226%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20390%206%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cg%20id%3D%22frondBright%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-10%20410%2C-2%22%20stroke%3D%22%2389BA5A%22%20stroke-width%3D%223.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafBright%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%22-22%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2050%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%2220%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2050%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%22-26%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-35%20105%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2835%20105%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%22-27%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-33%20165%20-27%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2833%20165%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%22-24%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-30%20222%20-24%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%2221%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2830%20222%2021%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%22-20%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%28-28%20275%20-20%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%2217%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%2828%20275%2017%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%22-15%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-24%20325%20-15%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%2212%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%2824%20325%2012%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%22-10%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20368%20-10%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%228%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20368%208%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cfilter%20id%3D%22softBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%227%22/%3E%3C/filter%3E%0A%20%20%20%20%3Cfilter%20id%3D%22midBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%222.5%22/%3E%3C/filter%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22url%28%23bgG%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22320%22%20cy%3D%22220%22%20r%3D%22240%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%221260%22%20cy%3D%22760%22%20r%3D%22300%22%20fill%3D%22url%28%23bokeh2%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22880%22%20cy%3D%22340%22%20r%3D%22260%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Cg%20filter%3D%22url%28%23softBlur%29%22%20opacity%3D%220.65%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-40%2C140%29%20rotate%2822%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281640%2C80%29%20rotate%28148%29%20scale%281.75%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281620%2C880%29%20rotate%28205%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-60%2C860%29%20rotate%28-28%29%20scale%281.7%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28560%2C-30%29%20rotate%2868%29%20scale%281.45%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28980%2C1040%29%20rotate%28-112%29%20scale%281.55%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20filter%3D%22url%28%23midBlur%29%22%20opacity%3D%220.82%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C360%29%20rotate%28-14%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281630%2C380%29%20rotate%28196%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28180%2C980%29%20rotate%28-52%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281320%2C960%29%20rotate%28-132%29%20scale%281.35%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20opacity%3D%220.92%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-20%2C-20%29%20rotate%2836%29%20scale%281.25%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C-10%29%20rotate%28142%29%20scale%281.22%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C1010%29%20rotate%28-38%29%20scale%281.28%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C1010%29%20rotate%28-146%29%20scale%281.25%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22rgba%286%2C16%2C9%2C0.28%29%22/%3E%0A%3C/svg%3E");
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', Verdana, 'Inter', sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-dark);
+      background-image: var(--fern-bg-img);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .lesson-layout { display: flex; min-height: 100vh; }
+
+    /* Fixed Left Banner: U - D - S - C - R */
+    .sidebar-udscr {
+      position: fixed; top: 16px; left: 16px; bottom: 16px; width: 118px; z-index: 40;
+      background: var(--glass-dark);
+      backdrop-filter: blur(22px) saturate(135%); -webkit-backdrop-filter: blur(22px) saturate(135%);
+      border: 1.25px solid rgba(255, 255, 255, 0.30); border-radius: 26px;
+      box-shadow: 0 22px 48px -16px rgba(3, 12, 6, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .sidebar-brand { text-align: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); width: 100%; }
+    .sidebar-brand-tag { display: inline-block; padding: 5px 10px; border-radius: 10px; background: var(--accent-lemon); color: #142618; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 10px; width: 100%; flex: 1; justify-content: center; }
+    .udscr-btn {
+      width: 100%; padding: 13px 6px; border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08); border: 1.25px solid rgba(255, 255, 255, 0.20);
+      color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 180ms ease; font-family: inherit;
+    }
+    .udscr-btn:hover { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; transform: translateY(-1px); }
+    .udscr-btn.is-active { background: var(--olive-grad); border-color: rgba(255, 255, 255, 0.65); color: #FFFFFF; box-shadow: 0 10px 22px -8px rgba(15, 36, 8, 0.72), 0 0 0 2px rgba(227, 222, 98, 0.35); }
+    .udscr-letter { font-size: 24px; font-weight: 800; line-height: 1; color: var(--accent-lemon); }
+    .udscr-btn.is-active .udscr-letter { color: #FFFFFF; }
+    .udscr-label { font-size: 11.5px; font-weight: 700; text-align: center; }
+    .sidebar-foot { width: 100%; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+    .mini-util-btn { width: 100%; padding: 8px 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.24); color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .mini-util-btn:hover { background: rgba(255, 255, 255, 0.24); }
+
+    .main-stage { flex: 1; margin-left: 150px; padding: 18px 26px 34px 12px; max-width: 1380px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
+    .glass-wrapper {
+      background: var(--glass-bg); backdrop-filter: blur(20px) saturate(135%); -webkit-backdrop-filter: blur(20px) saturate(135%);
+      border: 1.25px solid var(--glass-border); border-radius: 26px;
+      box-shadow: 0 22px 48px -16px rgba(3, 12, 6, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+    .glass-panel-dark {
+      background: var(--glass-dark); backdrop-filter: blur(18px) saturate(125%); -webkit-backdrop-filter: blur(18px) saturate(125%);
+      border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 22px;
+      box-shadow: 0 18px 40px -14px rgba(3, 12, 6, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    /* Persistent Centered Problem Banner (Plain textbook wording, large & prominent) */
+    .problem-banner { padding: 24px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+    .badge-task { padding: 7px 18px; border-radius: 999px; background: var(--accent-lemon); color: #142618; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+    .problem-text {
+      font-size: clamp(26px, 3.2vw, 38px);
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.35;
+    }
+
+    .math-line {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(22px, 2.5vw, 32px);
+      font-weight: 700;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      line-height: 1.4;
+    }
+    .math-var { font-style: italic; }
+    .hl-lemon { color: var(--accent-lemon); }
+    .hl-ok { color: var(--ok-color); }
+
+    .tab-panel { display: none; flex: 1; flex-direction: column; gap: 16px; animation: fadeUp 220ms ease forwards; }
+    .tab-panel.is-active { display: flex; }
+    .panel-topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+    .panel-title { font-size: clamp(20px, 2.2vw, 25px); font-weight: 800; color: var(--accent-lemon); }
+    .btn-primary { padding: 11px 22px; border-radius: 15px; background: var(--olive-grad); border: 1.25px solid rgba(255, 255, 255, 0.50); color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; transition: all 160ms ease; }
+    .btn-primary:hover { background: var(--olive-grad-hover); transform: translateY(-1px); }
+    .btn-secondary { padding: 10px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.36); color: #FFFFFF; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 160ms ease; }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.25); }
+    .btn-secondary.is-active { background: var(--accent-lemon); color: #142618; border-color: var(--accent-lemon); }
+
+    /* TAB U: Sequential Disappearing Questions -> Blank Canvas */
+    .u-question-stage { min-height: 430px; padding: 40px 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; user-select: none; position: relative; }
+    .u-q-counter { position: absolute; top: 22px; left: 26px; padding: 7px 16px; border-radius: 999px; background: rgba(10, 22, 13, 0.58); border: 1px solid rgba(227, 222, 98, 0.55); font-size: 14px; font-weight: 800; color: var(--accent-lemon); }
+    .u-q-card { max-width: 880px; width: 100%; padding: 46px 38px; border-radius: 28px; background: rgba(10, 22, 13, 0.58); border: 1.5px solid rgba(255, 255, 255, 0.38); animation: qPopIn 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .u-q-card.is-leaving { animation: qFadeOut 220ms ease forwards; }
+    .u-q-text { font-size: clamp(28px, 3.5vw, 42px); font-weight: 800; color: #FFFFFF; line-height: 1.38; }
+    .u-dots { display: flex; gap: 10px; margin-top: 28px; }
+    .u-dot { width: 11px; height: 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.25); transition: all 200ms ease; }
+    .u-dot.is-active { width: 32px; background: var(--accent-lemon); }
+
+    /* Blank Freehand Board (Used in Tab U & Tab S Redo) */
+    .board-wrapper { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; animation: fadeUp 260ms ease forwards; }
+    .board-wrapper.is-hidden { display: none; }
+    .board-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .board-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .color-swatch { width: 28px; height: 28px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.45); cursor: pointer; }
+    .color-swatch.is-active { border-color: #FFFFFF; box-shadow: 0 0 0 3px rgba(227, 222, 98, 0.45); transform: scale(1.12); }
+    .canvas-stage { width: 100%; height: 500px; border-radius: 20px; overflow: hidden; background: rgba(8, 18, 11, 0.78); border: 1.5px solid rgba(255, 255, 255, 0.28); background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1px); background-size: 24px 24px; touch-action: none; }
+    .freehand-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+    /* TAB D (Strictly Method Titles ONLY - No Calculations/Answers) */
+    .reveal-stage { padding: 28px 30px; min-height: 410px; display: flex; flex-direction: column; justify-content: center; gap: 18px; cursor: pointer; user-select: none; }
+    .method-step { display: none; padding: 24px 28px; border-radius: 22px; background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.28); align-items: center; gap: 20px; animation: slideIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .method-step.is-shown { display: flex; }
+    .step-circle { width: 58px; height: 58px; border-radius: 16px; background: var(--accent-lemon); color: #142618; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-heading { font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; color: #FFFFFF; line-height: 1.35; }
+    .step-sub { font-size: clamp(17px, 1.8vw, 21px); color: var(--text-muted); line-height: 1.5; }
+    .d-next-wrap { display: none; justify-content: flex-end; padding-top: 6px; }
+    .d-next-wrap.is-shown { display: flex; animation: fadeUp 240ms ease forwards; }
+
+    /* TAB S: Interactive Inline-Input Steps (Click-to-reveal sequentially + Auto-check) */
+    .solve-stage { padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 16px; cursor: pointer; }
+    .solve-step-card {
+      display: none; width: 100%; max-width: 1020px; padding: 22px 26px; border-radius: 22px;
+      background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.26);
+      flex-direction: column; align-items: center; gap: 14px; text-align: center;
+      animation: fadeUp 260ms ease forwards;
+    }
+    .s-seq-item { display: none; }
+    .s-seq-item.is-shown { display: inline-flex; animation: fadeUp 240ms ease forwards; }
+    .s-seq-item.step-conclude-pill.is-shown { display: inline-block; }
+    .solve-step-card.is-shown { display: flex; }
+    .solve-step-card.is-complete { border-color: rgba(74, 222, 128, 0.65); }
+    .solve-step-tag { font-size: 14px; font-weight: 800; color: var(--accent-lemon); text-transform: uppercase; letter-spacing: 0.04em; }
+    .solve-subline { font-size: clamp(19px, 2.1vw, 25px); color: var(--text-muted); font-weight: 600; display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+    .inline-input {
+      width: 82px; padding: 7px 10px; border-radius: 14px; text-align: center;
+      background: rgba(255, 255, 255, 0.14); border: 1.8px solid rgba(255, 255, 255, 0.62);
+      color: #FFFFFF; font-family: 'Be Vietnam Pro', Verdana, sans-serif; font-size: clamp(20px, 2.2vw, 26px); font-weight: 800;
+      outline: none; transition: all 160ms ease;
+    }
+    .inline-input:focus { border-color: var(--accent-lemon); background: rgba(255, 255, 255, 0.22); box-shadow: 0 0 0 3px rgba(227, 222, 98, 0.25); }
+    .inline-input.is-ok { border-color: var(--ok-color); background: rgba(34, 197, 94, 0.22); color: #DCFCE7; }
+    .inline-input.is-err { border-color: var(--err-color); background: rgba(225, 29, 72, 0.24); color: #FFE4E6; animation: shake 260ms ease; }
+    .step-fb { min-height: 22px; font-size: 15px; font-weight: 700; }
+    .step-fb.is-ok { color: var(--ok-color); }
+    .step-fb.is-err { color: var(--err-color); }
+
+    /* Value Table in Step 3 (Full 6 divisors of 12: 1, 2, 3, 4, 6, 12) */
+    .val-table-wrap { width: 100%; overflow-x: auto; display: flex; justify-content: center; }
+    .val-table {
+      width: 100%; max-width: 920px; border-collapse: collapse; margin-top: 4px;
+      background: rgba(8, 18, 11, 0.58); border-radius: 16px; overflow: hidden;
+      border: 1.25px solid rgba(255, 255, 255, 0.26);
+    }
+    .val-table th, .val-table td {
+      padding: 11px 10px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: clamp(18px, 2vw, 24px); font-weight: 700;
+    }
+    .val-table th { background: rgba(227, 222, 98, 0.16); color: var(--accent-lemon); font-family: Georgia, serif; }
+    .val-table td.row-hdr { background: rgba(255, 255, 255, 0.08); color: var(--accent-lemon); font-family: Georgia, serif; min-width: 118px; font-size: clamp(15px, 1.6vw, 19px); }
+    .val-table .inline-input { width: 76px; padding: 6px 6px; font-size: clamp(18px, 2vw, 22px); }
+
+    .cond-cell { font-size: 14px !important; font-weight: 800 !important; color: rgba(213, 226, 207, 0.45); transition: all 200ms ease; }
+    .cond-cell.is-accept { color: var(--ok-color); background: rgba(34, 197, 94, 0.14); }
+    .cond-cell.is-reject { color: var(--err-color); background: rgba(225, 29, 72, 0.16); }
+
+    .step-conclude-pill {
+      display: none;
+      margin-top: 4px;
+      padding: 10px 20px;
+      border-radius: 14px;
+      background: rgba(227, 222, 98, 0.16);
+      border: 1.25px solid rgba(227, 222, 98, 0.58);
+      color: var(--accent-lemon);
+      font-size: clamp(18px, 2vw, 23px);
+      font-weight: 800;
+      animation: fadeUp 240ms ease forwards;
+    }
+    .step-conclude-pill.is-shown { display: inline-block; }
+
+    .key-btn.key-op { background: rgba(227, 222, 98, 0.20); color: var(--accent-lemon); border-color: rgba(227, 222, 98, 0.50); }
+
+    .final-banner {
+      display: none; width: 100%; max-width: 1020px; padding: 20px 26px; border-radius: 22px;
+      border: 2px solid var(--accent-lemon); background: rgba(227, 222, 98, 0.16);
+      text-align: center; animation: fadeUp 260ms ease forwards;
+    }
+    .final-banner.is-shown { display: block; }
+
+    /* Compact Toggleable Math Keypad for Tab S */
+    .keypad-bar { display: none; width: 100%; max-width: 520px; grid-template-columns: repeat(6, 1fr); gap: 7px; padding: 12px; border-radius: 18px; background: rgba(10, 22, 13, 0.72); border: 1px solid rgba(255, 255, 255, 0.24); }
+    .keypad-bar.is-open { display: grid; }
+    .key-btn { padding: 10px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.28); color: #FFFFFF; font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .key-btn:hover { background: rgba(255, 255, 255, 0.26); }
+    .key-btn.key-del { background: rgba(244, 63, 94, 0.24); color: #FFE4E6; border-color: rgba(251, 113, 133, 0.50); font-size: 13px; }
+
+    /* TAB C: Check Table & Interactive Tester */
+    .check-table {
+      width: 100%; max-width: 960px; margin: 0 auto; border-collapse: collapse;
+      background: rgba(10, 22, 13, 0.62); border-radius: 20px; overflow: hidden;
+      border: 1.25px solid rgba(255, 255, 255, 0.26);
+    }
+    .check-table th, .check-table td {
+      padding: 15px 16px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: clamp(18px, 2vw, 23px); font-weight: 700;
+    }
+    .check-table th { background: rgba(227, 222, 98, 0.18); color: var(--accent-lemon); font-size: clamp(15px, 1.6vw, 18px); text-transform: uppercase; }
+    .check-row { display: none; animation: fadeUp 220ms ease forwards; }
+    .check-row.is-shown { display: table-row; }
+
+    .check-tester { padding: 20px 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .tester-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .tester-input {
+      width: 190px; padding: 10px 14px; border-radius: 14px; text-align: center;
+      background: rgba(255, 255, 255, 0.14); border: 1.5px solid rgba(255, 255, 255, 0.55);
+      color: #FFFFFF; font-size: 20px; font-weight: 800; outline: none; font-family: inherit;
+    }
+    .tester-input:focus { border-color: var(--accent-lemon); background: rgba(255, 255, 255, 0.22); }
+    .check-result-bar { display: none; padding: 12px 18px; border-radius: 14px; font-size: 17px; font-weight: 700; max-width: 820px; width: 100%; }
+    .check-result-bar.is-ok { display: block; background: rgba(34, 197, 94, 0.22); border: 1.25px solid rgba(74, 222, 128, 0.72); color: #DCFCE7; }
+    .check-result-bar.is-err { display: block; background: rgba(225, 29, 72, 0.24); border: 1.25px solid rgba(251, 113, 133, 0.72); color: #FFE4E6; }
+
+    /* TAB R: CCQ Grid */
+    .ccq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .ccq-card { padding: 22px 24px; border-radius: 22px; background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.28); cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all 180ms ease; }
+    .ccq-card:hover { border-color: var(--accent-lemon); transform: translateY(-2px); }
+    .ccq-q { font-size: clamp(18px, 1.9vw, 22px); font-weight: 800; line-height: 1.4; }
+    .ccq-ans { display: none; padding: 12px 16px; border-radius: 14px; background: rgba(227, 222, 98, 0.16); border: 1.25px solid rgba(227, 222, 98, 0.58); color: var(--accent-lemon); font-size: clamp(17px, 1.8vw, 21px); font-weight: 800; line-height: 1.4; }
+    .ccq-card.is-open .ccq-ans { display: block; animation: fadeUp 200ms ease forwards; }
+
+    @media (max-width: 820px) {
+      .lesson-layout { flex-direction: column; }
+      .sidebar-udscr { position: sticky; top: 8px; left: 0; bottom: auto; width: calc(100% - 20px); margin: 10px auto 0; flex-direction: row; padding: 10px 12px; }
+      .sidebar-brand, .sidebar-foot { display: none; }
+      .sidebar-nav { flex-direction: row; gap: 6px; }
+      .main-stage { margin-left: 0; padding: 12px 12px 28px; }
+      .ccq-grid { grid-template-columns: 1fr; }
+      .canvas-stage { height: 380px; }
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes qPopIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes qFadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: translateY(-10px) scale(0.97); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  </style>
+</head>
+<body>
+  <div class="lesson-layout">
+    <!-- FIXED LEFT BANNER: U - D - S - C - R -->
+    <aside class="sidebar-udscr" aria-label="Điều hướng UDSCR">
+      <div class="sidebar-brand"><span class="sidebar-brand-tag">UDSCR</span></div>
+      <nav class="sidebar-nav">
+        <button type="button" class="udscr-btn is-active" data-tab="U" onclick="LessonApp.switchTab('U')"><span class="udscr-letter">U</span><span class="udscr-label">Tìm hiểu</span></button>
+        <button type="button" class="udscr-btn" data-tab="D" onclick="LessonApp.switchTab('D')"><span class="udscr-letter">D</span><span class="udscr-label">Quyết định</span></button>
+        <button type="button" class="udscr-btn" data-tab="S" onclick="LessonApp.switchTab('S')"><span class="udscr-letter">S</span><span class="udscr-label">Giải bài</span></button>
+        <button type="button" class="udscr-btn" data-tab="C" onclick="LessonApp.switchTab('C')"><span class="udscr-letter">C</span><span class="udscr-label">Kiểm tra</span></button>
+        <button type="button" class="udscr-btn" data-tab="R" onclick="LessonApp.switchTab('R')"><span class="udscr-letter">R</span><span class="udscr-label">Ôn tập</span></button>
+      </nav>
+      <div class="sidebar-foot">
+        <button type="button" class="mini-util-btn" id="sound-btn" onclick="LessonApp.toggleSound()">🔊 Âm</button>
+        <button type="button" class="mini-util-btn" onclick="LessonApp.toggleFullscreen()">⛶ Full</button>
+      </div>
+    </aside>
+
+    <!-- MAIN STAGE -->
+    <main class="main-stage">
+      <!-- PERSISTENT CENTERED PROBLEM STATEMENT (PLAIN TEXTBOOK FORMAT) -->
+      <header class="glass-wrapper problem-banner">
+        <span class="badge-task">Đề bài</span>
+        <h1 class="problem-text">Tìm số tự nhiên <span class="math-var">x</span> sao cho <span class="math-var">x</span> + 15 là bội của <span class="math-var">x</span> + 3.</h1>
+      </header>
+
+      <!-- =========================================================== -->
+      <!-- U – TÌM HIỂU ĐỀ BÀI (4 CÂU HỎI BÁM SÁT ĐỀ -> BẢNG NHÁP TRỐNG) -->
+      <!-- =========================================================== -->
+      <section class="tab-panel is-active" id="panel-U">
+        <div class="panel-topbar">
+          <h2 class="panel-title">U • Tìm hiểu đề bài</h2>
+          <button type="button" class="btn-secondary" onclick="TabU.replay()">↺ Chạy lại câu hỏi</button>
+        </div>
+
+        <div class="glass-wrapper u-question-stage" id="u-question-stage" onclick="TabU.advance()">
+          <span class="u-q-counter" id="u-q-counter">Câu hỏi 1 / 4</span>
+          <div class="u-q-card" id="u-q-card"><div class="u-q-text" id="u-q-text"></div></div>
+          <div class="u-dots" id="u-dots"></div>
+        </div>
+
+        <!-- Completely Blank Freehand Board (NO inputs, NO keypad) -->
+        <div class="glass-wrapper board-wrapper is-hidden" id="u-try-wrapper">
+          <div class="board-toolbar">
+            <div class="board-controls">
+              <button type="button" class="color-swatch is-active" style="background:#E3DE62;" data-board="u" data-color="#E3DE62" title="Vàng chanh"></button>
+              <button type="button" class="color-swatch" style="background:#FFFFFF;" data-board="u" data-color="#FFFFFF" title="Trắng"></button>
+              <button type="button" class="color-swatch" style="background:#7DD3FC;" data-board="u" data-color="#7DD3FC" title="Xanh dương"></button>
+              <button type="button" class="btn-secondary is-active" id="u-pen-btn" onclick="BoardU.setMode('pen')">Bút viết</button>
+              <button type="button" class="btn-secondary" id="u-eraser-btn" onclick="BoardU.setMode('eraser')">Tẩy</button>
+              <button type="button" class="btn-secondary" onclick="BoardU.clear()">Xóa bảng</button>
+            </div>
+            <button type="button" class="btn-primary" onclick="LessonApp.switchTab('D')">Sang bước D →</button>
+          </div>
+          <div class="canvas-stage"><canvas id="u-scratch-canvas" class="freehand-canvas"></canvas></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- D – QUYẾT ĐỊNH PHƯƠNG PHÁP (CHỈ TIÊU ĐỀ TƯ DUY, KHÔNG PHÉP TÍNH) -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-D">
+        <div class="panel-topbar">
+          <h2 class="panel-title">D • Quyết định phương pháp</h2>
+          <button type="button" class="btn-secondary" onclick="TabD.reset()">↺ Làm mới</button>
+        </div>
+
+        <div class="glass-wrapper reveal-stage" id="d-stage" onclick="TabD.nextStep()">
+          <div id="d-steps-container" style="display:flex; flex-direction:column; gap:18px;"></div>
+          <div class="d-next-wrap" id="d-next-wrap" onclick="event.stopPropagation()">
+            <button type="button" class="btn-primary" onclick="LessonApp.switchTab('S')">Sang bước S →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- S – GIẢI BÀI (Ô NHẬP TỰ KIỂM TRA) & CHO HỌC SINH LÀM LẠI    -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-S">
+        <div class="panel-topbar">
+          <h2 class="panel-title">S • Giải bài</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" id="s-reset-btn" onclick="TabS.resetSequence()">↺ Làm mới</button>
+            <button type="button" class="btn-secondary" id="s-keypad-toggle" onclick="TabS.toggleKeypad()">⌨ Bàn phím số</button>
+            <button type="button" class="btn-secondary" id="s-redo-btn" onclick="TabS.openRedo()">✏️ Cho học sinh làm lại</button>
+            <button type="button" class="btn-primary" id="s-back-btn" style="display:none;" onclick="TabS.backToSolve()">← Quay lại phần giải bài</button>
+          </div>
+        </div>
+
+        <!-- Mode 1: Step-by-Step Interactive Solution (Auto-check inline inputs) -->
+        <div class="glass-wrapper solve-stage" id="s-solve-stage" onclick="TabS.handleStageClick(event)">
+          <!-- Step 1 -->
+          <div class="solve-step-card is-shown" data-s-step="0" data-s-seq="0">
+            <span class="solve-step-tag">Bước 1 • Chuyển về quan hệ chia hết và tách biểu thức</span>
+            <div class="solve-subline">Vì <span class="math-var">x</span> + 15 là bội của <span class="math-var">x</span> + 3 nên (<span class="math-var">x</span> + 15) ⋮ (<span class="math-var">x</span> + 3).</div>
+            <div class="math-line s-seq-item" data-s-seq="1">
+              <span>Ta có:</span>
+              <span><span class="math-var">x</span> + 15 = (<span class="math-var">x</span> + 3) +</span>
+              <input class="inline-input" data-step="0" data-ans="12" inputmode="numeric" placeholder="?" />
+            </div>
+            <div class="solve-subline s-seq-item" data-s-seq="2">
+              <span>Vì (<span class="math-var">x</span> + 3) ⋮ (<span class="math-var">x</span> + 3) nên</span>
+              <input class="inline-input" data-step="0" data-ans="12" inputmode="numeric" placeholder="?" />
+              <span>⋮ (<span class="math-var">x</span> + 3).</span>
+            </div>
+            <div class="step-conclude-pill s-seq-item" id="s-conclude-0" data-s-seq="3">
+              ⇒ Vậy <span class="math-var">x</span> + 3 là ước của 12 (hay <span class="math-var">x</span> + 3 ∈ Ư(12)).
+            </div>
+            <div class="step-fb" id="s-fb-0"></div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="solve-step-card" data-s-step="1" data-s-seq="4">
+            <span class="solve-step-tag">Bước 2 • Tìm các ước của 12</span>
+            <div class="solve-subline">Vì <span class="math-var">x</span> + 3 là ước của 12 nên các ước của 12 là:</div>
+            <div class="math-line">
+              <span>Ư(12) = &#123;</span>
+              <input class="inline-input" data-step="1" data-ans="1" inputmode="numeric" placeholder="?" />
+              <span>;</span>
+              <input class="inline-input" data-step="1" data-ans="2" inputmode="numeric" placeholder="?" />
+              <span>;</span>
+              <input class="inline-input" data-step="1" data-ans="3" inputmode="numeric" placeholder="?" />
+              <span>;</span>
+              <input class="inline-input" data-step="1" data-ans="4" inputmode="numeric" placeholder="?" />
+              <span>;</span>
+              <input class="inline-input" data-step="1" data-ans="6" inputmode="numeric" placeholder="?" />
+              <span>;</span>
+              <input class="inline-input" data-step="1" data-ans="12" inputmode="numeric" placeholder="?" />
+              <span>&#125;</span>
+            </div>
+            <div class="step-conclude-pill s-seq-item" id="s-conclude-1" data-s-seq="5">
+              ⇒ Cho nên ta lập bảng giá trị với <span class="math-var">x</span> + 3 lần lượt bằng 1 ; 2 ; 3 ; 4 ; 6 ; 12.
+            </div>
+            <div class="step-fb" id="s-fb-1"></div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="solve-step-card" data-s-step="2" data-s-seq="6">
+            <span class="solve-step-tag">Bước 3 • Lập bảng giá trị và chọn số tự nhiên x</span>
+            <div class="val-table-wrap">
+              <table class="val-table">
+                <tr>
+                  <td class="row-hdr"><span class="math-var">x</span> + 3</td>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>3</th>
+                  <th>4</th>
+                  <th>6</th>
+                  <th>12</th>
+                </tr>
+                <tr>
+                  <td class="row-hdr"><span class="math-var">x</span></td>
+                  <td><input class="inline-input" data-step="2" data-ans="-2" data-allow-reject="1" data-cond="cond-0" placeholder="?" /></td>
+                  <td><input class="inline-input" data-step="2" data-ans="-1" data-allow-reject="1" data-cond="cond-1" placeholder="?" /></td>
+                  <td><input class="inline-input" data-step="2" data-ans="0" data-cond="cond-2" inputmode="numeric" placeholder="?" /></td>
+                  <td><input class="inline-input" data-step="2" data-ans="1" data-cond="cond-3" inputmode="numeric" placeholder="?" /></td>
+                  <td><input class="inline-input" data-step="2" data-ans="3" data-cond="cond-4" inputmode="numeric" placeholder="?" /></td>
+                  <td><input class="inline-input" data-step="2" data-ans="9" data-cond="cond-5" inputmode="numeric" placeholder="?" /></td>
+                </tr>
+                <tr>
+                  <td class="row-hdr">Kết luận (x ∈ ℕ)</td>
+                  <td class="cond-cell" id="cond-0">—</td>
+                  <td class="cond-cell" id="cond-1">—</td>
+                  <td class="cond-cell" id="cond-2">—</td>
+                  <td class="cond-cell" id="cond-3">—</td>
+                  <td class="cond-cell" id="cond-4">—</td>
+                  <td class="cond-cell" id="cond-5">—</td>
+                </tr>
+              </table>
+            </div>
+            <div class="step-fb" id="s-fb-2"></div>
+          </div>
+
+          <!-- Final Conclusion Banner (click to reveal sequentially) -->
+          <div class="final-banner" id="s-final-banner" data-s-seq="7">
+            <div class="math-line hl-lemon">Vậy <span class="math-var">x</span> ∈ &#123; 0 ; 1 ; 3 ; 9 &#125;.</div>
+          </div>
+
+          <!-- Compact Toggleable Keypad -->
+          <div class="keypad-bar" id="s-keypad" onclick="event.stopPropagation()">
+            <button type="button" class="key-btn" data-key="1">1</button>
+            <button type="button" class="key-btn" data-key="2">2</button>
+            <button type="button" class="key-btn" data-key="3">3</button>
+            <button type="button" class="key-btn" data-key="4">4</button>
+            <button type="button" class="key-btn" data-key="5">5</button>
+            <button type="button" class="key-btn key-del" data-action="backspace">⌫</button>
+            <button type="button" class="key-btn" data-key="6">6</button>
+            <button type="button" class="key-btn" data-key="7">7</button>
+            <button type="button" class="key-btn" data-key="8">8</button>
+            <button type="button" class="key-btn" data-key="9">9</button>
+            <button type="button" class="key-btn" data-key="0">0</button>
+            <button type="button" class="key-btn key-op" data-key="-">−</button>
+          </div>
+        </div>
+
+        <!-- Mode 2: Completely Blank Freehand Canvas (No inputs, no subtitle, preserves Tab S state) -->
+        <div class="glass-wrapper board-wrapper is-hidden" id="s-redo-stage">
+          <div class="board-toolbar">
+            <div class="board-controls">
+              <button type="button" class="color-swatch is-active" style="background:#E3DE62;" data-board="s" data-color="#E3DE62" title="Vàng chanh"></button>
+              <button type="button" class="color-swatch" style="background:#FFFFFF;" data-board="s" data-color="#FFFFFF" title="Trắng"></button>
+              <button type="button" class="color-swatch" style="background:#7DD3FC;" data-board="s" data-color="#7DD3FC" title="Xanh dương"></button>
+              <button type="button" class="btn-secondary is-active" id="s-pen-btn" onclick="BoardS.setMode('pen')">Bút viết</button>
+              <button type="button" class="btn-secondary" id="s-eraser-btn" onclick="BoardS.setMode('eraser')">Tẩy</button>
+              <button type="button" class="btn-secondary" onclick="BoardS.clear()">Xóa bảng</button>
+            </div>
+          </div>
+          <div class="canvas-stage"><canvas id="s-scratch-canvas" class="freehand-canvas"></canvas></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- C – KIỂM TRA LẠI (CHECK)                                    -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-C">
+        <div class="panel-topbar">
+          <h2 class="panel-title">C • Kiểm tra lại kết quả</h2>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-secondary" onclick="TabC.reset()">↺ Làm mới</button>
+            <button type="button" class="btn-secondary" onclick="TabC.revealAll()">Hiện tất cả</button>
+          </div>
+        </div>
+
+        <div class="glass-wrapper reveal-stage" id="c-stage" style="min-height:300px;" onclick="TabC.nextStep()">
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th>Giá trị x</th>
+                <th>x + 15</th>
+                <th>x + 3</th>
+                <th>Phép chia (x + 15) : (x + 3)</th>
+                <th>Kết luận</th>
+              </tr>
+            </thead>
+            <tbody id="c-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="glass-panel-dark check-tester">
+          <div style="font-size:18px; font-weight:800; color:#E3DE62;">🔍 Thử một số tự nhiên <span class="math-var">x</span> bất kỳ</div>
+          <div class="tester-row">
+            <span style="font-family:Georgia,serif; font-size:26px; font-weight:700; color:#E3DE62;"><span class="math-var">x</span> =</span>
+            <input id="c-test-input" class="tester-input" type="text" inputmode="numeric" placeholder="VD: 0, 2, 9..." />
+            <button type="button" class="btn-primary" onclick="TabC.testValue()">Thử kiểm tra</button>
+          </div>
+          <div class="check-result-bar" id="c-test-result"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- R – ÔN TẬP PHƯƠNG PHÁP & CÁC BƯỚC                           -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-R">
+        <div class="panel-topbar">
+          <h2 class="panel-title">R • Ôn tập phương pháp &amp; các bước</h2>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-secondary" onclick="TabR.reset()">↺ Làm mới</button>
+            <button type="button" class="btn-secondary" onclick="TabR.revealAll()">Hiện tất cả</button>
+          </div>
+        </div>
+
+        <div class="glass-wrapper reveal-stage" id="r-stage" style="min-height:280px;" onclick="TabR.nextStep()">
+          <div class="method-step" data-r-step="1">
+            <div class="step-circle">01</div>
+            <div>
+              <div class="step-heading">Chuyển "là bội của" thành phép chia hết &amp; Tách hằng số</div>
+              <div class="step-sub">Tách <span class="hl-lemon">x + 15 = (x + 3) + 12</span> để đưa về <span class="hl-lemon">12 ⋮ (x + 3)</span>.</div>
+            </div>
+          </div>
+          <div class="method-step" data-r-step="2">
+            <div class="step-circle">02</div>
+            <div>
+              <div class="step-heading">Tìm tập ước &amp; Lọc theo điều kiện số tự nhiên</div>
+              <div class="step-sub">Liệt kê đủ <span class="hl-lemon">Ư(12)</span> rồi dùng điều kiện <span class="hl-lemon">x ≥ 0 ⇒ x + 3 ≥ 3</span> để loại giá trị không thỏa mãn.</div>
+            </div>
+          </div>
+          <div class="method-step" data-r-step="3">
+            <div class="step-circle">03</div>
+            <div>
+              <div class="step-heading">Tính x &amp; Kiểm tra lại</div>
+              <div class="step-sub">Tính từng giá trị <span class="hl-lemon">x = (x + 3) − 3</span> và thay ngược vào đề để xác nhận chia hết.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ccq-grid">
+          <div class="ccq-card" onclick="this.classList.toggle('is-open')">
+            <div style="font-size:13px; font-weight:800; color:#E3DE62; text-transform:uppercase;">Câu hỏi nhanh 1</div>
+            <div class="ccq-q">Tại sao ta loại các giá trị <i>x</i> + 3 = 1 và <i>x</i> + 3 = 2?</div>
+            <div class="ccq-ans">Vì nếu <i>x</i> + 3 = 1 hoặc 2 thì <i>x</i> sẽ là số âm (−2 hoặc −1), không phải số tự nhiên.</div>
+          </div>
+          <div class="ccq-card" onclick="this.classList.toggle('is-open')">
+            <div style="font-size:13px; font-weight:800; color:#E3DE62; text-transform:uppercase;">Câu hỏi nhanh 2</div>
+            <div class="ccq-q">Nếu đổi đề thành "<i>x</i> + 15 là bội của <i>x</i> + 5", ta sẽ tách <i>x</i> + 15 như thế nào?</div>
+            <div class="ccq-ans">Tách <i>x</i> + 15 = (<i>x</i> + 5) + 10 ⇒ 10 ⋮ (<i>x</i> + 5).</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* =====================================================================
+     * WEB AUDIO FEEDBACK
+     * ===================================================================== */
+    const SoundFX = (() => {
+      let enabled = true, ctx = null;
+      function getCtx() {
+        if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ctx = new AC(); }
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+        return ctx;
+      }
+      function tone(freq, off, dur, type = 'triangle', peak = 0.14) {
+        const c = getCtx(); if (!c || !enabled) return;
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, c.currentTime + off);
+        g.gain.setValueAtTime(0.001, c.currentTime + off);
+        g.gain.exponentialRampToValueAtTime(peak, c.currentTime + off + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + off + dur);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(c.currentTime + off); osc.stop(c.currentTime + off + dur + 0.02);
+      }
+      return {
+        toggle: () => { enabled = !enabled; return enabled; },
+        click: () => tone(620, 0, 0.05, 'sine', 0.07),
+        ok: () => { tone(523.25, 0, 0.12); tone(659.25, 0.09, 0.14); tone(783.99, 0.18, 0.20); },
+        err: () => { tone(240, 0, 0.12, 'sawtooth', 0.08); tone(195, 0.11, 0.15, 'sawtooth', 0.08); }
+      };
+    })();
+
+    /* =====================================================================
+     * REUSABLE BLANK FREEHAND CANVAS FACTORY (TAB U & TAB S REDO)
+     * ===================================================================== */
+    function createFreehandBoard(canvasId, penBtnId, eraserBtnId, boardKey) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      let drawing = false, mode = 'pen', color = '#E3DE62';
+
+      function resize() {
+        const wrap = canvas.parentElement; if (!wrap) return;
+        const r = wrap.getBoundingClientRect(); if (r.width < 20 || r.height < 20) return;
+        const prev = canvas.width > 0 && canvas.height > 0 ? canvas.toDataURL() : null;
+        canvas.width = Math.floor(r.width); canvas.height = Math.floor(r.height);
+        if (prev) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = prev; }
+      }
+      function pos(e) {
+        const r = canvas.getBoundingClientRect(), pt = e.touches ? e.touches[0] : e;
+        return { x: (pt.clientX - r.left) * (canvas.width / r.width), y: (pt.clientY - r.top) * (canvas.height / r.height) };
+      }
+      canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!drawing) return; e.preventDefault(); const p = pos(e);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        if (mode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 26; }
+        else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = color; ctx.lineWidth = 3.2; }
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+      });
+      window.addEventListener('pointerup', () => { if (drawing) { drawing = false; ctx.closePath(); } });
+      window.addEventListener('resize', resize);
+
+      document.querySelectorAll(`.color-swatch[data-board="${boardKey}"]`).forEach((sw) => {
+        sw.addEventListener('click', () => {
+          color = sw.dataset.color; mode = 'pen';
+          document.querySelectorAll(`.color-swatch[data-board="${boardKey}"]`).forEach((x) => x.classList.toggle('is-active', x === sw));
+          document.getElementById(penBtnId).classList.add('is-active');
+          document.getElementById(eraserBtnId).classList.remove('is-active');
+        });
+      });
+      return {
+        resize,
+        setMode: (m) => { mode = m; document.getElementById(penBtnId).classList.toggle('is-active', m === 'pen'); document.getElementById(eraserBtnId).classList.toggle('is-active', m === 'eraser'); },
+        clear: () => { ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+      };
+    }
+
+    const BoardU = createFreehandBoard('u-scratch-canvas', 'u-pen-btn', 'u-eraser-btn', 'u');
+    const BoardS = createFreehandBoard('s-scratch-canvas', 's-pen-btn', 's-eraser-btn', 's');
+
+    /* =====================================================================
+     * TAB U: 4 TAILORED INQUIRY QUESTIONS -> BLANK FREEHAND BOARD
+     * ===================================================================== */
+    const TabU = (() => {
+      const QUESTIONS_U = [
+        'Đề bài yêu cầu tìm loại số nào? Điều kiện của <i>x</i> là gì?',
+        '“<i>x</i> + 15 là bội của <i>x</i> + 3” có nghĩa là gì về mặt phép chia?',
+        'Ta có thể tách <i>x</i> + 15 như thế nào để xuất hiện cụm <i>x</i> + 3?',
+        'Vì <i>x</i> là số tự nhiên (<i>x</i> ≥ 0), giá trị nhỏ nhất của <i>x</i> + 3 là bao nhiêu?'
+      ];
+
+      let step = 0, busy = false;
+      const qStage = document.getElementById('u-question-stage');
+      const qCard = document.getElementById('u-q-card');
+      const qText = document.getElementById('u-q-text');
+      const qCounter = document.getElementById('u-q-counter');
+      const tryWrap = document.getElementById('u-try-wrapper');
+      const dotsWrap = document.getElementById('u-dots');
+      dotsWrap.innerHTML = QUESTIONS_U.map((_, i) => `<span class="u-dot ${i === 0 ? 'is-active' : ''}"></span>`).join('');
+      const dots = dotsWrap.querySelectorAll('.u-dot');
+
+      function render() {
+        if (step < QUESTIONS_U.length) {
+          qStage.style.display = 'flex';
+          tryWrap.classList.add('is-hidden');
+          qCounter.textContent = `Câu hỏi ${step + 1} / ${QUESTIONS_U.length}`;
+          qText.innerHTML = QUESTIONS_U[step];
+          qCard.classList.remove('is-leaving');
+          void qCard.offsetWidth;
+          dots.forEach((d, i) => d.classList.toggle('is-active', i === step));
+        } else {
+          qStage.style.display = 'none';
+          tryWrap.classList.remove('is-hidden');
+          setTimeout(() => BoardU.resize(), 60);
+        }
+      }
+      function advance() {
+        if (busy || step >= QUESTIONS_U.length) return;
+        busy = true; SoundFX.click(); qCard.classList.add('is-leaving');
+        setTimeout(() => { step += 1; busy = false; render(); }, 210);
+      }
+      function replay() { step = 0; busy = false; render(); }
+      render();
+      return { advance, replay };
+    })();
+
+    /* =====================================================================
+     * TAB D: STRICTLY THINKING-ACTION TITLES ONLY (NO CALCULATIONS)
+     * ===================================================================== */
+    const TabD = (() => {
+      const DECIDE_STEPS = [
+        { code: 'B1', title: 'Chuyển quan hệ bội thành phép chia hết và tách biểu thức' },
+        { code: 'B2', title: 'Tìm tập hợp các ước phù hợp với điều kiện số tự nhiên' },
+        { code: 'B3', title: 'Lập bảng tính từng giá trị của x và kết luận' }
+      ];
+
+      const wrap = document.getElementById('d-steps-container');
+      wrap.innerHTML = DECIDE_STEPS.map((st, i) => `
+        <div class="method-step" data-d-step="${i}">
+          <div class="step-circle">${st.code}</div>
+          <div class="step-heading">${st.title}</div>
+        </div>
+      `).join('');
+
+      let shown = 0;
+      const els = wrap.querySelectorAll('[data-d-step]');
+      const nextWrap = document.getElementById('d-next-wrap');
+      function update() {
+        els.forEach((el, i) => el.classList.toggle('is-shown', i < shown));
+        nextWrap.classList.toggle('is-shown', shown >= els.length);
+      }
+      function nextStep() { if (shown < els.length) { shown += 1; SoundFX.click(); update(); } }
+      function reset() { shown = 0; update(); }
+      return { nextStep, reset };
+    })();
+
+    /* =====================================================================
+     * TAB S: INLINE AUTO-CHECK STEPS + BLANK REDO BOARD (PRESERVES STATE)
+     * ===================================================================== */
+    const TabS = (() => {
+      const HINTS = [
+        'Gợi ý tư duy: Tìm phần còn dư khi tách 15 thành tổng của 3 và một số tự nhiên.',
+        'Gợi ý tư duy: Liệt kê đầy đủ 6 ước của 12 theo thứ tự tăng dần.',
+        'Gợi ý tư duy: Lấy giá trị ở hàng (x + 3) trừ đi 3 để tìm x (với 1 và 2 có thể nhập −2, −1 hoặc "loại").'
+      ];
+
+      let seqShown = 1; // 1 = only Bước 1 intro line; each click reveals 1 next item
+      let activeInput = null;
+      const stepCards = document.querySelectorAll('[data-s-step]');
+      const seqItems = Array.from(document.querySelectorAll('#s-solve-stage [data-s-seq]'))
+        .sort((a, b) => parseInt(a.dataset.sSeq, 10) - parseInt(b.dataset.sSeq, 10));
+
+      function matchesInputAnswer(inp) {
+        const raw = String(inp.value || '').trim().replace(/[−–—]/g, '-');
+        if (!raw) return false;
+        const expected = parseInt(inp.dataset.ans, 10);
+        if (inp.dataset.allowReject === '1') {
+          const low = raw.toLowerCase();
+          if (['loại', 'loai', 'không', 'khong', 'k', 'x', '∅'].includes(low)) return true;
+        }
+        if (!/^-?\d+$/.test(raw)) return false;
+        return parseInt(raw, 10) === expected;
+      }
+
+      function updateConditionBadge(inp, isOk) {
+        const condId = inp.dataset.cond;
+        if (!condId) return;
+        const cell = document.getElementById(condId);
+        if (!cell) return;
+        if (!isOk) {
+          cell.className = 'cond-cell';
+          cell.textContent = '—';
+          return;
+        }
+        if (inp.dataset.allowReject === '1') {
+          cell.className = 'cond-cell is-reject';
+          cell.textContent = '✕ Loại (∉ ℕ)';
+        } else {
+          cell.className = 'cond-cell is-accept';
+          cell.textContent = '✓ Nhận';
+        }
+      }
+
+      function updateSequence() {
+        seqItems.forEach((el, idx) => {
+          el.classList.toggle('is-shown', idx < seqShown);
+        });
+      }
+      updateSequence();
+
+      function validateSingleInput(inp, playSound = true) {
+        const stepIdx = parseInt(inp.dataset.step, 10);
+        const fbEl = document.getElementById(`s-fb-${stepIdx}`);
+
+        if (!inp.value.trim()) {
+          inp.classList.remove('is-ok', 'is-err');
+          updateConditionBadge(inp, false);
+          return false;
+        }
+        if (matchesInputAnswer(inp)) {
+          inp.classList.remove('is-err');
+          inp.classList.add('is-ok');
+          updateConditionBadge(inp, true);
+          if (playSound) SoundFX.ok();
+          checkStepCompletion(stepIdx);
+          return true;
+        } else {
+          inp.classList.remove('is-ok');
+          inp.classList.add('is-err');
+          updateConditionBadge(inp, false);
+          if (playSound) SoundFX.err();
+          if (fbEl) {
+            fbEl.className = 'step-fb is-err';
+            fbEl.textContent = HINTS[stepIdx] || 'Chưa chính xác, em kiểm tra lại nhé!';
+          }
+          return false;
+        }
+      }
+
+      function checkStepCompletion(stepIdx) {
+        const card = stepCards[stepIdx];
+        const visibleInputs = Array.from(card.querySelectorAll('.inline-input')).filter((i) => i.offsetParent !== null);
+        const allCardInputs = Array.from(card.querySelectorAll('.inline-input'));
+        const allOk = allCardInputs.every((i) => i.classList.contains('is-ok'));
+        const visibleOk = visibleInputs.length > 0 && visibleInputs.every((i) => i.classList.contains('is-ok'));
+        const fbEl = document.getElementById(`s-fb-${stepIdx}`);
+        card.classList.toggle('is-complete', allOk);
+
+        // Only update feedback text — NEVER auto-reveal the next line or step (teacher clicks to reveal)
+        if (fbEl) {
+          if (allOk) {
+            fbEl.className = 'step-fb is-ok';
+            fbEl.textContent = '✓ Chính xác!';
+          } else if (visibleOk) {
+            fbEl.className = 'step-fb is-ok';
+            fbEl.textContent = '✓ Chính xác!';
+          }
+        }
+      }
+
+      document.querySelectorAll('#s-solve-stage .inline-input').forEach((inp) => {
+        let timer = null;
+        inp.addEventListener('focus', () => { activeInput = inp; });
+        inp.addEventListener('click', (e) => e.stopPropagation());
+        inp.addEventListener('blur', () => { if (inp.value.trim()) validateSingleInput(inp, true); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); validateSingleInput(inp, true); }
+        });
+        inp.addEventListener('input', () => {
+          inp.classList.remove('is-ok', 'is-err');
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(() => {
+            if (matchesInputAnswer(inp)) {
+              validateSingleInput(inp, true);
+            }
+          }, 360);
+        });
+      });
+
+      document.getElementById('s-keypad').addEventListener('click', (e) => {
+        const btn = e.target.closest('.key-btn');
+        if (!btn || !activeInput) return;
+        if (btn.dataset.action === 'backspace') activeInput.value = activeInput.value.slice(0, -1);
+        else if (btn.dataset.action === 'clear') activeInput.value = '';
+        else if (typeof btn.dataset.key === 'string') activeInput.value += btn.dataset.key;
+        activeInput.dispatchEvent(new Event('input'));
+        activeInput.focus();
+      });
+
+      function handleStageClick(ev) {
+        if (ev.target.closest('.inline-input, button')) return;
+        if (seqShown < seqItems.length) {
+          seqShown += 1;
+          SoundFX.click();
+          updateSequence();
+          const newlyShown = seqItems[seqShown - 1];
+          if (newlyShown) {
+            newlyShown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+
+      function resetSequence() {
+        seqShown = 1;
+        updateSequence();
+        document.querySelectorAll('#s-solve-stage .inline-input').forEach((inp) => {
+          inp.value = '';
+          inp.classList.remove('is-ok', 'is-err');
+          updateConditionBadge(inp, false);
+        });
+        stepCards.forEach((c, idx) => {
+          c.classList.remove('is-complete');
+          const fb = document.getElementById(`s-fb-${idx}`);
+          if (fb) { fb.className = 'step-fb'; fb.textContent = ''; }
+        });
+        SoundFX.click();
+      }
+
+      function toggleKeypad() { document.getElementById('s-keypad').classList.toggle('is-open'); }
+
+      function openRedo() {
+        document.getElementById('s-solve-stage').style.display = 'none';
+        document.getElementById('s-redo-stage').classList.remove('is-hidden');
+        document.getElementById('s-redo-btn').style.display = 'none';
+        document.getElementById('s-keypad-toggle').style.display = 'none';
+        document.getElementById('s-reset-btn').style.display = 'none';
+        document.getElementById('s-back-btn').style.display = 'inline-block';
+        setTimeout(() => BoardS.resize(), 60);
+      }
+
+      function backToSolve() {
+        document.getElementById('s-redo-stage').classList.add('is-hidden');
+        document.getElementById('s-solve-stage').style.display = 'flex';
+        document.getElementById('s-redo-btn').style.display = 'inline-block';
+        document.getElementById('s-keypad-toggle').style.display = 'inline-block';
+        document.getElementById('s-reset-btn').style.display = 'inline-block';
+        document.getElementById('s-back-btn').style.display = 'none';
+      }
+
+      return { handleStageClick, resetSequence, toggleKeypad, openRedo, backToSolve };
+    })();
+
+    /* =====================================================================
+     * TAB C: VERIFICATION TABLE & NATURAL NUMBER TESTER
+     * ===================================================================== */
+    const TabC = (() => {
+      const CASES = [
+        { x: 0, a: 15, b: 3, q: 5 },
+        { x: 1, a: 16, b: 4, q: 4 },
+        { x: 3, a: 18, b: 6, q: 3 },
+        { x: 9, a: 24, b: 12, q: 2 }
+      ];
+      const tbody = document.getElementById('c-tbody');
+      tbody.innerHTML = CASES.map((c, i) => `
+        <tr class="check-row" data-c-row="${i}">
+          <td class="hl-lemon" style="font-family:Georgia,serif;">x = ${c.x}</td>
+          <td>${c.x} + 15 = ${c.a}</td>
+          <td>${c.x} + 3 = ${c.b}</td>
+          <td>${c.a} : ${c.b} = ${c.q}</td>
+          <td class="hl-ok">✓ Chia hết</td>
+        </tr>
+      `).join('');
+
+      let shown = 0;
+      const rows = tbody.querySelectorAll('[data-c-row]');
+      function update() { rows.forEach((r, i) => r.classList.toggle('is-shown', i < shown)); }
+      function nextStep() { if (shown < rows.length) { shown += 1; SoundFX.click(); update(); } }
+      function reset() { shown = 0; update(); }
+      function revealAll() { shown = rows.length; SoundFX.click(); update(); }
+
+      function testValue() {
+        const inp = document.getElementById('c-test-input');
+        const resEl = document.getElementById('c-test-result');
+        const raw = inp.value.trim();
+        if (!/^\d+$/.test(raw)) {
+          SoundFX.err();
+          resEl.className = 'check-result-bar is-err';
+          resEl.textContent = 'Vui lòng nhập một số tự nhiên (0, 1, 2, 3...).';
+          return;
+        }
+        const x = parseInt(raw, 10);
+        const a = x + 15, b = x + 3;
+        if (a % b === 0) {
+          SoundFX.ok();
+          resEl.className = 'check-result-bar is-ok';
+          resEl.textContent = `✓ Với x = ${x}: x + 15 = ${a}, x + 3 = ${b}. Vì ${a} : ${b} = ${a / b} (chia hết) nên x = ${x} thỏa mãn!`;
+        } else {
+          SoundFX.err();
+          resEl.className = 'check-result-bar is-err';
+          resEl.textContent = `✕ Với x = ${x}: x + 15 = ${a}, x + 3 = ${b}. Vì ${a} chia ${b} dư ${a % b} (không chia hết) nên x = ${x} không thỏa mãn.`;
+        }
+      }
+
+      document.getElementById('c-test-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); testValue(); }
+      });
+
+      return { nextStep, reset, revealAll, testValue };
+    })();
+
+    /* =====================================================================
+     * TAB R: SEQUENTIAL REVIEW SUMMARY
+     * ===================================================================== */
+    const TabR = (() => {
+      let shown = 0;
+      const els = document.querySelectorAll('[data-r-step]');
+      function update() { els.forEach((el, i) => el.classList.toggle('is-shown', i < shown)); }
+      return {
+        nextStep: () => { if (shown < els.length) { shown += 1; SoundFX.click(); update(); } },
+        reset: () => { shown = 0; update(); document.querySelectorAll('.ccq-card').forEach((c) => c.classList.remove('is-open')); },
+        revealAll: () => { shown = els.length; SoundFX.click(); update(); }
+      };
+    })();
+
+    /* =====================================================================
+     * MAIN SHELL CONTROLLER
+     * ===================================================================== */
+    const LessonApp = (() => {
+      function switchTab(key) {
+        document.querySelectorAll('.udscr-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === key));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('is-active', p.id === `panel-${key}`));
+        SoundFX.click();
+        if (key === 'U') setTimeout(() => BoardU.resize(), 60);
+        if (key === 'S') setTimeout(() => BoardS.resize(), 60);
+      }
+      function toggleSound() {
+        const on = SoundFX.toggle();
+        document.getElementById('sound-btn').textContent = on ? '🔊 Âm' : '🔇 Tắt';
+      }
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+        else document.exitFullscreen?.().catch(() => {});
+      }
+      return { switchTab, toggleSound, toggleFullscreen };
+    })();
+  </script>
+</body>
+</html>
