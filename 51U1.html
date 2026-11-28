@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Template Bài Giảng Tương Tác UDSCR – Botanical Nature Glassmorphism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #08140C;
+      --text-main: #FFFFFF;
+      --text-muted: #D5E2CF;
+      --accent-lemon: #E3DE62;
+      --olive-grad: linear-gradient(90deg, #BCC876 0%, #6A8535 55%, #49661F 100%);
+      --olive-grad-hover: linear-gradient(90deg, #CAD684 0%, #78963E 55%, #557526 100%);
+      --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.17) 0%, rgba(132, 158, 102, 0.18) 55%, rgba(22, 40, 25, 0.46) 100%);
+      --glass-dark: linear-gradient(155deg, rgba(18, 34, 21, 0.72) 0%, rgba(10, 22, 13, 0.84) 100%);
+      --glass-border: rgba(255, 255, 255, 0.34);
+      --ok-color: #4ADE80;
+      --err-color: #FB7185;
+      --fern-bg-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201600%201000%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bgG%22%20cx%3D%2250%25%22%20cy%3D%2245%25%22%20r%3D%2272%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231D3822%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%230E2013%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23061009%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh1%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220.28%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh2%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220.22%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafL%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%234A7A3A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23284A24%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23142914%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafBright%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2376A84C%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2265%25%22%20stop-color%3D%22%233B642D%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231B3418%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3Cg%20id%3D%22frond%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-12%20420%2C-4%22%20stroke%3D%22%235A8A40%22%20stroke-width%3D%224%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafL%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%22-22%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2045%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2045%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%22-26%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%28-36%2095%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%2224%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%2836%2095%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%22-28%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-34%20150%20-28%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%2225%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2834%20150%2025%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%22-26%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%28-32%20205%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%2224%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%2832%20205%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%22-23%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%28-30%20258%20-23%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%2830%20258%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%22-19%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%28-28%20308%20-19%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%2216%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%2828%20308%2016%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%22-14%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-25%20352%20-14%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%2211%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%2825%20352%2011%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%22-8%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20390%20-8%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%226%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20390%206%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cg%20id%3D%22frondBright%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-10%20410%2C-2%22%20stroke%3D%22%2389BA5A%22%20stroke-width%3D%223.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafBright%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%22-22%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2050%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%2220%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2050%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%22-26%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-35%20105%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2835%20105%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%22-27%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-33%20165%20-27%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2833%20165%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%22-24%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-30%20222%20-24%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%2221%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2830%20222%2021%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%22-20%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%28-28%20275%20-20%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%2217%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%2828%20275%2017%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%22-15%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-24%20325%20-15%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%2212%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%2824%20325%2012%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%22-10%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20368%20-10%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%228%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20368%208%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cfilter%20id%3D%22softBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%227%22/%3E%3C/filter%3E%0A%20%20%20%20%3Cfilter%20id%3D%22midBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%222.5%22/%3E%3C/filter%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22url%28%23bgG%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22320%22%20cy%3D%22220%22%20r%3D%22240%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%221260%22%20cy%3D%22760%22%20r%3D%22300%22%20fill%3D%22url%28%23bokeh2%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22880%22%20cy%3D%22340%22%20r%3D%22260%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Cg%20filter%3D%22url%28%23softBlur%29%22%20opacity%3D%220.65%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-40%2C140%29%20rotate%2822%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281640%2C80%29%20rotate%28148%29%20scale%281.75%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281620%2C880%29%20rotate%28205%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-60%2C860%29%20rotate%28-28%29%20scale%281.7%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28560%2C-30%29%20rotate%2868%29%20scale%281.45%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28980%2C1040%29%20rotate%28-112%29%20scale%281.55%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20filter%3D%22url%28%23midBlur%29%22%20opacity%3D%220.82%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C360%29%20rotate%28-14%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281630%2C380%29%20rotate%28196%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28180%2C980%29%20rotate%28-52%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281320%2C960%29%20rotate%28-132%29%20scale%281.35%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20opacity%3D%220.92%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-20%2C-20%29%20rotate%2836%29%20scale%281.25%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C-10%29%20rotate%28142%29%20scale%281.22%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C1010%29%20rotate%28-38%29%20scale%281.28%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C1010%29%20rotate%28-146%29%20scale%281.25%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22rgba%286%2C16%2C9%2C0.28%29%22/%3E%0A%3C/svg%3E");
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', Verdana, 'Inter', sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-dark);
+      background-image: var(--fern-bg-img);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .lesson-layout { display: flex; min-height: 100vh; }
+
+    /* Fixed Left Banner: U - D - S - C - R */
+    .sidebar-udscr {
+      position: fixed; top: 16px; left: 16px; bottom: 16px; width: 118px; z-index: 40;
+      background: var(--glass-dark);
+      backdrop-filter: blur(22px) saturate(135%); -webkit-backdrop-filter: blur(22px) saturate(135%);
+      border: 1.25px solid rgba(255, 255, 255, 0.30); border-radius: 26px;
+      box-shadow: 0 22px 48px -16px rgba(3, 12, 6, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .sidebar-brand { text-align: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); width: 100%; }
+    .sidebar-brand-tag { display: inline-block; padding: 5px 10px; border-radius: 10px; background: var(--accent-lemon); color: #142618; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 10px; width: 100%; flex: 1; justify-content: center; }
+    .udscr-btn {
+      width: 100%; padding: 13px 6px; border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08); border: 1.25px solid rgba(255, 255, 255, 0.20);
+      color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 180ms ease; font-family: inherit;
+    }
+    .udscr-btn:hover { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; transform: translateY(-1px); }
+    .udscr-btn.is-active { background: var(--olive-grad); border-color: rgba(255, 255, 255, 0.65); color: #FFFFFF; box-shadow: 0 10px 22px -8px rgba(15, 36, 8, 0.72), 0 0 0 2px rgba(227, 222, 98, 0.35); }
+    .udscr-letter { font-size: 24px; font-weight: 800; line-height: 1; color: var(--accent-lemon); }
+    .udscr-btn.is-active .udscr-letter { color: #FFFFFF; }
+    .udscr-label { font-size: 11.5px; font-weight: 700; text-align: center; }
+    .sidebar-foot { width: 100%; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+    .mini-util-btn { width: 100%; padding: 8px 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.24); color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .mini-util-btn:hover { background: rgba(255, 255, 255, 0.24); }
+
+    .main-stage { flex: 1; margin-left: 150px; padding: 18px 26px 34px 12px; max-width: 1380px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
+    .glass-wrapper {
+      background: var(--glass-bg); backdrop-filter: blur(20px) saturate(135%); -webkit-backdrop-filter: blur(20px) saturate(135%);
+      border: 1.25px solid var(--glass-border); border-radius: 26px;
+      box-shadow: 0 22px 48px -16px rgba(3, 12, 6, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+    .glass-panel-dark {
+      background: var(--glass-dark); backdrop-filter: blur(18px) saturate(125%); -webkit-backdrop-filter: blur(18px) saturate(125%);
+      border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 22px;
+      box-shadow: 0 18px 40px -14px rgba(3, 12, 6, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    /* Persistent Centered Problem Banner */
+    .problem-banner { padding: 22px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .problem-meta { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .badge-task { padding: 8px 18px; border-radius: 999px; background: var(--accent-lemon); color: #142618; font-size: 15px; font-weight: 800; text-transform: uppercase; }
+    .task-prompt-text { font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; color: #FFFFFF; }
+
+    /* Large Math Typography */
+    .math-expr { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(32px, 4.1vw, 48px); font-weight: 700; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; line-height: 1.22; }
+    .math-expr.math-solve { font-size: clamp(24px, 2.8vw, 34px); gap: 8px; }
+    .math-var { font-style: italic; padding: 0 3px; }
+    .math-op { padding: 0 5px; }
+    .math-paren { font-size: 1.45em; font-weight: 400; line-height: 1; transform: translateY(-2px); }
+    .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: 0.78em; line-height: 1.08; }
+    .frac .num { padding: 0 6px 3px; border-bottom: 2.5px solid currentColor; min-width: 24px; text-align: center; }
+    .frac .den { padding: 3px 6px 0; min-width: 24px; text-align: center; }
+    .mixed { display: inline-flex; align-items: center; gap: 2px; }
+    .hl-lemon { color: var(--accent-lemon); }
+    .hl-ok { color: var(--ok-color); }
+
+    .tab-panel { display: none; flex: 1; flex-direction: column; gap: 16px; animation: fadeUp 220ms ease forwards; }
+    .tab-panel.is-active { display: flex; }
+    .panel-topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+    .panel-title { font-size: clamp(20px, 2.2vw, 25px); font-weight: 800; color: var(--accent-lemon); }
+    .btn-primary { padding: 11px 22px; border-radius: 15px; background: var(--olive-grad); border: 1.25px solid rgba(255, 255, 255, 0.50); color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .btn-primary:hover { background: var(--olive-grad-hover); transform: translateY(-1px); }
+    .btn-secondary { padding: 10px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.36); color: #FFFFFF; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.25); }
+    .btn-secondary.is-active { background: var(--accent-lemon); color: #142618; border-color: var(--accent-lemon); }
+
+    /* TAB U: Sequential Disappearing Questions -> Blank Canvas */
+    .u-question-stage { min-height: 430px; padding: 40px 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; user-select: none; position: relative; }
+    .u-q-counter { position: absolute; top: 22px; left: 26px; padding: 7px 16px; border-radius: 999px; background: rgba(10, 22, 13, 0.58); border: 1px solid rgba(227, 222, 98, 0.55); font-size: 14px; font-weight: 800; color: var(--accent-lemon); }
+    .u-q-card { max-width: 860px; width: 100%; padding: 46px 38px; border-radius: 28px; background: rgba(10, 22, 13, 0.58); border: 1.5px solid rgba(255, 255, 255, 0.38); animation: qPopIn 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .u-q-card.is-leaving { animation: qFadeOut 220ms ease forwards; }
+    .u-q-text { font-size: clamp(28px, 3.6vw, 42px); font-weight: 800; color: #FFFFFF; line-height: 1.35; }
+    .u-dots { display: flex; gap: 10px; margin-top: 28px; }
+    .u-dot { width: 11px; height: 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.25); transition: all 200ms ease; }
+    .u-dot.is-active { width: 32px; background: var(--accent-lemon); }
+
+    /* Blank Freehand Board (Used in Tab U & Tab S Redo) */
+    .board-wrapper { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; animation: fadeUp 260ms ease forwards; }
+    .board-wrapper.is-hidden { display: none; }
+    .board-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .board-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .color-swatch { width: 28px; height: 28px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.45); cursor: pointer; }
+    .color-swatch.is-active { border-color: #FFFFFF; box-shadow: 0 0 0 3px rgba(227, 222, 98, 0.45); transform: scale(1.12); }
+    .canvas-stage { width: 100%; height: 500px; border-radius: 20px; overflow: hidden; background: rgba(8, 18, 11, 0.78); border: 1.5px solid rgba(255, 255, 255, 0.28); background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1px); background-size: 24px 24px; touch-action: none; }
+    .freehand-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+    /* TAB D (Strictly Method Titles ONLY - No Calculations/Answers) */
+    .reveal-stage { padding: 28px 30px; min-height: 410px; display: flex; flex-direction: column; justify-content: center; gap: 18px; cursor: pointer; user-select: none; }
+    .method-step { display: none; padding: 24px 28px; border-radius: 22px; background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.28); align-items: center; gap: 20px; animation: slideIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .method-step.is-shown { display: flex; }
+    .step-circle { width: 58px; height: 58px; border-radius: 16px; background: var(--accent-lemon); color: #142618; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-heading { font-size: clamp(22px, 2.5vw, 28px); font-weight: 800; color: #FFFFFF; line-height: 1.35; }
+    .step-sub { font-size: clamp(17px, 1.8vw, 21px); color: var(--text-muted); line-height: 1.5; }
+    .d-next-wrap { display: none; justify-content: flex-end; padding-top: 6px; }
+    .d-next-wrap.is-shown { display: flex; animation: fadeUp 240ms ease forwards; }
+
+    /* TAB S: Interactive Inline-Input Steps (Auto-check, No Giant Check/Reveal Buttons) */
+    .solve-stage { padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .solve-step-card {
+      display: none; width: 100%; max-width: 1000px; padding: 20px 26px; border-radius: 22px;
+      background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.26);
+      flex-direction: column; align-items: center; gap: 12px; text-align: center;
+      animation: fadeUp 260ms ease forwards;
+    }
+    .solve-step-card.is-shown { display: flex; }
+    .solve-step-card.is-complete { border-color: rgba(74, 222, 128, 0.65); }
+    .solve-step-tag { font-size: 14px; font-weight: 800; color: var(--accent-lemon); text-transform: uppercase; letter-spacing: 0.04em; }
+    .inline-input {
+      width: 118px; padding: 8px 12px; border-radius: 14px; text-align: center;
+      background: rgba(255, 255, 255, 0.14); border: 1.8px solid rgba(255, 255, 255, 0.62);
+      color: #FFFFFF; font-family: 'Be Vietnam Pro', Verdana, sans-serif; font-size: clamp(20px, 2.2vw, 26px); font-weight: 800;
+      outline: none; transition: all 160ms ease;
+    }
+    .inline-input:focus { border-color: var(--accent-lemon); background: rgba(255, 255, 255, 0.22); box-shadow: 0 0 0 3px rgba(227, 222, 98, 0.25); }
+    .inline-input.is-ok { border-color: var(--ok-color); background: rgba(34, 197, 94, 0.22); color: #DCFCE7; }
+    .inline-input.is-err { border-color: var(--err-color); background: rgba(225, 29, 72, 0.24); color: #FFE4E6; animation: shake 260ms ease; }
+    .step-fb { min-height: 22px; font-size: 14.5px; font-weight: 700; }
+    .step-fb.is-ok { color: var(--ok-color); }
+    .step-fb.is-err { color: var(--err-color); }
+
+    /* Compact Toggleable Math Keypad for Tab S */
+    .keypad-bar { display: none; width: 100%; max-width: 560px; grid-template-columns: repeat(7, 1fr); gap: 7px; padding: 12px; border-radius: 18px; background: rgba(10, 22, 13, 0.72); border: 1px solid rgba(255, 255, 255, 0.24); }
+    .keypad-bar.is-open { display: grid; }
+    .key-btn { padding: 10px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.28); color: #FFFFFF; font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .key-btn:hover { background: rgba(255, 255, 255, 0.26); }
+    .key-btn.key-op { background: rgba(227, 222, 98, 0.20); color: var(--accent-lemon); border-color: rgba(227, 222, 98, 0.50); }
+    .key-btn.key-del { background: rgba(244, 63, 94, 0.24); color: #FFE4E6; border-color: rgba(251, 113, 133, 0.50); font-size: 13px; }
+
+    /* TAB C & R */
+    .solve-lines { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+    .solve-line { display: none; width: 100%; max-width: 980px; padding: 20px 28px; border-radius: 22px; background: rgba(10, 22, 13, 0.58); border: 1.25px solid rgba(255, 255, 255, 0.26); flex-direction: column; align-items: center; text-align: center; gap: 8px; animation: fadeUp 240ms ease forwards; }
+    .solve-line.is-shown { display: flex; }
+    .solve-line.is-final { border: 2px solid var(--accent-lemon); background: rgba(227, 222, 98, 0.16); }
+    .ccq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .ccq-card { padding: 22px 24px; border-radius: 22px; background: rgba(10, 22, 13, 0.60); border: 1.5px solid rgba(255, 255, 255, 0.28); cursor: pointer; display: flex; flex-direction: column; gap: 12px; }
+    .ccq-card:hover { border-color: var(--accent-lemon); }
+    .ccq-q { font-size: clamp(18px, 1.9vw, 22px); font-weight: 800; }
+    .ccq-ans { display: none; padding: 12px 16px; border-radius: 14px; background: rgba(227, 222, 98, 0.16); border: 1.25px solid rgba(227, 222, 98, 0.58); color: var(--accent-lemon); font-size: clamp(18px, 1.9vw, 22px); font-weight: 800; }
+    .ccq-card.is-open .ccq-ans { display: block; }
+
+    @media (max-width: 820px) {
+      .lesson-layout { flex-direction: column; }
+      .sidebar-udscr { position: sticky; top: 8px; left: 0; bottom: auto; width: calc(100% - 20px); margin: 10px auto 0; flex-direction: row; padding: 10px 12px; }
+      .sidebar-brand, .sidebar-foot { display: none; }
+      .sidebar-nav { flex-direction: row; gap: 6px; }
+      .main-stage { margin-left: 0; padding: 12px 12px 28px; }
+      .ccq-grid { grid-template-columns: 1fr; }
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes qPopIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes qFadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: translateY(-10px) scale(0.97); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  </style>
+</head>
+<body>
+  <div class="lesson-layout">
+    <!-- FIXED LEFT BANNER -->
+    <aside class="sidebar-udscr" aria-label="Điều hướng UDSCR">
+      <div class="sidebar-brand"><span class="sidebar-brand-tag">UDSCR</span></div>
+      <nav class="sidebar-nav">
+        <button type="button" class="udscr-btn is-active" data-tab="U" onclick="LessonApp.switchTab('U')"><span class="udscr-letter">U</span><span class="udscr-label">Tìm hiểu</span></button>
+        <button type="button" class="udscr-btn" data-tab="D" onclick="LessonApp.switchTab('D')"><span class="udscr-letter">D</span><span class="udscr-label">Quyết định</span></button>
+        <button type="button" class="udscr-btn" data-tab="S" onclick="LessonApp.switchTab('S')"><span class="udscr-letter">S</span><span class="udscr-label">Giải bài</span></button>
+        <button type="button" class="udscr-btn" data-tab="C" onclick="LessonApp.switchTab('C')"><span class="udscr-letter">C</span><span class="udscr-label">Kiểm tra</span></button>
+        <button type="button" class="udscr-btn" data-tab="R" onclick="LessonApp.switchTab('R')"><span class="udscr-letter">R</span><span class="udscr-label">Ôn tập</span></button>
+      </nav>
+      <div class="sidebar-foot">
+        <button type="button" class="mini-util-btn" id="sound-btn" onclick="LessonApp.toggleSound()">🔊 Âm</button>
+        <button type="button" class="mini-util-btn" onclick="LessonApp.toggleFullscreen()">⛶ Full</button>
+      </div>
+    </aside>
+
+    <!-- MAIN STAGE -->
+    <main class="main-stage">
+      <!-- PERSISTENT CENTERED PROBLEM STATEMENT -->
+      <header class="glass-wrapper problem-banner">
+        <div class="problem-meta">
+          <span class="badge-task">Nhiệm vụ 1</span>
+          <span class="task-prompt-text">Tìm <span style="font-style:italic; font-family:Georgia,serif; color:#E3DE62;">x</span>, biết:</span>
+        </div>
+        <div class="math-expr" id="persistent-equation"></div>
+      </header>
+
+      <!-- =========================================================== -->
+      <!-- U – TÌM HIỂU ĐỀ BÀI                                         -->
+      <!-- =========================================================== -->
+      <section class="tab-panel is-active" id="panel-U">
+        <div class="panel-topbar">
+          <h2 class="panel-title">U • Tìm hiểu đề bài</h2>
+          <button type="button" class="btn-secondary" onclick="TabU.replay()">↺ Chạy lại câu hỏi</button>
+        </div>
+
+        <div class="glass-wrapper u-question-stage" id="u-question-stage" onclick="TabU.advance()">
+          <span class="u-q-counter" id="u-q-counter">Câu hỏi 1 / 3</span>
+          <div class="u-q-card" id="u-q-card"><div class="u-q-text" id="u-q-text"></div></div>
+          <div class="u-dots" id="u-dots"></div>
+        </div>
+
+        <!-- Completely Blank Freehand Board (No inputs, no keypad) -->
+        <div class="glass-wrapper board-wrapper is-hidden" id="u-try-wrapper">
+          <div class="board-toolbar">
+            <div class="board-controls">
+              <button type="button" class="color-swatch is-active" style="background:#E3DE62;" data-board="u" data-color="#E3DE62" title="Vàng chanh"></button>
+              <button type="button" class="color-swatch" style="background:#FFFFFF;" data-board="u" data-color="#FFFFFF" title="Trắng"></button>
+              <button type="button" class="color-swatch" style="background:#7DD3FC;" data-board="u" data-color="#7DD3FC" title="Xanh dương"></button>
+              <button type="button" class="btn-secondary is-active" id="u-pen-btn" onclick="BoardU.setMode('pen')">Bút viết</button>
+              <button type="button" class="btn-secondary" id="u-eraser-btn" onclick="BoardU.setMode('eraser')">Tẩy</button>
+              <button type="button" class="btn-secondary" onclick="BoardU.clear()">Xóa bảng</button>
+            </div>
+            <button type="button" class="btn-primary" onclick="LessonApp.switchTab('D')">Sang bước D →</button>
+          </div>
+          <div class="canvas-stage"><canvas id="u-scratch-canvas" class="freehand-canvas"></canvas></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- D – QUYẾT ĐỊNH PHƯƠNG PHÁP (CHỈ TIÊU ĐỀ TƯ DUY, KHÔNG PHÉP TÍNH) -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-D">
+        <div class="panel-topbar">
+          <h2 class="panel-title">D • Quyết định phương pháp</h2>
+          <button type="button" class="btn-secondary" onclick="TabD.reset()">↺ Làm mới</button>
+        </div>
+
+        <div class="glass-wrapper reveal-stage" id="d-stage" onclick="TabD.nextStep()">
+          <div id="d-steps-container" style="display:flex; flex-direction:column; gap:18px;"></div>
+          <div class="d-next-wrap" id="d-next-wrap" onclick="event.stopPropagation()">
+            <button type="button" class="btn-primary" onclick="LessonApp.switchTab('S')">Sang bước S →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- S – GIẢI BÀI (Ô NHẬP TỰ KIỂM TRA) & CHO HỌC SINH LÀM LẠI    -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-S">
+        <div class="panel-topbar">
+          <h2 class="panel-title">S • Giải bài</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" id="s-keypad-toggle" onclick="TabS.toggleKeypad()">⌨ Bàn phím số</button>
+            <button type="button" class="btn-secondary" id="s-redo-btn" onclick="TabS.openRedo()">✏️ Cho học sinh làm lại</button>
+            <button type="button" class="btn-primary" id="s-back-btn" style="display:none;" onclick="TabS.backToSolve()">← Quay lại phần giải bài</button>
+          </div>
+        </div>
+
+        <!-- Mode 1: Step-by-Step Interactive Solution (Auto-check inline inputs) -->
+        <div class="glass-wrapper solve-stage" id="s-solve-stage" onclick="TabS.handleStageClick(event)">
+          <div id="s-steps-container" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:16px;"></div>
+
+          <div class="keypad-bar" id="s-keypad" onclick="event.stopPropagation()">
+            <button type="button" class="key-btn" data-key="7">7</button>
+            <button type="button" class="key-btn" data-key="8">8</button>
+            <button type="button" class="key-btn" data-key="9">9</button>
+            <button type="button" class="key-btn key-op" data-key="-">−</button>
+            <button type="button" class="key-btn key-op" data-key="/">/</button>
+            <button type="button" class="key-btn key-op" data-key=",">,</button>
+            <button type="button" class="key-btn key-del" data-action="backspace">⌫</button>
+            <button type="button" class="key-btn" data-key="4">4</button>
+            <button type="button" class="key-btn" data-key="5">5</button>
+            <button type="button" class="key-btn" data-key="6">6</button>
+            <button type="button" class="key-btn" data-key="1">1</button>
+            <button type="button" class="key-btn" data-key="2">2</button>
+            <button type="button" class="key-btn" data-key="3">3</button>
+            <button type="button" class="key-btn" data-key="0">0</button>
+          </div>
+        </div>
+
+        <!-- Mode 2: Completely Blank Freehand Canvas (No inputs, no subtitle, preserves Tab S state) -->
+        <div class="glass-wrapper board-wrapper is-hidden" id="s-redo-stage">
+          <div class="board-toolbar">
+            <div class="board-controls">
+              <button type="button" class="color-swatch is-active" style="background:#E3DE62;" data-board="s" data-color="#E3DE62" title="Vàng chanh"></button>
+              <button type="button" class="color-swatch" style="background:#FFFFFF;" data-board="s" data-color="#FFFFFF" title="Trắng"></button>
+              <button type="button" class="color-swatch" style="background:#7DD3FC;" data-board="s" data-color="#7DD3FC" title="Xanh dương"></button>
+              <button type="button" class="btn-secondary is-active" id="s-pen-btn" onclick="BoardS.setMode('pen')">Bút viết</button>
+              <button type="button" class="btn-secondary" id="s-eraser-btn" onclick="BoardS.setMode('eraser')">Tẩy</button>
+              <button type="button" class="btn-secondary" onclick="BoardS.clear()">Xóa bảng</button>
+            </div>
+          </div>
+          <div class="canvas-stage"><canvas id="s-scratch-canvas" class="freehand-canvas"></canvas></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- C – KIỂM TRA LẠI                                            -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-C">
+        <div class="panel-topbar">
+          <h2 class="panel-title">C • Kiểm tra lại kết quả</h2>
+          <button type="button" class="btn-secondary" onclick="TabC.reset()">↺ Làm mới</button>
+        </div>
+        <div class="glass-wrapper reveal-stage" id="c-stage" onclick="TabC.nextStep()">
+          <div class="solve-lines" id="c-lines-container"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================== -->
+      <!-- R – ÔN TẬP PHƯƠNG PHÁP & CÁC BƯỚC                           -->
+      <!-- =========================================================== -->
+      <section class="tab-panel" id="panel-R">
+        <div class="panel-topbar">
+          <h2 class="panel-title">R • Ôn tập phương pháp &amp; các bước</h2>
+          <button type="button" class="btn-secondary" onclick="TabR.reset()">↺ Làm mới</button>
+        </div>
+        <div class="glass-wrapper reveal-stage" id="r-stage" style="min-height:280px;" onclick="TabR.nextStep()">
+          <div class="method-step" data-r-step="1"><div class="step-circle">01</div><div><div class="step-heading">Đổi hỗn số sang số thập phân</div><div class="step-sub">Giữ nguyên dấu trừ ở ngoài khi đổi hỗn số âm.</div></div></div>
+          <div class="method-step" data-r-step="2"><div class="step-circle">02</div><div><div class="step-heading">Bóc từ ngoài vào trong ngoặc</div><div class="step-sub">Xử lý phép nhân/chia ngoài ngoặc trước để tìm cụm trong ngoặc.</div></div></div>
+          <div class="method-step" data-r-step="3"><div class="step-circle">03</div><div><div class="step-heading">Tìm x &amp; Kiểm tra lại</div><div class="step-sub">Cẩn thận dấu khi trừ số âm, sau đó thay ngược vào đề kiểm chứng.</div></div></div>
+        </div>
+        <div class="ccq-grid">
+          <div class="ccq-card" onclick="this.classList.toggle('is-open')">
+            <div class="ccq-q" id="ccq-1-q"></div>
+            <div class="ccq-ans" id="ccq-1-a"></div>
+          </div>
+          <div class="ccq-card" onclick="this.classList.toggle('is-open')">
+            <div class="ccq-q" id="ccq-2-q"></div>
+            <div class="ccq-ans" id="ccq-2-a"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* =====================================================================
+     * MATH HELPERS & EXACT RATIONAL EQUIVALENCE ENGINE
+     * ===================================================================== */
+    function f(n, d) { return `<span class="frac"><span class="num">${n}</span><span class="den">${d}</span></span>`; }
+    function mix(w, n, d) { return `<span class="mixed"><span>${w}</span>${f(n, d)}</span>`; }
+    function v(ch) { return `<span class="math-var">${ch}</span>`; }
+    function op(s) { return `<span class="math-op">${s}</span>`; }
+    function lp() { return `<span class="math-paren">(</span>`; }
+    function rp() { return `<span class="math-paren">)</span>`; }
+
+    function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; }
+    function normFrac(n, d) {
+      if (d === 0 || !Number.isFinite(n) || !Number.isFinite(d)) return null;
+      if (d < 0) { n = -n; d = -d; }
+      if (n === 0) return { num: 0, den: 1 };
+      const g = gcd(n, d);
+      return { num: n / g, den: d / g };
+    }
+
+    function parseMathAnswer(raw, strictFormat = 'any') {
+      if (!raw || typeof raw !== 'string') return null;
+      const s = raw.trim().replace(/^[xX]\s*=\s*/, '').replace(/[−–—]/g, '-').replace(/,/g, '.').replace(/\s+/g, ' ');
+      if (!s) return null;
+      const isFrac = s.includes('/');
+      if (strictFormat === 'decimal' && isFrac) return null;
+      if (strictFormat === 'fraction' && !isFrac) return null;
+
+      const mixM = s.match(/^([+-]?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+      if (mixM) {
+        const sign = mixM[1] === '-' ? -1 : 1;
+        return normFrac(sign * (parseInt(mixM[2], 10) * parseInt(mixM[4], 10) + parseInt(mixM[3], 10)), parseInt(mixM[4], 10));
+      }
+      const fracM = s.match(/^([+-]?\s*\d+)\s*\/\s*([+-]?\s*\d+)$/);
+      if (fracM) return normFrac(parseInt(fracM[1].replace(/\s+/g, ''), 10), parseInt(fracM[2].replace(/\s+/g, ''), 10));
+      const decM = s.match(/^([+-]?)\s*(\d+)(?:\.(\d+))?$/);
+      if (decM) {
+        const sign = decM[1] === '-' ? -1 : 1;
+        const fp = decM[3] || '';
+        return normFrac(sign * parseInt(decM[2] + fp, 10), Math.pow(10, fp.length));
+      }
+      return null;
+    }
+
+    /* =====================================================================
+     * AUDIO FEEDBACK
+     * ===================================================================== */
+    const SoundFX = (() => {
+      let enabled = true, ctx = null;
+      function getCtx() {
+        if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ctx = new AC(); }
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+        return ctx;
+      }
+      function tone(freq, off, dur, type = 'triangle', peak = 0.14) {
+        const c = getCtx(); if (!c || !enabled) return;
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, c.currentTime + off);
+        g.gain.setValueAtTime(0.001, c.currentTime + off);
+        g.gain.exponentialRampToValueAtTime(peak, c.currentTime + off + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + off + dur);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(c.currentTime + off); osc.stop(c.currentTime + off + dur + 0.02);
+      }
+      return {
+        toggle: () => { enabled = !enabled; return enabled; },
+        click: () => tone(620, 0, 0.05, 'sine', 0.07),
+        ok: () => { tone(523.25, 0, 0.12); tone(659.25, 0.09, 0.14); tone(783.99, 0.18, 0.20); },
+        err: () => { tone(240, 0, 0.12, 'sawtooth', 0.08); tone(195, 0.11, 0.15, 'sawtooth', 0.08); }
+      };
+    })();
+
+    /* =====================================================================
+     * REUSABLE BLANK FREEHAND CANVAS FACTORY (TAB U & TAB S REDO)
+     * ===================================================================== */
+    function createFreehandBoard(canvasId, penBtnId, eraserBtnId, boardKey) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      let drawing = false, mode = 'pen', color = '#E3DE62';
+
+      function resize() {
+        const wrap = canvas.parentElement; if (!wrap) return;
+        const r = wrap.getBoundingClientRect(); if (r.width < 20 || r.height < 20) return;
+        const prev = canvas.width > 0 && canvas.height > 0 ? canvas.toDataURL() : null;
+        canvas.width = Math.floor(r.width); canvas.height = Math.floor(r.height);
+        if (prev) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = prev; }
+      }
+      function pos(e) {
+        const r = canvas.getBoundingClientRect(), pt = e.touches ? e.touches[0] : e;
+        return { x: (pt.clientX - r.left) * (canvas.width / r.width), y: (pt.clientY - r.top) * (canvas.height / r.height) };
+      }
+      canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!drawing) return; e.preventDefault(); const p = pos(e);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        if (mode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 26; }
+        else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = color; ctx.lineWidth = 3.2; }
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+      });
+      window.addEventListener('pointerup', () => { if (drawing) { drawing = false; ctx.closePath(); } });
+      window.addEventListener('resize', resize);
+
+      document.querySelectorAll(`.color-swatch[data-board="${boardKey}"]`).forEach((sw) => {
+        sw.addEventListener('click', () => {
+          color = sw.dataset.color; mode = 'pen';
+          document.querySelectorAll(`.color-swatch[data-board="${boardKey}"]`).forEach((x) => x.classList.toggle('is-active', x === sw));
+          document.getElementById(penBtnId).classList.add('is-active');
+          document.getElementById(eraserBtnId).classList.remove('is-active');
+        });
+      });
+      return {
+        resize,
+        setMode: (m) => { mode = m; document.getElementById(penBtnId).classList.toggle('is-active', m === 'pen'); document.getElementById(eraserBtnId).classList.toggle('is-active', m === 'eraser'); },
+        clear: () => { ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+      };
+    }
+
+    const BoardU = createFreehandBoard('u-scratch-canvas', 'u-pen-btn', 'u-eraser-btn', 'u');
+    const BoardS = createFreehandBoard('s-scratch-canvas', 's-pen-btn', 's-eraser-btn', 's');
+
+    /* =====================================================================
+     * LESSON DATA CONFIGURATION (CUSTOMIZE THIS BLOCK FOR NEW LESSONS)
+     * ===================================================================== */
+    document.getElementById('persistent-equation').innerHTML =
+      `${lp()}${mix(3, 1, 2)}${op('−')}${v('x')}${rp()}${op('·')}${mix(1, 1, 4)}${op('=')}${op('−')}${mix(1, 1, 20)}`;
+
+    // U: 2-4 tailored inquiry questions
+    const QUESTIONS_U = [
+      '<i>x</i> đang nằm ở vị trí nào? Biểu thức có các loại số nào?',
+      'Ta nên đổi các hỗn số về dạng số nào để tính gọn nhất?',
+      'Yêu cầu đề bài là gì?'
+    ];
+
+    // D: STRICTLY short thinking-action titles ONLY (NO equations/calculations/results)
+    const DECIDE_STEPS = [
+      { code: 'B1', title: 'Đổi tất cả hỗn số về số thập phân' },
+      { code: 'B2', title: 'Bóc lớp ngoài để tìm biểu thức trong ngoặc' },
+      { code: 'B3', title: 'Bóc lớp trong và tìm x' }
+    ];
+
+    // S: Interactive steps matching D, with inline auto-checking inputs
+    const SOLVE_STEPS = [
+      {
+        tag: 'Bước 1 • Đổi các hỗn số về số thập phân',
+        hint: 'Gợi ý tư duy: Đổi phần phân số sang số thập phân rồi ghép với phần nguyên; chú ý dấu trừ ở ngoài.',
+        lineHtml: `${lp()}<input class="inline-input" data-step="0" data-ans="3.5" data-strict="decimal" placeholder="?" />${op('−')}${v('x')}${rp()}${op('·')}<input class="inline-input" data-step="0" data-ans="1.25" data-strict="decimal" placeholder="?" />${op('=')}<input class="inline-input" data-step="0" data-ans="-1.05" data-strict="decimal" placeholder="?" />`
+      },
+      {
+        tag: 'Bước 2 • Bóc lớp ngoài – Tìm biểu thức trong ngoặc',
+        hint: 'Gợi ý tư duy: Muốn tìm thừa số chưa biết, lấy tích chia cho thừa số đã biết.',
+        lineHtml: `3,5 ${op('−')} ${v('x')} ${op('=')} (−1,05) : 1,25 ${op('=')} <input class="inline-input" data-step="1" data-ans="-0.84" data-strict="any" placeholder="?" />`
+      },
+      {
+        tag: 'Bước 3 • Bóc lớp trong – Tìm x',
+        hint: 'Gợi ý tư duy: Muốn tìm số trừ, lấy số bị trừ trừ đi hiệu.',
+        lineHtml: `${v('x')} ${op('=')} 3,5 ${op('−')} (−0,84) ${op('=')} <input class="inline-input" data-step="2" data-ans="4.34" data-strict="any" placeholder="?" />`
+      }
+    ];
+
+    document.getElementById('ccq-1-q').innerHTML = `Đổi hỗn số âm −${mix(1, 1, 20)} sang số thập phân bằng bao nhiêu?`;
+    document.getElementById('ccq-1-a').innerHTML = `−${mix(1, 1, 20)} = −(1 + 0,05) = −1,05`;
+    document.getElementById('ccq-2-q').innerHTML = `Khi tính 3,5 − (−0,84), phép trừ số âm chuyển thành phép tính nào?`;
+    document.getElementById('ccq-2-a').innerHTML = `Chuyển thành phép cộng: 3,5 + 0,84 = 4,34`;
+
+    /* =====================================================================
+     * TAB U CONTROLLER
+     * ===================================================================== */
+    const TabU = (() => {
+      let step = 0, busy = false;
+      const qStage = document.getElementById('u-question-stage');
+      const qCard = document.getElementById('u-q-card');
+      const qText = document.getElementById('u-q-text');
+      const qCounter = document.getElementById('u-q-counter');
+      const tryWrap = document.getElementById('u-try-wrapper');
+      const dotsWrap = document.getElementById('u-dots');
+      dotsWrap.innerHTML = QUESTIONS_U.map((_, i) => `<span class="u-dot ${i === 0 ? 'is-active' : ''}"></span>`).join('');
+      const dots = dotsWrap.querySelectorAll('.u-dot');
+
+      function render() {
+        if (step < QUESTIONS_U.length) {
+          qStage.style.display = 'flex';
+          tryWrap.classList.add('is-hidden');
+          qCounter.textContent = `Câu hỏi ${step + 1} / ${QUESTIONS_U.length}`;
+          qText.innerHTML = QUESTIONS_U[step];
+          qCard.classList.remove('is-leaving');
+          void qCard.offsetWidth;
+          dots.forEach((d, i) => d.classList.toggle('is-active', i === step));
+        } else {
+          qStage.style.display = 'none';
+          tryWrap.classList.remove('is-hidden');
+          setTimeout(() => BoardU.resize(), 60);
+        }
+      }
+      function advance() {
+        if (busy || step >= QUESTIONS_U.length) return;
+        busy = true; SoundFX.click(); qCard.classList.add('is-leaving');
+        setTimeout(() => { step += 1; busy = false; render(); }, 210);
+      }
+      function replay() { step = 0; busy = false; render(); }
+      render();
+      return { advance, replay };
+    })();
+
+    /* =====================================================================
+     * TAB D CONTROLLER (SEQUENTIAL METHOD TITLES ONLY)
+     * ===================================================================== */
+    const TabD = (() => {
+      const wrap = document.getElementById('d-steps-container');
+      wrap.innerHTML = DECIDE_STEPS.map((st, i) => `
+        <div class="method-step" data-d-step="${i}">
+          <div class="step-circle">${st.code}</div>
+          <div class="step-heading">${st.title}</div>
+        </div>
+      `).join('');
+      let shown = 0;
+      const els = wrap.querySelectorAll('[data-d-step]');
+      const nextWrap = document.getElementById('d-next-wrap');
+      function update() {
+        els.forEach((el, i) => el.classList.toggle('is-shown', i < shown));
+        nextWrap.classList.toggle('is-shown', shown >= els.length);
+      }
+      function nextStep() { if (shown < els.length) { shown += 1; SoundFX.click(); update(); } }
+      function reset() { shown = 0; update(); }
+      return { nextStep, reset };
+    })();
+
+    /* =====================================================================
+     * TAB S CONTROLLER (INLINE AUTO-CHECK + PRESERVED-STATE BLANK REDO BOARD)
+     * ===================================================================== */
+    const TabS = (() => {
+      const wrap = document.getElementById('s-steps-container');
+      wrap.innerHTML = SOLVE_STEPS.map((st, i) => `
+        <div class="solve-step-card" data-s-step="${i}">
+          <span class="solve-step-tag">${st.tag}</span>
+          <div class="math-expr math-solve">${st.lineHtml}</div>
+          <div class="step-fb" id="s-fb-${i}"></div>
+        </div>
+      `).join('');
+
+      let shownCount = 1; // Step 1 visible initially; next steps unlock when solved or teacher clicks stage
+      let activeInput = null;
+      const stepCards = wrap.querySelectorAll('[data-s-step]');
+
+      function updateVisible() {
+        stepCards.forEach((c, i) => c.classList.toggle('is-shown', i < shownCount));
+      }
+      updateVisible();
+
+      function validateSingleInput(inp, triggerSound = true) {
+        const expected = parseMathAnswer(inp.dataset.ans, 'any');
+        const actual = parseMathAnswer(inp.value, inp.dataset.strict || 'any');
+        const stepIdx = parseInt(inp.dataset.step, 10);
+        const fbEl = document.getElementById(`s-fb-${stepIdx}`);
+
+        if (!inp.value.trim()) {
+          inp.classList.remove('is-ok', 'is-err');
+          return false;
+        }
+        if (actual && expected && actual.num === expected.num && actual.den === expected.den) {
+          inp.classList.remove('is-err');
+          inp.classList.add('is-ok');
+          if (triggerSound) SoundFX.ok();
+          checkStepCompletion(stepIdx);
+          return true;
+        } else {
+          inp.classList.remove('is-ok');
+          inp.classList.add('is-err');
+          if (triggerSound) SoundFX.err();
+          if (fbEl) {
+            fbEl.className = 'step-fb is-err';
+            fbEl.textContent = SOLVE_STEPS[stepIdx].hint || 'Chưa chính xác, em kiểm tra lại nhé!';
+          }
+          return false;
+        }
+      }
+
+      function checkStepCompletion(stepIdx) {
+        const card = stepCards[stepIdx];
+        const inputs = Array.from(card.querySelectorAll('.inline-input'));
+        const allOk = inputs.every((i) => i.classList.contains('is-ok'));
+        const fbEl = document.getElementById(`s-fb-${stepIdx}`);
+        card.classList.toggle('is-complete', allOk);
+        if (allOk && fbEl) {
+          fbEl.className = 'step-fb is-ok';
+          fbEl.textContent = stepIdx === SOLVE_STEPS.length - 1 ? '✓ Chính xác! Em đã hoàn thành lời giải!' : '✓ Chính xác! Bước tiếp theo đã mở.';
+          if (shownCount === stepIdx + 1 && shownCount < SOLVE_STEPS.length) {
+            shownCount += 1;
+            setTimeout(() => {
+              updateVisible();
+              const nextInp = stepCards[shownCount - 1].querySelector('.inline-input');
+              if (nextInp) nextInp.focus();
+            }, 320);
+          }
+        }
+      }
+
+      wrap.querySelectorAll('.inline-input').forEach((inp) => {
+        let typingTimer = null;
+        inp.addEventListener('focus', () => { activeInput = inp; });
+        inp.addEventListener('click', (e) => e.stopPropagation());
+        inp.addEventListener('blur', () => { if (inp.value.trim()) validateSingleInput(inp, true); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); validateSingleInput(inp, true); }
+        });
+        inp.addEventListener('input', () => {
+          inp.classList.remove('is-ok', 'is-err');
+          if (typingTimer) clearTimeout(typingTimer);
+          typingTimer = setTimeout(() => {
+            const exp = parseMathAnswer(inp.dataset.ans, 'any');
+            const act = parseMathAnswer(inp.value, inp.dataset.strict || 'any');
+            if (act && exp && act.num === exp.num && act.den === exp.den) {
+              validateSingleInput(inp, true);
+            }
+          }, 420);
+        });
+      });
+
+      document.getElementById('s-keypad').addEventListener('click', (e) => {
+        const btn = e.target.closest('.key-btn');
+        if (!btn || !activeInput) return;
+        if (btn.dataset.action === 'backspace') activeInput.value = activeInput.value.slice(0, -1);
+        else if (typeof btn.dataset.key === 'string') activeInput.value += btn.dataset.key;
+        activeInput.dispatchEvent(new Event('input'));
+        activeInput.focus();
+      });
+
+      function handleStageClick(ev) {
+        if (ev.target.closest('.inline-input, button')) return;
+        const curCard = stepCards[shownCount - 1];
+        if (curCard && curCard.classList.contains('is-complete') && shownCount < SOLVE_STEPS.length) {
+          shownCount += 1; SoundFX.click(); updateVisible();
+        }
+      }
+
+      function toggleKeypad() {
+        document.getElementById('s-keypad').classList.toggle('is-open');
+      }
+
+      function openRedo() {
+        document.getElementById('s-solve-stage').style.display = 'none';
+        document.getElementById('s-redo-stage').classList.remove('is-hidden');
+        document.getElementById('s-redo-btn').style.display = 'none';
+        document.getElementById('s-keypad-toggle').style.display = 'none';
+        document.getElementById('s-back-btn').style.display = 'inline-block';
+        setTimeout(() => BoardS.resize(), 60);
+      }
+
+      function backToSolve() {
+        document.getElementById('s-redo-stage').classList.add('is-hidden');
+        document.getElementById('s-solve-stage').style.display = 'flex';
+        document.getElementById('s-redo-btn').style.display = 'inline-block';
+        document.getElementById('s-keypad-toggle').style.display = 'inline-block';
+        document.getElementById('s-back-btn').style.display = 'none';
+      }
+
+      return { handleStageClick, toggleKeypad, openRedo, backToSolve };
+    })();
+
+    /* =====================================================================
+     * TAB C & TAB R CONTROLLERS
+     * ===================================================================== */
+    const TabC = (() => {
+      const LINES = [
+        { tag: 'Thay x = 4,34 vào Vế trái', html: `VT = ( 3,5 − 4,34 ) · 1,25` },
+        { tag: 'Tính trong ngoặc', html: `VT = (−0,84) · 1,25` },
+        { tag: 'Kết luận', isFinal: true, html: `<span class="hl-ok">VT = −1,05 = VP ⇒ Đúng!</span>` }
+      ];
+      const wrap = document.getElementById('c-lines-container');
+      wrap.innerHTML = LINES.map((ln, i) => `
+        <div class="solve-line ${ln.isFinal ? 'is-final' : ''}" data-c-line="${i}">
+          <span class="solve-step-tag">${ln.tag}</span>
+          <div class="math-expr math-solve">${ln.html}</div>
+        </div>
+      `).join('');
+      let shown = 0;
+      const els = wrap.querySelectorAll('[data-c-line]');
+      function update() { els.forEach((el, i) => el.classList.toggle('is-shown', i < shown)); }
+      return { nextStep: () => { if (shown < els.length) { shown += 1; SoundFX.click(); update(); } }, reset: () => { shown = 0; update(); } };
+    })();
+
+    const TabR = (() => {
+      let shown = 0;
+      const els = document.querySelectorAll('[data-r-step]');
+      function update() { els.forEach((el, i) => el.classList.toggle('is-shown', i < shown)); }
+      return {
+        nextStep: () => { if (shown < els.length) { shown += 1; SoundFX.click(); update(); } },
+        reset: () => { shown = 0; update(); document.querySelectorAll('.ccq-card').forEach((c) => c.classList.remove('is-open')); }
+      };
+    })();
+
+    const LessonApp = (() => {
+      function switchTab(key) {
+        document.querySelectorAll('.udscr-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === key));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('is-active', p.id === `panel-${key}`));
+        SoundFX.click();
+        if (key === 'U') setTimeout(() => BoardU.resize(), 60);
+        if (key === 'S') setTimeout(() => BoardS.resize(), 60);
+      }
+      function toggleSound() {
+        const on = SoundFX.toggle();
+        document.getElementById('sound-btn').textContent = on ? '🔊 Âm' : '🔇 Tắt';
+      }
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+        else document.exitFullscreen?.().catch(() => {});
+      }
+      return { switchTab, toggleSound, toggleFullscreen };
+    })();
+  </script>
+</body>
+</html>
