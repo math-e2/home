@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice Room 1 – Tìm x (Phân số & Hỗn số) | Thang điểm 10</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* =====================================================================
+     * BOTANICAL NATURE GLASSMORPHISM THEME (SPARKLE STANDARD)
+     * ===================================================================== */
+    :root {
+      --bg-dark: #08140C;
+      --bg-mid: #0D1E13;
+      --text-main: #FFFFFF;
+      --text-muted: #D5E2CF;
+      --accent-lemon: #E3DE62;
+      --accent-lemon-soft: rgba(227, 222, 98, 0.18);
+      --olive-grad: linear-gradient(90deg, #BCC876 0%, #6A8535 55%, #49661F 100%);
+      --olive-grad-hover: linear-gradient(90deg, #CAD684 0%, #78963E 55%, #557526 100%);
+      --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.17) 0%, rgba(132, 158, 102, 0.18) 55%, rgba(22, 40, 25, 0.46) 100%);
+      --glass-dark: linear-gradient(155deg, rgba(20, 36, 23, 0.68) 0%, rgba(10, 22, 13, 0.78) 100%);
+      --glass-border: rgba(255, 255, 255, 0.34);
+      --ok-color: #4ADE80;
+      --err-color: #FB7185;
+      --fern-bg-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201600%201000%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bgG%22%20cx%3D%2250%25%22%20cy%3D%2245%25%22%20r%3D%2272%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231D3822%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%230E2013%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23061009%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh1%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220.28%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B9D96C%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22bokeh2%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220.22%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236FA34B%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafL%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%234A7A3A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23284A24%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23142914%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22leafBright%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2376A84C%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2265%25%22%20stop-color%3D%22%233B642D%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231B3418%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3Cg%20id%3D%22frond%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-12%20420%2C-4%22%20stroke%3D%22%235A8A40%22%20stroke-width%3D%224%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafL%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%22-22%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2045%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2245%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2045%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%22-26%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%28-36%2095%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2295%22%20cy%3D%2224%22%20rx%3D%2240%22%20ry%3D%2210%22%20transform%3D%22rotate%2836%2095%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%22-28%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-34%20150%20-28%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22150%22%20cy%3D%2225%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2834%20150%2025%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%22-26%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%28-32%20205%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22205%22%20cy%3D%2224%22%20rx%3D%2238%22%20ry%3D%229.5%22%20transform%3D%22rotate%2832%20205%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%22-23%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%28-30%20258%20-23%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22258%22%20cy%3D%2220%22%20rx%3D%2234%22%20ry%3D%228.5%22%20transform%3D%22rotate%2830%20258%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%22-19%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%28-28%20308%20-19%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22308%22%20cy%3D%2216%22%20rx%3D%2228%22%20ry%3D%227.5%22%20transform%3D%22rotate%2828%20308%2016%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%22-14%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-25%20352%20-14%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22352%22%20cy%3D%2211%22%20rx%3D%2222%22%20ry%3D%226.5%22%20transform%3D%22rotate%2825%20352%2011%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%22-8%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20390%20-8%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22390%22%20cy%3D%226%22%20rx%3D%2215%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20390%206%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cg%20id%3D%22frondBright%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C0%20Q180%2C-10%20410%2C-2%22%20stroke%3D%22%2389BA5A%22%20stroke-width%3D%223.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%20%20%3Cg%20fill%3D%22url%28%23leafBright%29%22%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%22-22%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-38%2050%20-22%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%2250%22%20cy%3D%2220%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2838%2050%2020%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%22-26%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-35%20105%20-26%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22105%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2835%20105%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%22-27%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%28-33%20165%20-27%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22165%22%20cy%3D%2224%22%20rx%3D%2242%22%20ry%3D%2210%22%20transform%3D%22rotate%2833%20165%2024%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%22-24%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%28-30%20222%20-24%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22222%22%20cy%3D%2221%22%20rx%3D%2236%22%20ry%3D%229%22%20transform%3D%22rotate%2830%20222%2021%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%22-20%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%28-28%20275%20-20%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22275%22%20cy%3D%2217%22%20rx%3D%2230%22%20ry%3D%228%22%20transform%3D%22rotate%2828%20275%2017%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%22-15%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%28-24%20325%20-15%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22325%22%20cy%3D%2212%22%20rx%3D%2224%22%20ry%3D%226.5%22%20transform%3D%22rotate%2824%20325%2012%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%22-10%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%28-20%20368%20-10%29%22/%3E%0A%20%20%20%20%20%20%20%20%3Cellipse%20cx%3D%22368%22%20cy%3D%228%22%20rx%3D%2217%22%20ry%3D%225%22%20transform%3D%22rotate%2820%20368%208%29%22/%3E%0A%20%20%20%20%20%20%3C/g%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cfilter%20id%3D%22softBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%227%22/%3E%3C/filter%3E%0A%20%20%20%20%3Cfilter%20id%3D%22midBlur%22%3E%3CfeGaussianBlur%20stdDeviation%3D%222.5%22/%3E%3C/filter%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22url%28%23bgG%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22320%22%20cy%3D%22220%22%20r%3D%22240%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%221260%22%20cy%3D%22760%22%20r%3D%22300%22%20fill%3D%22url%28%23bokeh2%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%22880%22%20cy%3D%22340%22%20r%3D%22260%22%20fill%3D%22url%28%23bokeh1%29%22/%3E%0A%20%20%3Cg%20filter%3D%22url%28%23softBlur%29%22%20opacity%3D%220.65%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-40%2C140%29%20rotate%2822%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281640%2C80%29%20rotate%28148%29%20scale%281.75%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281620%2C880%29%20rotate%28205%29%20scale%281.65%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28-60%2C860%29%20rotate%28-28%29%20scale%281.7%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28560%2C-30%29%20rotate%2868%29%20scale%281.45%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28980%2C1040%29%20rotate%28-112%29%20scale%281.55%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20filter%3D%22url%28%23midBlur%29%22%20opacity%3D%220.82%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C360%29%20rotate%28-14%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281630%2C380%29%20rotate%28196%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%28180%2C980%29%20rotate%28-52%29%20scale%281.35%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frond%22%20transform%3D%22translate%281320%2C960%29%20rotate%28-132%29%20scale%281.35%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Cg%20opacity%3D%220.92%22%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-20%2C-20%29%20rotate%2836%29%20scale%281.25%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C-10%29%20rotate%28142%29%20scale%281.22%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%28-30%2C1010%29%20rotate%28-38%29%20scale%281.28%29%22/%3E%0A%20%20%20%20%3Cuse%20href%3D%22%23frondBright%22%20transform%3D%22translate%281620%2C1010%29%20rotate%28-146%29%20scale%281.25%29%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%221000%22%20fill%3D%22rgba%286%2C16%2C9%2C0.28%29%22/%3E%0A%3C/svg%3E");
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Be Vietnam Pro', Verdana, 'Inter', sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-dark);
+      background-image: var(--fern-bg-img);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: 18px 14px 32px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Frosted Glass Wrappers */
+    .glass-wrapper {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px) saturate(135%);
+      -webkit-backdrop-filter: blur(20px) saturate(135%);
+      border: 1.25px solid var(--glass-border);
+      border-radius: 26px;
+      box-shadow: 0 22px 48px -16px rgba(3, 12, 6, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .glass-panel-dark {
+      background: var(--glass-dark);
+      backdrop-filter: blur(18px) saturate(125%);
+      -webkit-backdrop-filter: blur(18px) saturate(125%);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 22px;
+      box-shadow: 0 18px 40px -14px rgba(3, 12, 6, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    /* Top Header Bar */
+    .topbar {
+      padding: 14px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill-room {
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--accent-lemon);
+      color: #142618;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .room-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 14px;
+      background: rgba(10, 22, 13, 0.55);
+      border: 1px solid rgba(227, 222, 98, 0.55);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .score-pill strong {
+      color: var(--accent-lemon);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .btn-icon {
+      padding: 7px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.26);
+    }
+
+    /* Progress Stepper */
+    .stepper {
+      padding: 12px 18px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 640px) {
+      .stepper {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(10, 22, 13, 0.44);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(213, 226, 207, 0.68);
+      transition: all 180ms ease;
+      user-select: none;
+    }
+
+    .step-item.is-active {
+      background: rgba(227, 222, 98, 0.22);
+      border-color: var(--accent-lemon);
+      color: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(227, 222, 98, 0.25);
+    }
+
+    .step-item.is-done {
+      background: rgba(34, 197, 94, 0.22);
+      border-color: rgba(74, 222, 128, 0.65);
+      color: #DCFCE7;
+      cursor: pointer;
+    }
+
+    .step-item.is-done:hover {
+      background: rgba(34, 197, 94, 0.34);
+    }
+
+    .step-badge-pts {
+      font-size: 10px;
+      opacity: 0.85;
+      font-weight: 600;
+    }
+
+    /* Main Workspace Grid */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Problem & Input Card */
+    .problem-card {
+      padding: 22px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .q-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .q-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-qnum {
+      padding: 6px 14px;
+      border-radius: 12px;
+      background: var(--accent-lemon);
+      color: #142618;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .badge-level {
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #FFFFFF;
+    }
+
+    .badge-level.is-challenge {
+      background: rgba(227, 222, 98, 0.20);
+      border-color: var(--accent-lemon);
+      color: var(--accent-lemon);
+    }
+
+    .attempt-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Persistent Problem Statement Box */
+    .equation-box {
+      padding: 24px 20px;
+      border-radius: 22px;
+      background: rgba(10, 22, 13, 0.56);
+      border: 1.25px solid rgba(255, 255, 255, 0.28);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .equation-prompt {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-lemon);
+      letter-spacing: 0.02em;
+    }
+
+    .math-expr {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(24px, 3.2vw, 34px);
+      font-weight: 700;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      line-height: 1.2;
+    }
+
+    .math-var {
+      font-style: italic;
+      padding: 0 2px;
+    }
+
+    .math-op {
+      padding: 0 4px;
+    }
+
+    .math-paren {
+      font-size: 1.55em;
+      font-weight: 400;
+      line-height: 1;
+      transform: translateY(-2px);
+    }
+
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      margin: 0 3px;
+      font-size: 0.78em;
+      line-height: 1.1;
+    }
+
+    .frac .num {
+      padding: 0 5px 3px;
+      border-bottom: 2px solid #FFFFFF;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    .frac .den {
+      padding: 3px 5px 0;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    .mixed {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Answer Input Area */
+    .answer-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(10, 22, 13, 0.46);
+      border: 1.25px solid rgba(255, 255, 255, 0.28);
+      border-radius: 18px;
+      padding: 12px 16px;
+    }
+
+    .answer-prefix {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent-lemon);
+      flex-shrink: 0;
+    }
+
+    .answer-input {
+      flex: 1;
+      min-width: 140px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1.5px solid rgba(255, 255, 255, 0.55);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFFFFF;
+      outline: none;
+      font-family: 'Be Vietnam Pro', Verdana, sans-serif;
+      transition: all 160ms ease;
+    }
+
+    .answer-input::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .answer-input:focus {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: var(--accent-lemon);
+      box-shadow: 0 0 0 3px rgba(227, 222, 98, 0.22);
+    }
+
+    .answer-input:disabled {
+      opacity: 0.78;
+      border-color: var(--ok-color);
+      background: rgba(34, 197, 94, 0.18);
+    }
+
+    .live-preview {
+      min-width: 84px;
+      min-height: 48px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px dashed rgba(255, 255, 255, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-lemon);
+    }
+
+    .input-format-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: -8px;
+      padding-left: 4px;
+    }
+
+    /* Math Keypad */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .key-btn {
+      padding: 12px 8px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.30);
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 800;
+      font-family: 'Be Vietnam Pro', Verdana, sans-serif;
+      cursor: pointer;
+      transition: all 140ms ease;
+      user-select: none;
+    }
+
+    .key-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .key-btn:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    .key-btn.key-op {
+      background: rgba(227, 222, 98, 0.20);
+      border-color: rgba(227, 222, 98, 0.55);
+      color: var(--accent-lemon);
+    }
+
+    .key-btn.key-del {
+      background: rgba(244, 63, 94, 0.24);
+      border-color: rgba(251, 113, 133, 0.55);
+      color: #FFE4E6;
+      font-size: 14px;
+    }
+
+    .key-btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    /* Action Buttons */
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      flex: 1;
+      min-width: 180px;
+      padding: 14px 20px;
+      border-radius: 16px;
+      background: var(--olive-grad);
+      border: 1.25px solid rgba(255, 255, 255, 0.52);
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 10px 24px -8px rgba(18, 38, 10, 0.65);
+      transition: all 160ms ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--olive-grad-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-next {
+      flex: 1;
+      min-width: 180px;
+      padding: 14px 20px;
+      border-radius: 16px;
+      background: var(--accent-lemon);
+      border: 1.5px solid #FFFFFF;
+      color: #142618;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 24px -8px rgba(227, 222, 98, 0.55);
+      transition: all 160ms ease;
+      display: none;
+    }
+
+    .btn-next.is-visible {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      animation: popIn 240ms ease forwards;
+    }
+
+    .btn-next:hover {
+      background: #EFEA76;
+      transform: translateY(-1px);
+    }
+
+    /* Feedback Banner */
+    .feedback-box {
+      display: none;
+      padding: 13px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feedback-box.is-ok {
+      display: flex;
+      background: rgba(34, 197, 94, 0.22);
+      border: 1.25px solid rgba(74, 222, 128, 0.72);
+      color: #DCFCE7;
+    }
+
+    .feedback-box.is-err {
+      display: flex;
+      background: rgba(225, 29, 72, 0.24);
+      border: 1.25px solid rgba(251, 113, 133, 0.72);
+      color: #FFE4E6;
+      animation: shake 320ms ease;
+    }
+
+    /* Scratchpad (Open Student Workspace) */
+    .scratch-card {
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .scratch-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .scratch-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent-lemon);
+    }
+
+    .scratch-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      padding: 6px 11px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tool-btn.is-active {
+      background: var(--accent-lemon);
+      color: #142618;
+      border-color: var(--accent-lemon);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(8, 18, 11, 0.72);
+      border: 1.25px solid rgba(255, 255, 255, 0.26);
+      background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+      background-size: 20px 20px;
+      touch-action: none;
+    }
+
+    #scratch-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Summary View */
+    .summary-card {
+      display: none;
+      padding: 28px 26px;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .summary-card.is-visible {
+      display: flex;
+      animation: popIn 280ms ease forwards;
+    }
+
+    .summary-score-circle {
+      width: 154px;
+      height: 154px;
+      border-radius: 50%;
+      background: rgba(10, 22, 13, 0.62);
+      border: 3px solid var(--accent-lemon);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 32px rgba(227, 222, 98, 0.28);
+    }
+
+    .summary-score-num {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--accent-lemon);
+      line-height: 1;
+    }
+
+    .summary-score-max {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .summary-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(10, 22, 13, 0.52);
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .summary-table th {
+      color: var(--accent-lemon);
+      font-weight: 800;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .summary-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="glass-wrapper topbar">
+      <div class="brand-group">
+        <span class="pill-room">Practice Room 1</span>
+        <span class="room-title">Bài Luyện Tập: Tìm x (Phân số &amp; Hỗn số)</span>
+      </div>
+      <div class="topbar-right">
+        <div class="score-pill" id="live-score-badge">
+          Điểm hiện tại: <strong id="score-val">0 / 10</strong>
+        </div>
+        <button type="button" class="btn-icon" id="sound-toggle-btn" onclick="PracticeApp.toggleSound()">🔊 Âm thanh: Bật</button>
+      </div>
+    </header>
+
+    <!-- Mastery-Gated Stepper -->
+    <nav class="glass-panel-dark stepper" id="stepper-bar" aria-label="Tiến độ 6 câu hỏi"></nav>
+
+    <!-- Active Practice Workspace -->
+    <main class="workspace-grid" id="practice-workspace">
+      <!-- Left: Problem Statement + Input + Math Keypad -->
+      <section class="glass-wrapper problem-card">
+        <div class="q-header">
+          <div class="q-badges">
+            <span class="badge-qnum" id="q-num-badge">Câu 1 / 6</span>
+            <span class="badge-level" id="q-level-badge">Cơ bản • 1,5 điểm</span>
+          </div>
+          <span class="attempt-info" id="attempt-info">Lần thử: 0</span>
+        </div>
+
+        <div class="equation-box">
+          <div class="equation-prompt">Tìm <span style="font-style:italic">x</span>, biết:</div>
+          <div class="math-expr" id="equation-display"></div>
+        </div>
+
+        <div class="answer-row">
+          <span class="answer-prefix"><span style="font-style:italic">x</span> =</span>
+          <input
+            id="answer-input"
+            class="answer-input"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Nhập kết quả (VD: -1, -10/3, 7/3)..."
+          />
+          <div class="live-preview" id="live-preview" title="Xem trước biểu thức em vừa nhập">—</div>
+        </div>
+        <div class="input-format-note">
+          Chấp nhận số nguyên, phân số (<strong style="color:#E3DE62">a/b</strong>), hỗn số (<strong style="color:#E3DE62">a b/c</strong>) hoặc số thập phân hữu hạn.
+        </div>
+
+        <!-- On-Screen Math Keypad -->
+        <div class="keypad" id="math-keypad">
+          <button type="button" class="key-btn" data-key="7">7</button>
+          <button type="button" class="key-btn" data-key="8">8</button>
+          <button type="button" class="key-btn" data-key="9">9</button>
+          <button type="button" class="key-btn key-op" data-key="-">−</button>
+          <button type="button" class="key-btn key-del" data-action="backspace">⌫ Xóa</button>
+
+          <button type="button" class="key-btn" data-key="4">4</button>
+          <button type="button" class="key-btn" data-key="5">5</button>
+          <button type="button" class="key-btn" data-key="6">6</button>
+          <button type="button" class="key-btn key-op" data-key="/">/</button>
+          <button type="button" class="key-btn key-del" data-action="clear">C Xóa hết</button>
+
+          <button type="button" class="key-btn" data-key="1">1</button>
+          <button type="button" class="key-btn" data-key="2">2</button>
+          <button type="button" class="key-btn" data-key="3">3</button>
+          <button type="button" class="key-btn key-op" data-key=",">,</button>
+          <button type="button" class="key-btn key-op" data-key=" " title="Dấu cách cho hỗn số">␣ Cách</button>
+
+          <button type="button" class="key-btn" data-key="0" style="grid-column: span 5;">0</button>
+        </div>
+
+        <!-- Feedback Banner -->
+        <div class="feedback-box" id="feedback-box" role="status" aria-live="polite"></div>
+
+        <!-- Submit & Next Controls -->
+        <div class="actions-row">
+          <button type="button" class="btn-primary" id="submit-btn" onclick="PracticeApp.checkAnswer()">
+            KIỂM TRA ĐÁP ÁN
+          </button>
+          <button type="button" class="btn-next" id="next-btn" onclick="PracticeApp.nextQuestion()">
+            Câu tiếp theo →
+          </button>
+        </div>
+      </section>
+
+      <!-- Right: Open Scratchpad Workspace -->
+      <aside class="glass-panel-dark scratch-card">
+        <div class="scratch-head">
+          <span class="scratch-title">✏️ Bảng nháp tự do</span>
+          <div class="scratch-tools">
+            <button type="button" class="tool-btn is-active" id="tool-pen" onclick="Scratchpad.setMode('pen')">Bút viết</button>
+            <button type="button" class="tool-btn" id="tool-eraser" onclick="Scratchpad.setMode('eraser')">Tẩy</button>
+            <button type="button" class="tool-btn" onclick="Scratchpad.clear()">Xóa bảng</button>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="scratch-canvas"></canvas>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Completion Summary Screen -->
+    <section class="glass-wrapper summary-card" id="summary-screen">
+      <span class="pill-room">HOÀN TẤT PHIÊN LUYỆN TẬP</span>
+      <h1 style="font-size:26px; font-weight:800; color:#FFFFFF;">CHÚC MỪNG EM ĐÃ HOÀN THÀNH BÀI LUYỆN TẬP!</h1>
+
+      <div class="summary-score-circle">
+        <div class="summary-score-num" id="final-score-num">10</div>
+        <div class="summary-score-max">/ 10 điểm</div>
+      </div>
+
+      <div id="final-score-line" style="font-size:16px; font-weight:800; color:#E3DE62;">
+        TỔNG ĐIỂM: 10/10
+      </div>
+
+      <div class="summary-table-wrap">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Câu</th>
+              <th>Đề bài</th>
+              <th>Đáp án đúng</th>
+              <th>Số lần thử</th>
+              <th>Điểm đạt</th>
+            </tr>
+          </thead>
+          <tbody id="summary-tbody"></tbody>
+        </table>
+      </div>
+
+      <button type="button" class="btn-primary" style="max-width:260px;" onclick="PracticeApp.restart()">
+        Làm lại từ đầu
+      </button>
+    </section>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* =====================================================================
+     * MATH RENDERING HELPERS
+     * ===================================================================== */
+    function f(n, d) {
+      return `<span class="frac"><span class="num">${n}</span><span class="den">${d}</span></span>`;
+    }
+    function mix(w, n, d) {
+      return `<span class="mixed"><span>${w}</span>${f(n, d)}</span>`;
+    }
+    function v(ch) { return `<span class="math-var">${ch}</span>`; }
+    function op(s) { return `<span class="math-op">${s}</span>`; }
+    function lp() { return `<span class="math-paren">(</span>`; }
+    function rp() { return `<span class="math-paren">)</span>`; }
+
+    /* =====================================================================
+     * 6 PRACTICE QUESTIONS (EXACTLY MATCHING UPLOADED SLIDES, TOTAL = 10 PTS)
+     * ===================================================================== */
+    const QUESTIONS = [
+      {
+        id: 1,
+        level: 'Cơ bản',
+        isChallenge: false,
+        maxPoints: 1.5,
+        equationHtml: `${f(11, 12)}${v('x')}${op('+')}${f(3, 4)}${op('=')}${op('−')}${f(1, 6)}`,
+        shortText: '11/12 · x + 3/4 = -1/6',
+        ansNum: -1,
+        ansDen: 1,
+        ansDisplayHtml: `−1`
+      },
+      {
+        id: 2,
+        level: 'Cơ bản',
+        isChallenge: false,
+        maxPoints: 1.5,
+        equationHtml: `3${op('−')}${lp()}${f(1, 6)}${op('−')}${v('x')}${rp()}${op('·')}${f(2, 3)}${op('=')}${f(2, 3)}`,
+        shortText: '3 - (1/6 - x) · 2/3 = 2/3',
+        ansNum: -10,
+        ansDen: 3,
+        ansDisplayHtml: `−${f(10, 3)}`
+      },
+      {
+        id: 3,
+        level: 'Cơ bản',
+        isChallenge: false,
+        maxPoints: 1.5,
+        equationHtml: `${f(2, 3)}${v('x')}${op('+')}${f(1, 2)}${op('=')}${f(3, 10)}${op('−')}${f(1, 5)}`,
+        shortText: '2/3 · x + 1/2 = 3/10 - 1/5',
+        ansNum: -3,
+        ansDen: 5,
+        ansDisplayHtml: `−${f(3, 5)}`
+      },
+      {
+        id: 4,
+        level: 'Cơ bản',
+        isChallenge: false,
+        maxPoints: 1.5,
+        equationHtml: `${lp()}${v('x')}${op('−')}${f(1, 2)}${rp()}${op('·')}${f(3, 4)}${op('=')}${op('−')}${f(3, 8)}`,
+        shortText: '(x - 1/2) · 3/4 = -3/8',
+        ansNum: 0,
+        ansDen: 1,
+        ansDisplayHtml: `0`
+      },
+      {
+        id: 5,
+        level: '★ Câu thử thách',
+        isChallenge: true,
+        maxPoints: 2.0,
+        equationHtml: `${lp()}${v('x')}${op('+')}${mix(1, 1, 2)}${rp()}${op('·')}${lp()}${op('−')}${mix(1, 1, 4)}${rp()}${op('=')}${mix(2, 1, 8)}`,
+        shortText: '(x + 1 1/2) · (-1 1/4) = 2 1/8',
+        ansNum: -16,
+        ansDen: 5,
+        ansDisplayHtml: `−${f(16, 5)}`
+      },
+      {
+        id: 6,
+        level: '★ Câu thử thách',
+        isChallenge: true,
+        maxPoints: 2.0,
+        equationHtml: `${mix(2, 1, 3)}${op('−')}${mix(1, 1, 2)}${v('x')}${op('=')}${op('−')}${mix(1, 1, 6)}`,
+        shortText: '2 1/3 - 1 1/2 · x = -1 1/6',
+        ansNum: 7,
+        ansDen: 3,
+        ansDisplayHtml: `${f(7, 3)}`
+      }
+    ];
+
+    /* =====================================================================
+     * EXACT RATIONAL NUMBER PARSER (INTEGER, FRACTION, MIXED, DECIMAL)
+     * ===================================================================== */
+    function gcd(a, b) {
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const t = a % b;
+        a = b;
+        b = t;
+      }
+      return a || 1;
+    }
+
+    function normalizeFraction(num, den) {
+      if (den === 0 || !Number.isFinite(num) || !Number.isFinite(den)) return null;
+      if (den < 0) { num = -num; den = -den; }
+      if (num === 0) return { num: 0, den: 1 };
+      const g = gcd(num, den);
+      return { num: num / g, den: den / g };
+    }
+
+    function parseRationalInput(raw) {
+      if (!raw || typeof raw !== 'string') return null;
+      let s = raw.trim()
+        .replace(/^[xX]\s*=\s*/, '')
+        .replace(/[−–—]/g, '-')
+        .replace(/,/g, '.')
+        .replace(/\s+/g, ' ');
+      if (!s) return null;
+
+      // Mixed number: e.g. "-3 1/3" or "2 1/3"
+      const mixedMatch = s.match(/^([+-]?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+      if (mixedMatch) {
+        const sign = mixedMatch[1] === '-' ? -1 : 1;
+        const whole = parseInt(mixedMatch[2], 10);
+        const n = parseInt(mixedMatch[3], 10);
+        const d = parseInt(mixedMatch[4], 10);
+        if (d === 0) return null;
+        return normalizeFraction(sign * (whole * d + n), d);
+      }
+
+      // Fraction: e.g. "-10/3", "7/3", "- 3 / 5"
+      const fracMatch = s.match(/^([+-]?\s*\d+)\s*\/\s*([+-]?\s*\d+)$/);
+      if (fracMatch) {
+        const n = parseInt(fracMatch[1].replace(/\s+/g, ''), 10);
+        const d = parseInt(fracMatch[2].replace(/\s+/g, ''), 10);
+        if (d === 0) return null;
+        return normalizeFraction(n, d);
+      }
+
+      // Integer or exact terminating decimal: e.g. "-1", "0", "-0.6", "-3.2"
+      const decMatch = s.match(/^([+-]?)\s*(\d+)(?:\.(\d+))?$/);
+      if (decMatch) {
+        const sign = decMatch[1] === '-' ? -1 : 1;
+        const intPart = decMatch[2];
+        const fracPart = decMatch[3] || '';
+        const den = Math.pow(10, fracPart.length);
+        const num = parseInt(intPart + fracPart, 10);
+        return normalizeFraction(sign * num, den);
+      }
+
+      return null;
+    }
+
+    function formatVNScore(val) {
+      const rounded = Math.round(val * 100) / 100;
+      return String(rounded).replace('.', ',');
+    }
+
+    /* =====================================================================
+     * WEB AUDIO FEEDBACK ENGINE
+     * ===================================================================== */
+    const SoundFX = (() => {
+      let enabled = true;
+      let ctx = null;
+
+      function getCtx() {
+        if (!ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+        return ctx;
+      }
+
+      function playTone(freq, startOffset, duration, type = 'sine', gainPeak = 0.16) {
+        const c = getCtx();
+        if (!c || !enabled) return;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, c.currentTime + startOffset);
+        gain.gain.setValueAtTime(0.001, c.currentTime + startOffset);
+        gain.gain.exponentialRampToValueAtTime(gainPeak, c.currentTime + startOffset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + startOffset + duration);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(c.currentTime + startOffset);
+        osc.stop(c.currentTime + startOffset + duration + 0.02);
+      }
+
+      return {
+        isEnabled: () => enabled,
+        toggle: () => { enabled = !enabled; return enabled; },
+        correct: () => {
+          playTone(523.25, 0, 0.14, 'triangle', 0.18);
+          playTone(659.25, 0.11, 0.16, 'triangle', 0.18);
+          playTone(783.99, 0.22, 0.26, 'triangle', 0.20);
+        },
+        wrong: () => {
+          playTone(260, 0, 0.16, 'sawtooth', 0.10);
+          playTone(205, 0.14, 0.22, 'sawtooth', 0.10);
+        },
+        complete: () => {
+          [523.25, 659.25, 783.99, 1046.5].forEach((hz, i) => playTone(hz, i * 0.11, 0.28, 'triangle', 0.20));
+        }
+      };
+    })();
+
+    /* =====================================================================
+     * SCRATCHPAD CANVAS (OPEN WORKSPACE FOR STUDENTS)
+     * ===================================================================== */
+    const Scratchpad = (() => {
+      const canvas = document.getElementById('scratch-canvas');
+      const ctx = canvas.getContext('2d');
+      let drawing = false;
+      let mode = 'pen';
+      const savedStrokesByQ = {};
+
+      function resizeCanvas() {
+        const wrap = canvas.parentElement;
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
+        const prev = canvas.width > 0 && canvas.height > 0 ? canvas.toDataURL() : null;
+        canvas.width = Math.max(300, Math.floor(rect.width));
+        canvas.height = Math.max(260, Math.floor(rect.height));
+        if (prev) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.src = prev;
+        }
+      }
+
+      function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const pt = e.touches ? e.touches[0] : e;
+        return {
+          x: (pt.clientX - rect.left) * (canvas.width / rect.width),
+          y: (pt.clientY - rect.top) * (canvas.height / rect.height)
+        };
+      }
+
+      function start(e) {
+        e.preventDefault();
+        drawing = true;
+        const p = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }
+
+      function move(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        const p = getPos(e);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (mode === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.lineWidth = 22;
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = '#E3DE62';
+          ctx.lineWidth = 2.8;
+        }
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+
+      function end() {
+        if (!drawing) return;
+        drawing = false;
+        ctx.closePath();
+      }
+
+      canvas.addEventListener('pointerdown', start);
+      canvas.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', end);
+      window.addEventListener('resize', resizeCanvas);
+
+      function setMode(m) {
+        mode = m;
+        document.getElementById('tool-pen').classList.toggle('is-active', m === 'pen');
+        document.getElementById('tool-eraser').classList.toggle('is-active', m === 'eraser');
+      }
+
+      function clear() {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function saveForQuestion(qIdx) {
+        if (canvas.width > 0 && canvas.height > 0) {
+          savedStrokesByQ[qIdx] = canvas.toDataURL();
+        }
+      }
+
+      function loadForQuestion(qIdx) {
+        clear();
+        if (savedStrokesByQ[qIdx]) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.src = savedStrokesByQ[qIdx];
+        }
+      }
+
+      function resetAll() {
+        Object.keys(savedStrokesByQ).forEach((k) => delete savedStrokesByQ[k]);
+        clear();
+      }
+
+      setTimeout(resizeCanvas, 50);
+      return { setMode, clear, saveForQuestion, loadForQuestion, resetAll };
+    })();
+
+    /* =====================================================================
+     * PRACTICE ROOM APP CONTROLLER (MASTERY-GATED + 10-POINT SCORING)
+     * ===================================================================== */
+    const PracticeApp = (() => {
+      let currentIdx = 0;
+      const results = QUESTIONS.map(() => ({
+        solved: false,
+        attempts: 0,
+        earnedPoints: 0,
+        lastInput: ''
+      }));
+
+      const inputEl = document.getElementById('answer-input');
+      const previewEl = document.getElementById('live-preview');
+      const feedbackEl = document.getElementById('feedback-box');
+      const submitBtn = document.getElementById('submit-btn');
+      const nextBtn = document.getElementById('next-btn');
+
+      function computePointsForAttempt(maxPoints, attempts) {
+        const factor = attempts <= 1 ? 1.0 : attempts === 2 ? 0.8 : attempts === 3 ? 0.6 : 0.4;
+        return Math.round(maxPoints * factor * 100) / 100;
+      }
+
+      function getTotalScore() {
+        const sum = results.reduce((acc, r) => acc + r.earnedPoints, 0);
+        return Math.round(sum * 100) / 100;
+      }
+
+      function renderLivePreview(val) {
+        const parsed = parseRationalInput(val);
+        if (!val.trim()) {
+          previewEl.innerHTML = '—';
+          return;
+        }
+        if (!parsed) {
+          previewEl.innerHTML = '<span style="font-size:12px; color:#FB7185; font-family:Be Vietnam Pro,sans-serif;">Sai định dạng</span>';
+          return;
+        }
+        if (parsed.den === 1) {
+          previewEl.innerHTML = parsed.num < 0 ? `−${Math.abs(parsed.num)}` : `${parsed.num}`;
+        } else {
+          const sign = parsed.num < 0 ? '−' : '';
+          previewEl.innerHTML = `${sign}${f(Math.abs(parsed.num), parsed.den)}`;
+        }
+      }
+
+      function renderStepper() {
+        const bar = document.getElementById('stepper-bar');
+        bar.innerHTML = QUESTIONS.map((q, idx) => {
+          const r = results[idx];
+          const isCur = idx === currentIdx;
+          const cls = r.solved ? 'step-item is-done' : isCur ? 'step-item is-active' : 'step-item';
+          const icon = r.solved ? '✓' : isCur ? '●' : '🔒';
+          const clickAttr = r.solved ? `onclick="PracticeApp.jumpToSolved(${idx})"` : '';
+          return `
+            <div class="${cls}" ${clickAttr}>
+              <span>${icon} Câu ${q.id}</span>
+              <span class="step-badge-pts">(${formatVNScore(q.maxPoints)}đ)</span>
+            </div>`;
+        }).join('');
+      }
+
+      function updateScoreHeader() {
+        document.getElementById('score-val').textContent = `${formatVNScore(getTotalScore())} / 10`;
+      }
+
+      function renderQuestion() {
+        const q = QUESTIONS[currentIdx];
+        const r = results[currentIdx];
+
+        document.getElementById('q-num-badge').textContent = `Câu ${q.id} / ${QUESTIONS.length}`;
+        const lvlBadge = document.getElementById('q-level-badge');
+        lvlBadge.textContent = `${q.level} • ${formatVNScore(q.maxPoints)} điểm`;
+        lvlBadge.className = q.isChallenge ? 'badge-level is-challenge' : 'badge-level';
+
+        document.getElementById('attempt-info').textContent = `Lần thử: ${r.attempts}`;
+        document.getElementById('equation-display').innerHTML = q.equationHtml;
+
+        inputEl.value = r.lastInput || '';
+        inputEl.disabled = r.solved;
+        renderLivePreview(inputEl.value);
+
+        document.querySelectorAll('#math-keypad .key-btn').forEach((btn) => {
+          btn.disabled = r.solved;
+        });
+
+        submitBtn.disabled = r.solved;
+        submitBtn.style.display = r.solved ? 'none' : 'inline-block';
+
+        nextBtn.classList.toggle('is-visible', r.solved);
+        nextBtn.textContent = currentIdx === QUESTIONS.length - 1 ? 'Xem tổng kết điểm →' : 'Câu tiếp theo →';
+
+        if (r.solved) {
+          feedbackEl.className = 'feedback-box is-ok';
+          feedbackEl.innerHTML = `<span>✓</span><span>Chính xác! Em đạt <strong>+${formatVNScore(r.earnedPoints)} / ${formatVNScore(q.maxPoints)} điểm</strong> ở câu này.</span>`;
+        } else {
+          feedbackEl.className = 'feedback-box';
+          feedbackEl.innerHTML = '';
+        }
+
+        renderStepper();
+        updateScoreHeader();
+        Scratchpad.loadForQuestion(currentIdx);
+        if (!r.solved) setTimeout(() => inputEl.focus(), 40);
+      }
+
+      function checkAnswer() {
+        const q = QUESTIONS[currentIdx];
+        const r = results[currentIdx];
+        if (r.solved) return;
+
+        const raw = inputEl.value.trim();
+        const parsed = parseRationalInput(raw);
+        if (!parsed) {
+          SoundFX.wrong();
+          feedbackEl.className = 'feedback-box is-err';
+          feedbackEl.innerHTML = `<span>✕</span><span>Vui lòng nhập đáp án đúng định dạng (VD: -1, -10/3, 7/3 hoặc -3 1/5).</span>`;
+          inputEl.focus();
+          return;
+        }
+
+        r.attempts += 1;
+        r.lastInput = raw;
+        document.getElementById('attempt-info').textContent = `Lần thử: ${r.attempts}`;
+
+        if (parsed.num === q.ansNum && parsed.den === q.ansDen) {
+          r.solved = true;
+          r.earnedPoints = computePointsForAttempt(q.maxPoints, r.attempts);
+          SoundFX.correct();
+          renderQuestion();
+        } else {
+          SoundFX.wrong();
+          feedbackEl.className = 'feedback-box is-err';
+          feedbackEl.innerHTML = `<span>✕</span><span>Chưa chính xác (lần thử ${r.attempts}). Em hãy kiểm tra lại phép tính rồi nhập lại để mở khóa câu tiếp theo nhé!</span>`;
+          inputEl.focus();
+          inputEl.select();
+        }
+      }
+
+      function nextQuestion() {
+        if (!results[currentIdx].solved) return;
+        Scratchpad.saveForQuestion(currentIdx);
+        if (currentIdx < QUESTIONS.length - 1) {
+          currentIdx += 1;
+          renderQuestion();
+        } else {
+          showSummary();
+        }
+      }
+
+      function jumpToSolved(idx) {
+        if (!results[idx].solved) return;
+        Scratchpad.saveForQuestion(currentIdx);
+        currentIdx = idx;
+        renderQuestion();
+      }
+
+      function showSummary() {
+        document.getElementById('practice-workspace').style.display = 'none';
+        const summaryEl = document.getElementById('summary-screen');
+        summaryEl.classList.add('is-visible');
+
+        const total = getTotalScore();
+        const displayScore = formatVNScore(total);
+        document.getElementById('final-score-num').textContent = displayScore;
+        document.getElementById('final-score-line').textContent = `TỔNG ĐIỂM: ${total}/10`;
+
+        const tbody = document.getElementById('summary-tbody');
+        tbody.innerHTML = QUESTIONS.map((q, idx) => {
+          const r = results[idx];
+          return `
+            <tr>
+              <td style="font-weight:800; color:#E3DE62;">Câu ${q.id}</td>
+              <td style="font-family:Georgia,serif;">${q.shortText}</td>
+              <td style="font-family:Georgia,serif; font-weight:700;">x = ${q.ansDisplayHtml}</td>
+              <td>${r.attempts} lần</td>
+              <td style="font-weight:800; color:#4ADE80;">${formatVNScore(r.earnedPoints)} / ${formatVNScore(q.maxPoints)}</td>
+            </tr>`;
+        }).join('');
+
+        SoundFX.complete();
+
+        // Sync score automatically to SPARKLE Practice Room parent iframe
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'SPARKLE_COMPLETE',
+              score: total,
+              summary: `Hoàn thành Practice Room 1 (6 câu Tìm x) • Điểm đạt: ${total}/10`
+            }, '*');
+          }
+        } catch (e) {}
+      }
+
+      function restart() {
+        results.forEach((r) => {
+          r.solved = false;
+          r.attempts = 0;
+          r.earnedPoints = 0;
+          r.lastInput = '';
+        });
+        currentIdx = 0;
+        Scratchpad.resetAll();
+        document.getElementById('summary-screen').classList.remove('is-visible');
+        document.getElementById('practice-workspace').style.display = 'grid';
+        renderQuestion();
+      }
+
+      function toggleSound() {
+        const on = SoundFX.toggle();
+        document.getElementById('sound-toggle-btn').textContent = on ? '🔊 Âm thanh: Bật' : '🔇 Âm thanh: Tắt';
+      }
+
+      // Input & Keypad bindings
+      inputEl.addEventListener('input', () => renderLivePreview(inputEl.value));
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (results[currentIdx].solved) nextQuestion();
+          else checkAnswer();
+        }
+      });
+
+      document.getElementById('math-keypad').addEventListener('click', (e) => {
+        const btn = e.target.closest('.key-btn');
+        if (!btn || btn.disabled) return;
+        const action = btn.dataset.action;
+        const key = btn.dataset.key;
+        if (action === 'backspace') {
+          inputEl.value = inputEl.value.slice(0, -1);
+        } else if (action === 'clear') {
+          inputEl.value = '';
+        } else if (typeof key === 'string') {
+          inputEl.value += key;
+        }
+        renderLivePreview(inputEl.value);
+        inputEl.focus();
+      });
+
+      renderQuestion();
+      return { checkAnswer, nextQuestion, jumpToSolved, restart, toggleSound };
+    })();
+  </script>
+</body>
+</html>
